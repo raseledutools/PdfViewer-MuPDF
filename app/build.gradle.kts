@@ -95,9 +95,16 @@ dependencies {
     // True vector rendering: same engine as Adobe / MuPDF desktop
     // Sharp at any zoom — re-renders from vectors, NOT bitmap-stretch
     // Supports: PDF, XPS, EPUB, CBZ, MOBI
-    // Source: https://mvnrepository.com/artifact/com.artifex.mupdf/viewer
+    // FIX: 1.24.10 doesn't actually exist on maven.ghostscript.com (confirmed
+    // by the build failure itself — "Could not find ...viewer/1.24.10/...").
+    // mvnrepository.com's listing was apparently wrong/stale for this
+    // artifact. Switched to a floating version, matching MuPDF's own current
+    // official docs exactly (mupdf.readthedocs.io/en/latest/guide/
+    // using-with-android.html) — Gradle resolves this against the repo's
+    // real maven-metadata.xml itself, so it always gets a version that
+    // genuinely exists there instead of a hand-picked number that might not.
     // ─────────────────────────────────────────────────────────────────────────
-    implementation("com.artifex.mupdf:viewer:1.24.10")
+    implementation("com.artifex.mupdf:viewer:1.15.+")
 
     // Testing
     testImplementation("junit:junit:4.13.2")
