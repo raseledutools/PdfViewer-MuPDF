@@ -12,6 +12,8 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         maven { url = uri("https://jitpack.io") }
+        maven { url = uri("https://maven.ghostscript.com") }
+        maven { url = uri("https://artifacts.mupdf.com/maven") }
     }
 }
 
