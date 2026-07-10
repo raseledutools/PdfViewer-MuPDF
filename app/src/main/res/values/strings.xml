@@ -1,3 +1,16 @@
 <resources>
     <string name="app_name">PDF Viewer</string>
+
+    <!-- Accessibility Service descriptions -->
+    <string name="accessibility_extreme_description">RasFocus Extreme Block Service monitors app usage to block restricted content</string>
+    <string name="accessibility_appblocker_description">RasFocus App Blocker Service monitors and blocks restricted applications</string>
+    <string name="accessibility_focus_description">RasFocus Focus Service helps you stay focused by blocking distractions</string>
+    <string name="accessibility_reels_description">RasFocus Reels Block Service monitors and controls short video content</string>
+    <string name="accessibility_selffocus_description">RasFocus Self Focus Service helps you maintain focus and productivity</string>
+    <string name="extreme_block_service_label">RasFocus Extreme Block</string>
+
+    <!-- Shortcuts -->
+    <string name="shortcut_pdf_label">PDF Viewer</string>
+    <string name="shortcut_pdf_long_label">Open PDF Viewer</string>
+    <string name="shortcut_pdf_disabled">PDF Viewer unavailable</string>
 </resources>
