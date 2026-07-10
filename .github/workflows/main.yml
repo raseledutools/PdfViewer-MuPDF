@@ -56,13 +56,13 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew assembleFullRelease --build-cache --parallel
+        run: ./gradlew assembleRelease --build-cache --parallel
 
       - name: Upload Full armeabi-v7a APK (dev debug testing only — not committed to repo)
         uses: actions/upload-artifact@v4
         with:
           name: RasFocus-full-armeabi-v7a
-          path: app/build/outputs/apk/full/release/*armeabi-v7a*.apk
+          path: app/build/outputs/apk/release/*armeabi-v7a*.apk
           retention-days: 30
 
       # FIX: universal APK previously only went to the GitHub Release — it
@@ -72,7 +72,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: RasFocus-full-universal
-          path: app/build/outputs/apk/full/release/*universal*.apk
+          path: app/build/outputs/apk/release/*universal*.apk
           retention-days: 30
 
       # This is what turns an obfuscated crash log (u2.i, h4.a, q0.r, etc.)
@@ -86,8 +86,8 @@ jobs:
           tag_name: v1.0.${{ github.run_number }}
           name: RasFocus Full v1.0.${{ github.run_number }}
           files: |
-            app/build/outputs/apk/full/release/*universal*.apk
-            app/build/outputs/apk/full/release/*armeabi-v7a*.apk
+            app/build/outputs/apk/release/*universal*.apk
+            app/build/outputs/apk/release/*armeabi-v7a*.apk
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -127,12 +127,12 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew assembleLightRelease --build-cache --parallel
+        run: ./gradlew assembleRelease --build-cache --parallel
 
       - name: Debug — list generated APK outputs
         run: |
-          echo "----- Contents of app/build/outputs/apk/light/release -----"
-          find app/build/outputs/apk/light -type f -name "*.apk" -print || echo "No light release folder found!"
+          echo "----- Contents of app/build/outputs/apk/release -----"
+          find app/build/outputs/apk/release -type f -name "*.apk" -print || echo "No light release folder found!"
 
       # FIX: previously this APK only ever got committed into the repo's
       # apk/ folder — it never appeared as an Actions artifact on the run
@@ -141,6 +141,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: RasFocus-light-armeabi-v7a
-          path: app/build/outputs/apk/light/release/*armeabi-v7a*.apk
+          path: app/build/outputs/apk/release/*armeabi-v7a*.apk
           retention-days: 30
+
 
