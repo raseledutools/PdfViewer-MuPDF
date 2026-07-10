@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.rasel.pdfviewer">
 
     <!-- Storage permissions for reading PDF files -->
@@ -56,6 +57,19 @@
             </intent-filter>
 
         </activity>
+
+        <!-- FIX: com.artifex.mupdf:viewer's own AAR declares DocumentActivity
+             with an intent-filter but no explicit android:exported — required
+             by Android 12+ for any component with an intent-filter, and the
+             library's manifest predates that requirement. Overriding here via
+             manifest merge. Our own .PdfViewerActivity above already serves
+             as the app's externally-launchable PDF viewer (exported=true with
+             full intent-filters), so this one only needs to be reachable from
+             inside this app — exported=false. -->
+        <activity
+            android:name="com.artifex.mupdf.viewer.DocumentActivity"
+            android:exported="false"
+            tools:node="merge" />
 
         <!-- FileProvider for sharing internal cache files -->
         <provider
