@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Status bar notification icon for Extreme Block service.
+  Must be white/transparent only — Android enforces this for notification icons.
+  24x24dp, white shield with a small lock inside.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Shield outline -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,2 L4,5.5 L4,11 C4,15.55 7.41,19.74 12,21 C16.59,19.74 20,15.55 20,11 L20,5.5 Z" />
+
+    <!-- Lock body (cutout effect using dark color — will render white on status bar) -->
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M14,11 L14,9.5 C14,8.4 13.1,7.5 12,7.5 C10.9,7.5 10,8.4 10,9.5 L10,11 L9,11 L9,15 L15,15 L15,11 Z" />
+
+    <!-- Lock shackle -->
+    <path
+        android:fillColor="#FF000000"
+        android:strokeWidth="1.2"
+        android:strokeColor="#FF000000"
+        android:pathData="M10.5,11 L10.5,9.5 C10.5,8.67 11.17,8 12,8 C12.83,8 13.5,8.67 13.5,9.5 L13.5,11" />
+
+</vector>

@@ -1,0 +1,232 @@
+commit 04fa29686dc30ffb885bf8cd997cb95f8c65d873
+Author: Claude <claude@anthropic.com>
+Date:   Tue Jul 7 18:37:58 2026 +0000
+
+    Fix 2 real bugs: Firebase keyword sync delay + floating windows missing keyword block
+    
+    Bug 1 — Firebase keyword update doesn't apply until app restart:
+    FirebaseKeywordSync.fetchFromFirebase() used addListenerForSingleValueEvent
+    — fetches ONCE, never updates again on its own. The code comment even
+    admitted this ('data change হলে forceRefresh call করো') but nothing
+    anywhere actually calls forceRefresh() automatically. So updating a
+    keyword in the Firebase console had zero effect until the app process was
+    killed and restarted.
+    
+    Fix: switched to addValueEventListener — Realtime Database's actual live
+    listener, fires automatically on every change at that path. The earlier
+    switch away from it was guarding against a listener leak, which is a real
+    concern for a listener tied to a short-lived Activity/Fragment, but this
+    is a permanent app-process-lifetime singleton with nothing to leak past.
+    Also fixed activeListener never actually being assigned (dead code before
+    this), so forceRefresh()/repeated calls now properly detach the old
+    listener before attaching a new one instead of accumulating duplicates.
+    
+    Bug 2 — floating YouTube / Facebook / generic floating window: adult
+    keyword typed into a search box doesn't trigger any block screen, even
+    though the full-page browser catches the exact same keyword:
+    YoutubeFloatingWindowService.kt, FacebookFloatingWindowService.kt, and
+    FloatingWindowService.kt's WebViewClients only ever called
+    AdBlocker.isAdultSite(url) — a DOMAIN-only check. Typing an adult keyword
+    into a search box on a legitimate domain (youtube.com, facebook.com)
+    never matches a domain check, unlike the full-page browser which also
+    checks the URL text itself against FirebaseKeywordSync's keyword list
+    (catches it because the search query ends up embedded in the URL, e.g.
+    .../results?search_query=X).
+    
+    Fix: added FirebaseKeywordSync.containsAdultKeyword(url) alongside the
+    existing isAdultSite(url) check in shouldInterceptRequest AND
+    shouldOverrideUrlLoading for all three files, and upgraded the blank/silent
+    response to a real blocked page (AdBlocker.buildBlockedPage() for the two
+    service files; FloatingWindowService.kt already had its own
+    buildFloatingBlockPage(), reused as-is).
+    
+    On the reported slowness: I don't have profiling data or a crash log
+    pointing at a specific cause, so I'm not guessing at a fix without
+    evidence. One plausible contributor: bug 1 meant restarting the app was
+    the ONLY way to pick up new keywords — if that's been happening
+    repeatedly, repeated cold starts would genuinely feel slower than a warm,
+    properly-running app. Worth re-checking after this fix; if it's still
+    slow, a fresh crash/ANR log would let me look at an actual cause instead
+    of guessing.
+
+diff --git a/app/src/main/java/com/rasel/RasFocus/selfcontrol/FirebaseKeywordSync.kt b/app/src/main/java/com/rasel/RasFocus/selfcontrol/FirebaseKeywordSync.kt
+index 2666b17..e52afc3 100644
+--- a/app/src/main/java/com/rasel/RasFocus/selfcontrol/FirebaseKeywordSync.kt
++++ b/app/src/main/java/com/rasel/RasFocus/selfcontrol/FirebaseKeywordSync.kt
+@@ -180,9 +180,24 @@ object FirebaseKeywordSync {
+ 
+     // ────────────────────────────────────────────────────────
+     // Firebase fetch
+-    // FIX 1: explicit DB_URL দেওয়া হয়েছে
+-    // FIX 2: addValueEventListener → addListenerForSingleValueEvent
+-    //         (memory leak নেই, একবারই fetch করে; data change হলে forceRefresh call করো)
++    // FIX (this pass): addListenerForSingleValueEvent → addValueEventListener
++    //
++    // The single-value-event approach fetches Firebase data EXACTLY ONCE and
++    // never updates again on its own — the code comment even said "data
++    // change হলে forceRefresh call করো" (call forceRefresh() when data
++    // changes), but nothing in the app ever actually calls forceRefresh()
++    // automatically. So updating a keyword in the Firebase console had zero
++    // effect until the app process was killed and restarted.
++    //
++    // addValueEventListener is Firebase Realtime Database's actual live-sync
++    // listener — it keeps firing automatically every time the data at this
++    // path changes, which is the whole point of "Realtime" Database and
++    // exactly what "update keyword in Firebase, app picks it up right away"
++    // needs. The earlier switch away from it was reasoning about a listener
++    // *leak* — that's a real concern for a listener registered from a
++    // short-lived Activity/Fragment that needs to detach on destroy, but
++    // this is a permanent, app-process-lifetime singleton object with no
++    // such lifecycle to leak past; there's nothing to leak here.
+     // ────────────────────────────────────────────────────────
+     private fun fetchFromFirebase() {
+         try {
+@@ -190,7 +205,11 @@ object FirebaseKeywordSync {
+             db.setPersistenceEnabled(false) // cache আমরা নিজে করি, Firebase disk cache off
+             val ref = db.getReference(DB_PATH)
+ 
+-            ref.addListenerForSingleValueEvent(object : ValueEventListener {
++            // পুরনো listener থাকলে আগে detach করো (forceRefresh() একাধিকবার
++            // call হলে duplicate listener জমে যাওয়া ঠেকাতে)
++            activeListener?.let { ref.removeEventListener(it) }
++
++            val listener = object : ValueEventListener {
+ 
+                 override fun onDataChange(snapshot: DataSnapshot) {
+                     if (!snapshot.exists()) {
+@@ -230,7 +249,7 @@ object FirebaseKeywordSync {
+ 
+                     isLoaded = true
+ 
+-                    Log.d(TAG, "✅ Fetched — Adult: ${keywords.size}kw ${domains.size}dm | " +
++                    Log.d(TAG, "✅ Live update — Adult: ${keywords.size}kw ${domains.size}dm | " +
+                                "Custom: ${ckw.size}kw ${cdm.size}dm ${cap.size}apps | " +
+                                "Messages: ${appMsgs.size}app ${domainMsgs.size}domain ${keywordMsgs.size}kw")
+ 
+@@ -244,7 +263,10 @@ object FirebaseKeywordSync {
+                 override fun onCancelled(error: DatabaseError) {
+                     Log.e(TAG, "Firebase cancelled: ${error.message} (code=${error.code})")
+                 }
+-            })
++            }
++
++            activeListener = listener
++            ref.addValueEventListener(listener)
+ 
+         } catch (e: Exception) {
+             Log.e(TAG, "fetchFromFirebase error: ${e.message}")
+diff --git a/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/FloatingWindowService.kt b/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/FloatingWindowService.kt
+index e5af6d8..d8a9aac 100644
+--- a/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/FloatingWindowService.kt
++++ b/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/FloatingWindowService.kt
+@@ -274,7 +274,13 @@ class FloatingWindowService : Service() {
+                     request: android.webkit.WebResourceRequest
+                 ): android.webkit.WebResourceResponse? {
+                     val reqUrl = request.url.toString()
+-                    if (com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.isAdultSite(reqUrl)) {
++                    // FIX: was domain-only (isAdultSite) — missed adult
++                    // keywords typed into a search box on an otherwise
++                    // non-adult domain. Same FirebaseKeywordSync check the
++                    // full-page browser already has.
++                    val isDomainBlocked  = com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.isAdultSite(reqUrl)
++                    val isKeywordBlocked = com.rasel.RasFocus.selfcontrol.FirebaseKeywordSync.containsAdultKeyword(reqUrl)
++                    if (isDomainBlocked || isKeywordBlocked) {
+                         return if (request.isForMainFrame) {
+                             android.webkit.WebResourceResponse(
+                                 "text/html", "UTF-8",
+@@ -294,8 +300,10 @@ class FloatingWindowService : Service() {
+                 ): Boolean {
+                     val reqUrl = request.url.toString()
+ 
+-                    // Adult site → block page দেখাও (আগে শুধু true return করত, blank থাকত)
+-                    if (com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.isAdultSite(reqUrl)) {
++                    // Adult site or keyword → block page দেখাও
++                    val isDomainBlocked  = com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.isAdultSite(reqUrl)
++                    val isKeywordBlocked = com.rasel.RasFocus.selfcontrol.FirebaseKeywordSync.containsAdultKeyword(reqUrl)
++                    if (isDomainBlocked || isKeywordBlocked) {
+                         view.loadDataWithBaseURL(null, buildFloatingBlockPage(), "text/html", "UTF-8", null)
+                         return true
+                     }
+diff --git a/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/service/FacebookFloatingWindowService.kt b/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/service/FacebookFloatingWindowService.kt
+index 7bebab7..c6f0d67 100644
+--- a/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/service/FacebookFloatingWindowService.kt
++++ b/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/service/FacebookFloatingWindowService.kt
+@@ -468,8 +468,17 @@ class FacebookFloatingWindowService : Service() {
+                     view: WebView, request: WebResourceRequest
+                 ): WebResourceResponse? {
+                     val url = request.url.toString()
+-                    if (com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.isAdultSite(url)) {
+-                        return WebResourceResponse("text/html", "UTF-8", "<html><body></body></html>".byteInputStream())
++                    // FIX: same gap as YoutubeFloatingWindowService — domain-only
++                    // check missed adult keywords typed into Facebook's own
++                    // search box. Added the same FirebaseKeywordSync check the
++                    // full-page browser already has, and a real blocked page
++                    // instead of blank content.
++                    val isDomainBlocked  = com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.isAdultSite(url)
++                    val isKeywordBlocked = com.rasel.RasFocus.selfcontrol.FirebaseKeywordSync.containsAdultKeyword(url)
++                    if (isDomainBlocked || isKeywordBlocked) {
++                        val blockedHtml = com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker
++                            .buildBlockedPage(url, com.rasel.RasFocus.selfcontrol.familybrowser.BlockReason.ADULT)
++                        return WebResourceResponse("text/html", "UTF-8", blockedHtml.byteInputStream())
+                     }
+                     return super.shouldInterceptRequest(view, request)
+                 }
+@@ -485,7 +494,14 @@ class FacebookFloatingWindowService : Service() {
+ 
+                 override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                     val url = request.url.toString()
+-                    if (com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.isAdultSite(url)) return true
++                    val isDomainBlocked  = com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.isAdultSite(url)
++                    val isKeywordBlocked = com.rasel.RasFocus.selfcontrol.FirebaseKeywordSync.containsAdultKeyword(url)
++                    if (isDomainBlocked || isKeywordBlocked) {
++                        val blockedHtml = com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker
++                            .buildBlockedPage(url, com.rasel.RasFocus.selfcontrol.familybrowser.BlockReason.ADULT)
++                        view.loadDataWithBaseURL(null, blockedHtml, "text/html", "UTF-8", null)
++                        return true
++                    }
+                     if (!url.startsWith("http://") && !url.startsWith("https://")) return true
+                     currentUrl = url
+                     return false
+diff --git a/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/service/YoutubeFloatingWindowService.kt b/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/service/YoutubeFloatingWindowService.kt
+index 63bc124..3e75514 100644
+--- a/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/service/YoutubeFloatingWindowService.kt
++++ b/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/service/YoutubeFloatingWindowService.kt
+@@ -1015,10 +1015,22 @@ class YoutubeFloatingWindowService : Service() {
+                     request: android.webkit.WebResourceRequest
+                 ): android.webkit.WebResourceResponse? {
+                     val reqUrl = request.url.toString()
+-                    if (com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.isAdultSite(reqUrl)) {
++                    // FIX: this only ever checked the DOMAIN (isAdultSite) —
++                    // so a keyword typed into YouTube's own search box (still
++                    // under the youtube.com domain, not an "adult site" by
++                    // domain) never triggered anything, unlike the full-page
++                    // browser which also checks the URL text for adult
++                    // keywords via FirebaseKeywordSync. Added that same check
++                    // here, and upgraded the response from blank HTML to a
++                    // real blocked page.
++                    val isDomainBlocked  = com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.isAdultSite(reqUrl)
++                    val isKeywordBlocked = com.rasel.RasFocus.selfcontrol.FirebaseKeywordSync.containsAdultKeyword(reqUrl)
++                    if (isDomainBlocked || isKeywordBlocked) {
++                        val blockedHtml = com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker
++                            .buildBlockedPage(reqUrl, com.rasel.RasFocus.selfcontrol.familybrowser.BlockReason.ADULT)
+                         return android.webkit.WebResourceResponse(
+                             "text/html", "UTF-8",
+-                            "<html><body></body></html>".byteInputStream()
++                            blockedHtml.byteInputStream()
+                         )
+                     }
+                     return super.shouldInterceptRequest(view, request)
+@@ -1052,7 +1064,12 @@ class YoutubeFloatingWindowService : Service() {
+                 override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                     val url = request.url.toString()
+ 
+-                    if (com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.isAdultSite(url)) {
++                    val isDomainBlocked  = com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.isAdultSite(url)
++                    val isKeywordBlocked = com.rasel.RasFocus.selfcontrol.FirebaseKeywordSync.containsAdultKeyword(url)
++                    if (isDomainBlocked || isKeywordBlocked) {
++                        val blockedHtml = com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker
++                            .buildBlockedPage(url, com.rasel.RasFocus.selfcontrol.familybrowser.BlockReason.ADULT)
++                        view.loadDataWithBaseURL(null, blockedHtml, "text/html", "UTF-8", null)
+                         return true
+                     }
+ 

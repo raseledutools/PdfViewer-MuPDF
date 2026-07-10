@@ -1,0 +1,29 @@
+.gradle/
+
+# Build outputs
+*.apk
+*.aab
+*.zip
+apks/
+apk/
+build/
+app/build/
+scanLib/build/
+*.ilk
+
+# R8/ProGuard outputs
+**/mapping.txt
+**/seeds.txt
+**/usage.txt
+**/*.map
+
+# Android Studio / IDE
+.idea/
+local.properties
+*.iml
+*.hprof
+.DS_Store
+*.log
+
+# Kotlin
+**/*.kotlin_module

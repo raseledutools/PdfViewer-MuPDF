@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "868329616276",
+    "firebase_url": "https://rasfocus-c746d-default-rtdb.firebaseio.com",
+    "project_id": "rasfocus-c746d",
+    "storage_bucket": "rasfocus-c746d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:868329616276:android:de9ee8d0f23dcc02231581",
+        "android_client_info": {
+          "package_name": "com.rasel.RasFocus"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "868329616276-ne4gk2gdoeknt3aa1n62ckak99tiblim.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.rasel.RasFocus",
+            "certificate_hash": "4cdc30b4e88251b9204e21dbf67318be11b5bf6f"
+          }
+        },
+        {
+          "client_id": "868329616276-jtv50h50toa7e563cdcihmrdv66hgvfd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBcsyn2COOfawUn0MVvQsM08_FUdlDd8Mw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "868329616276-jtv50h50toa7e563cdcihmrdv66hgvfd.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

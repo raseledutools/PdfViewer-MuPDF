@@ -1,0 +1,5 @@
+# Copy this file to local.properties (which is git-ignored) and fill in the values.
+# NEVER commit local.properties to version control.
+
+# Google Sign-In Web Client ID (OAuth 2.0 — Type: Web application) from Firebase Console
+GOOGLE_WEB_CLIENT_ID=YOUR_WEB_CLIENT_ID_HERE

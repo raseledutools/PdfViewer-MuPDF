@@ -1,0 +1,146 @@
+name: Build RasFocus APK
+
+on:
+  push:
+    branches: [ main, master ]
+    paths-ignore:
+      - 'apk/**'
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+
+  # ✅ Full build — PDF সহ, real minified+shrunk release.
+  # universal APK -> GitHub Release (for real-device distribution, any ABI)
+  #               -> ALSO uploaded as an Actions artifact
+  # armeabi-v7a APK -> GitHub Release (smaller download for dev's own test phone / v7a users)
+  #               -> ALSO uploaded as an Actions artifact (not committed to repo)
+  build-full:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # FIX: replaced the hand-rolled actions/cache block. Caching **/build
+      # (raw build-output directories) is an anti-pattern — it's huge, slow
+      # to upload/restore, and risks stale outputs bleeding into a build for
+      # a different commit. gradle/actions/setup-gradle is the
+      # Gradle-maintained, purpose-built action for this: it caches
+      # dependencies AND the local Gradle Build Cache (the thing your
+      # --build-cache flag below actually needs to persist across separate
+      # CI runs to do anything useful — without this, --build-cache starts
+      # from empty every single run). It also auto-saves an updated cache at
+      # the end of each run, so it keeps getting better as the project grows,
+      # not just a one-time snapshot from the first run.
+      - name: Set up Gradle (with dependency + build cache)
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+
+      - name: Build Full Release APK (with PDF) — real minified+shrunk release
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: ./gradlew assembleFullRelease --build-cache --parallel
+
+      - name: Upload Full armeabi-v7a APK (dev debug testing only — not committed to repo)
+        uses: actions/upload-artifact@v4
+        with:
+          name: RasFocus-full-armeabi-v7a
+          path: app/build/outputs/apk/full/release/*armeabi-v7a*.apk
+          retention-days: 30
+
+      # FIX: universal APK previously only went to the GitHub Release — it
+      # never showed up under this workflow run's own Artifacts list, so
+      # there was no quick way to grab it without going through Releases.
+      - name: Upload Full universal APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: RasFocus-full-universal
+          path: app/build/outputs/apk/full/release/*universal*.apk
+          retention-days: 30
+
+      # This is what turns an obfuscated crash log (u2.i, h4.a, q0.r, etc.)
+      # back into real class/method names — without it, every future crash
+      # in a release build has to be diagnosed half-blind like this one was.
+      # `retracer` on Android Studio, or the standalone `retrace` tool from
+
+      - name: Publish Full universal + armeabi-v7a split APKs to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: RasFocus Full v1.0.${{ github.run_number }}
+          files: |
+            app/build/outputs/apk/full/release/*universal*.apk
+            app/build/outputs/apk/full/release/*armeabi-v7a*.apk
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ✅ Light build — PDF/scanner ছাড়া (OpenCV/scanLib/pdfium নাই), সবচেয়ে ছোট APK.
+  # armeabi-v7a APK -> committed straight into the repo's apk/ folder
+  #                 -> ALSO uploaded as an Actions artifact
+  build-light:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 1
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Set up Gradle (with dependency + build cache)
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+
+      - name: Build Light Release APK (no PDF/scanner, armeabi-v7a only) — real minified+shrunk release
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: ./gradlew assembleLightRelease --build-cache --parallel
+
+      - name: Debug — list generated APK outputs
+        run: |
+          echo "----- Contents of app/build/outputs/apk/light/release -----"
+          find app/build/outputs/apk/light -type f -name "*.apk" -print || echo "No light release folder found!"
+
+      # FIX: previously this APK only ever got committed into the repo's
+      # apk/ folder — it never appeared as an Actions artifact on the run
+      # itself, unlike the full flavor's armeabi-v7a build.
+      - name: Upload Light armeabi-v7a APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: RasFocus-light-armeabi-v7a
+          path: app/build/outputs/apk/light/release/*armeabi-v7a*.apk
+          retention-days: 30
+

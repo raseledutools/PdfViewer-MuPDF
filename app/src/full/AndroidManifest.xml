@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Full-flavor-only manifest fragment.
+    AGP merges this into app/src/main/AndroidManifest.xml only when building
+    the "full" flavor.
+
+    (Previously declared RasDocumentScannerActivity for the OpenCV/scanLib
+    CamScanner. That activity + scanLib have been replaced by a self-contained
+    CameraX + ML Kit scanner living entirely inside ScanToPdfScreen.kt as a
+    Composable — no separate Activity to declare here anymore.)
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+    </application>
+
+</manifest>

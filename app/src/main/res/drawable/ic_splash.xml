@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Simple globe icon for splash screen -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Outer circle -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,14
+            C32,14 14,32 14,54
+            C14,76 32,94 54,94
+            C76,94 94,76 94,54
+            C94,32 76,14 54,14Z" />
+
+    <!-- Globe lines (latitude) -->
+    <path
+        android:strokeColor="#2563EB"
+        android:strokeWidth="3"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M14,54 L94,54" />
+    <path
+        android:strokeColor="#2563EB"
+        android:strokeWidth="2"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M20,38 Q54,46 88,38" />
+    <path
+        android:strokeColor="#2563EB"
+        android:strokeWidth="2"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M20,70 Q54,62 88,70" />
+
+    <!-- Globe lines (longitude) -->
+    <path
+        android:strokeColor="#2563EB"
+        android:strokeWidth="2"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M54,14 Q38,54 54,94" />
+    <path
+        android:strokeColor="#2563EB"
+        android:strokeWidth="2"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M54,14 Q70,54 54,94" />
+
+    <!-- Outer ring -->
+    <path
+        android:strokeColor="#2563EB"
+        android:strokeWidth="3"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M54,14
+            A40,40 0 1,1 53.99,14Z" />
+</vector>

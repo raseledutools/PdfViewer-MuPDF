@@ -1,0 +1,5 @@
+commit 12cef8659f64e345d5d901c155ceff658a5ab72b
+Author: raseledutools <bhmrasel60@gmail.com>
+Date:   Thu Jul 9 06:55:18 2026 +0600
+
+     fix: resolve floating window UI disappearance caused by overly broad adult keyword blocking on subresources

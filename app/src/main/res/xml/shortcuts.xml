@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ফাইলটা এখানে রাখো:
+  app/src/main/res/xml/shortcuts.xml
+-->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <shortcut
+        android:shortcutId="open_pdf_viewer"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_pdf_label"
+        android:shortcutLongLabel="@string/shortcut_pdf_long_label"
+        android:shortcutDisabledMessage="@string/shortcut_pdf_disabled">
+
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.rasel.RasFocus"
+            android:targetClass="com.rasel.RasFocus.selfcontrol.study_tools.PdfViewerActivity" />
+
+        <categories android:name="android.shortcut.conversation" />
+
+    </shortcut>
+
+</shortcuts>
+
+<!--
+  res/values/strings.xml এ এই strings add করো:
+
+  <string name="shortcut_pdf_label">PDF Viewer</string>
+  <string name="shortcut_pdf_long_label">RasFocus PDF Viewer</string>
+  <string name="shortcut_pdf_disabled">PDF Viewer unavailable</string>
+-->
