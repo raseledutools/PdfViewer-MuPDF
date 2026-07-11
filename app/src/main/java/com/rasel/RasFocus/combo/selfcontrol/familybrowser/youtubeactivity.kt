@@ -1,4 +1,4 @@
-package com.rasel.pdfviewer.combo.selfcontrol.familybrowser
+package com.rasel.RasFocus.combo.selfcontrol.familybrowser
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -30,7 +30,7 @@ class YoutubeActivity : ComponentActivity() {
     private var webView: WebView? = null
     // Feed/search এ visible content (thumbnails, titles, alt-text) scan করে
     // adult content ধরার জন্য — AdBlocker.kt এর existing multi-layer scanner
-    private val adBlocker by lazy { com.rasel.pdfviewer.selfcontrol.familybrowser.AdBlocker(this) }
+    private val adBlocker by lazy { com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker(this) }
     private var customView: View? = null
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
 
@@ -52,9 +52,9 @@ class YoutubeActivity : ComponentActivity() {
     // BackgroundAudioService থেকে broadcast এসে WebView-এ JS inject করে
     private val playbackControlReceiver = object : BroadcastReceiver() {
         override fun onReceive(ctx: Context, intent: Intent) {
-            if (intent.action != com.rasel.pdfviewer.selfcontrol.familybrowser.service.BackgroundAudioService.BROADCAST_PLAYBACK_ACTION) return
+            if (intent.action != com.rasel.RasFocus.selfcontrol.familybrowser.service.BackgroundAudioService.BROADCAST_PLAYBACK_ACTION) return
             val wv = webView ?: return
-            when (intent.getStringExtra(com.rasel.pdfviewer.selfcontrol.familybrowser.service.BackgroundAudioService.EXTRA_PLAYBACK_CMD)) {
+            when (intent.getStringExtra(com.rasel.RasFocus.selfcontrol.familybrowser.service.BackgroundAudioService.EXTRA_PLAYBACK_CMD)) {
                 "play"    -> wv.evaluateJavascript("(function(){ try{ var v=document.querySelector('video'); if(v) v.play().catch(function(){}); }catch(e){} })()", null)
                 "pause"   -> wv.evaluateJavascript("(function(){ try{ var v=document.querySelector('video'); if(v) v.pause(); }catch(e){} })()", null)
                 "stop"    -> wv.evaluateJavascript("(function(){ try{ var v=document.querySelector('video'); if(v) v.pause(); }catch(e){} })()", null)
@@ -161,8 +161,8 @@ class YoutubeActivity : ComponentActivity() {
         injectVisibilitySpoofBeforeLeave(wv)
 
         // WebView service এ দাও — reload হবে না
-        com.rasel.pdfviewer.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView = wv
-        com.rasel.pdfviewer.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.launchNoReload(
+        com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView = wv
+        com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.launchNoReload(
             this, currentUrl, currentTitle
         )
 
@@ -188,7 +188,7 @@ class YoutubeActivity : ComponentActivity() {
         // আলাদা জায়গায় sync রাখার ঝামেলা নেই। Firebase console এ keyword যোগ/বাদ
         // দিলেই — কোনো app update ছাড়াই — YouTube search bar এ সাথে সাথে reflect হয়।
         private val ADULT_SEARCH_KEYWORDS: Set<String>
-            get() = com.rasel.pdfviewer.selfcontrol.FirebaseKeywordSync.getAdultKeywords()
+            get() = com.rasel.RasFocus.selfcontrol.FirebaseKeywordSync.getAdultKeywords()
 
         private val AD_SERVERS = setOf(
             "googleads.g.doubleclick.net", "pagead2.googlesyndication.com", 
@@ -244,7 +244,7 @@ class YoutubeActivity : ComponentActivity() {
 
         // Notification controls receiver register করো
         val playbackFilter = IntentFilter(
-            com.rasel.pdfviewer.selfcontrol.familybrowser.service.BackgroundAudioService.BROADCAST_PLAYBACK_ACTION
+            com.rasel.RasFocus.selfcontrol.familybrowser.service.BackgroundAudioService.BROADCAST_PLAYBACK_ACTION
         )
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(playbackControlReceiver, playbackFilter, Context.RECEIVER_NOT_EXPORTED)
@@ -297,7 +297,7 @@ class YoutubeActivity : ComponentActivity() {
             // জন্য আটকে থাকতো, কোনো navigation/back কাজ করতো না।
             addJavascriptInterface(YtBlockBridge(this), "RasYtBlockBridge")
             addJavascriptInterface(
-                com.rasel.pdfviewer.selfcontrol.familybrowser.AdBlocker.BlockOverlayBridge(
+                com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.BlockOverlayBridge(
                     this, "https://m.youtube.com/", { block -> runOnUiThread(block) }
                 ),
                 "RasBlockBridge"
@@ -513,8 +513,8 @@ class YoutubeActivity : ComponentActivity() {
 
         injectVisibilitySpoofBeforeLeave(wv)
 
-        com.rasel.pdfviewer.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView = wv
-        com.rasel.pdfviewer.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.launchNoReload(this, currentUrl, currentTitle)
+        com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView = wv
+        com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.launchNoReload(this, currentUrl, currentTitle)
 
         webView = null
         isMiniPlayerActive = true
@@ -531,7 +531,7 @@ class YoutubeActivity : ComponentActivity() {
         try {
             stopService(Intent(
                 this,
-                com.rasel.pdfviewer.selfcontrol.familybrowser.service.YoutubeFloatingWindowService::class.java
+                com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService::class.java
             ))
         } catch (_: Exception) {}
         finish()
@@ -552,7 +552,7 @@ class YoutubeActivity : ComponentActivity() {
             try {
                 stopService(Intent(
                     this,
-                    com.rasel.pdfviewer.selfcontrol.familybrowser.service.YoutubeFloatingWindowService::class.java
+                    com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService::class.java
                 ))
             } catch (_: Exception) {}
 
@@ -562,13 +562,13 @@ class YoutubeActivity : ComponentActivity() {
                 val rootFrame = getRootFrame()
 
                 // প্রথমে immediately চেষ্টা করো
-                val immediateWv = com.rasel.pdfviewer.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView
+                val immediateWv = com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView
                 if (immediateWv != null) {
                     reattachWebView(immediateWv, rootFrame)
                 } else {
                     // Fallback: একটু অপেক্ষা করো — service onDestroy() সময় নিচ্ছে
                     rootFrame?.postDelayed({
-                        val pendingWv = com.rasel.pdfviewer.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView
+                        val pendingWv = com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView
                         if (pendingWv != null) {
                             reattachWebView(pendingWv, rootFrame)
                         }
@@ -604,7 +604,7 @@ class YoutubeActivity : ComponentActivity() {
      */
     private fun reattachWebView(returnedWv: WebView, rootFrame: FrameLayout?) {
         webView = returnedWv
-        com.rasel.pdfviewer.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView = null
+        com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView = null
 
         // পুরনো parent থেকে সরাও
         (returnedWv.parent as? ViewGroup)?.removeView(returnedWv)
@@ -965,9 +965,9 @@ class YoutubeActivity : ComponentActivity() {
 
             val svc = Intent(
                 this,
-                com.rasel.pdfviewer.selfcontrol.familybrowser.service.BackgroundAudioService::class.java
+                com.rasel.RasFocus.selfcontrol.familybrowser.service.BackgroundAudioService::class.java
             ).apply {
-                putExtra(com.rasel.pdfviewer.selfcontrol.familybrowser.service.BackgroundAudioService.EXTRA_TITLE, title)
+                putExtra(com.rasel.RasFocus.selfcontrol.familybrowser.service.BackgroundAudioService.EXTRA_TITLE, title)
                 putExtra("extra_video_url", url)
                 if (thumbUrl != null) putExtra("extra_thumb_url", thumbUrl)
                 if (videoId != null) putExtra("extra_video_id", videoId)
@@ -981,7 +981,7 @@ class YoutubeActivity : ComponentActivity() {
 
     private fun stopBgAudioService() {
         try {
-            stopService(Intent(this, com.rasel.pdfviewer.selfcontrol.familybrowser.service.BackgroundAudioService::class.java))
+            stopService(Intent(this, com.rasel.RasFocus.selfcontrol.familybrowser.service.BackgroundAudioService::class.java))
         } catch (_: Exception) {}
     }
 
