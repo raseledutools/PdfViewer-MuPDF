@@ -1,24 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    Full-flavor-only manifest fragment.
-    AGP merges this into app/src/main/AndroidManifest.xml only when building
-    the "full" flavor.
-
-    (Previously declared RasDocumentScannerActivity for the OpenCV/scanLib
-    CamScanner. That activity + scanLib have been replaced by a self-contained
-    CameraX + ML Kit scanner living entirely inside ScanToPdfScreen.kt as a
-    Composable — no separate Activity to declare here anymore.)
--->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
     <application>
-        <!-- FIX: Android 12+ requires android:exported explicitly specified for activities with intent filters.
-             MuPDF's DocumentActivity lacks this in its own manifest. -->
+        <!-- FIX: Android 12+ requires android:exported for activities with intent-filter.
+             MuPDF's DocumentActivity has intent-filter but no exported flag.
+             tools:node="merge" forces our exported=true into the merged manifest. -->
         <activity
             android:name="com.artifex.mupdf.viewer.DocumentActivity"
             android:exported="true"
-            tools:replace="android:exported" />
+            tools:node="merge" />
     </application>
 
 </manifest>
