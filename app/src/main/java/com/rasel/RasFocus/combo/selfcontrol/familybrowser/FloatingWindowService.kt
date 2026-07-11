@@ -1,4 +1,4 @@
-package com.rasel.RasFocus.combo.selfcontrol.familybrowser.service
+package com.rasel.pdfviewer.combo.selfcontrol.familybrowser.service
 
 import android.annotation.SuppressLint
 import android.app.*
@@ -12,7 +12,7 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.core.app.NotificationCompat
-import com.rasel.RasFocus.combo.selfcontrol.familybrowser.FamilyBrowserActivity
+import com.rasel.pdfviewer.combo.selfcontrol.familybrowser.FamilyBrowserActivity
 import kotlin.math.max
 import kotlin.math.min
 
@@ -278,8 +278,8 @@ class FloatingWindowService : Service() {
                     // keywords typed into a search box on an otherwise
                     // non-adult domain. Same FirebaseKeywordSync check the
                     // full-page browser already has.
-                    val isDomainBlocked  = com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.isAdultSite(reqUrl)
-                    val isKeywordBlocked = com.rasel.RasFocus.selfcontrol.FirebaseKeywordSync.containsAdultKeyword(reqUrl)
+                    val isDomainBlocked  = com.rasel.pdfviewer.selfcontrol.familybrowser.AdBlocker.isAdultSite(reqUrl)
+                    val isKeywordBlocked = com.rasel.pdfviewer.selfcontrol.FirebaseKeywordSync.containsAdultKeyword(reqUrl)
                     if (isDomainBlocked || isKeywordBlocked) {
                         return if (request.isForMainFrame) {
                             android.webkit.WebResourceResponse(
@@ -301,15 +301,15 @@ class FloatingWindowService : Service() {
                     val reqUrl = request.url.toString()
 
                     // Adult site or keyword → block page দেখাও
-                    val isDomainBlocked  = com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.isAdultSite(reqUrl)
-                    val isKeywordBlocked = com.rasel.RasFocus.selfcontrol.FirebaseKeywordSync.containsAdultKeyword(reqUrl)
+                    val isDomainBlocked  = com.rasel.pdfviewer.selfcontrol.familybrowser.AdBlocker.isAdultSite(reqUrl)
+                    val isKeywordBlocked = com.rasel.pdfviewer.selfcontrol.FirebaseKeywordSync.containsAdultKeyword(reqUrl)
                     if (isDomainBlocked || isKeywordBlocked) {
                         view.loadDataWithBaseURL(null, buildFloatingBlockPage(), "text/html", "UTF-8", null)
                         return true
                     }
 
                     // Safe Search enforce
-                    val safeUrl = com.rasel.RasFocus.selfcontrol.familybrowser.SafeSearchEnforcer
+                    val safeUrl = com.rasel.pdfviewer.selfcontrol.familybrowser.SafeSearchEnforcer
                         .enforceIfNeeded(reqUrl)
                     if (safeUrl != null) {
                         view.loadUrl(safeUrl)
