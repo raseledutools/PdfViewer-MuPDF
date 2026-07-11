@@ -1,4 +1,4 @@
-package com.rasel.RasFocus.combo.selfcontrol
+package com.rasel.pdfviewer.combo.selfcontrol
 
 // ============================================================
 // UnifiedBlockerService.kt
@@ -28,7 +28,7 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.TextView
 import androidx.core.app.NotificationCompat
-import com.rasel.RasFocus.DataManager
+import com.rasel.pdfviewer.DataManager
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -1269,7 +1269,7 @@ class UnifiedBlockerService : AccessibilityService() {
         return packageName.contains("launcher") || packageName.contains("systemui") ||
                 packageName.contains("dialer") || packageName.contains("messaging") ||
                 packageName.contains("inputmethod") || packageName.contains("keyboard") ||
-                packageName == "com.rasel.RasFocus"
+                packageName == "com.rasel.pdfviewer"
     }
 
     private fun isBrowserApp(packageName: String): Boolean {
@@ -1404,7 +1404,7 @@ class UnifiedBlockerService : AccessibilityService() {
         // ── Main tap → RasFocus MainActivity ──────────────────────────────────
         val mainIntent = PendingIntent.getActivity(
             this, 0,
-            Intent(this, Class.forName("com.rasel.RasFocus.MainActivity")),
+            Intent(this, Class.forName("com.rasel.pdfviewer.MainActivity")),
             PendingIntent.FLAG_IMMUTABLE
         )
 
@@ -1412,7 +1412,7 @@ class UnifiedBlockerService : AccessibilityService() {
         val browserIntent = PendingIntent.getActivity(
             this, 10,
             Intent(this, Class.forName(
-                "com.rasel.RasFocus.selfcontrol.familybrowser.FamilyBrowserActivity"
+                "com.rasel.pdfviewer.selfcontrol.familybrowser.FamilyBrowserActivity"
             )).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
                 action = Intent.ACTION_MAIN
