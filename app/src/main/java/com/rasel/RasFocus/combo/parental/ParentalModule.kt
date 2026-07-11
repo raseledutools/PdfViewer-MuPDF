@@ -1,4 +1,4 @@
-package com.rasel.RasFocus.combo.parental
+package com.rasel.pdfviewer.combo.parental
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -18,8 +18,8 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.text.font.*
 import androidx.compose.ui.text.style.*
 import androidx.compose.ui.unit.*
-import com.rasel.RasFocus.*
-import com.rasel.RasFocus.ui.theme.SoftWhite
+import com.rasel.pdfviewer.*
+import com.rasel.pdfviewer.ui.theme.SoftWhite
 
 // ─────────────────────────────────────────────────────────────
 // THEME
