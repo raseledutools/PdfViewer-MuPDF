@@ -82,8 +82,18 @@ fun DrawerContent(
             
             // Menu Items
             Spacer(modifier = Modifier.height(16.dp))
+            // FIX: these route strings previously didn't match anything
+            // registered in MainActivity.kt's NavHost ("home" and
+            // "settings" don't exist as routes there). "Home" here uses
+            // "combo_self" (Routes.COMBO_SELF) — this drawer's own combo
+            // module screen — rather than "self_control_dashboard" (the
+            // standalone module's route), so the user stays inside the
+            // combo experience instead of jumping out to a different
+            // module. Settings uses "settings_screen" (Routes.SETTINGS),
+            // same as the standalone copy. Block List and Check for
+            // Updates were already correct.
             DrawerMenuItem(Icons.Default.Home, "Home") {
-                onNavigate("home")
+                onNavigate("combo_self")
                 closeDrawer()
             }
             DrawerMenuItem(Icons.Default.Analytics, "Statistics") {
@@ -95,7 +105,7 @@ fun DrawerContent(
                 closeDrawer()
             }
             DrawerMenuItem(Icons.Default.Settings, "Settings") {
-                onNavigate("settings")
+                onNavigate("settings_screen")
                 closeDrawer()
             }
 

@@ -82,8 +82,16 @@ fun DrawerContent(
             
             // Menu Items
             Spacer(modifier = Modifier.height(16.dp))
+            // FIX: these route strings previously didn't match anything
+            // registered in MainActivity.kt's NavHost ("home" and
+            // "settings" don't exist as routes there — the actual routes
+            // are "self_control_dashboard" and "settings_screen", per
+            // Routes.SELF_CONTROL_DASH / Routes.SETTINGS). Tapping Home or
+            // Settings crashed with "Navigation destination that matches
+            // route X cannot be found". Block List and Check for Updates
+            // were already correct.
             DrawerMenuItem(Icons.Default.Home, "Home") {
-                onNavigate("home")
+                onNavigate("self_control_dashboard")
                 closeDrawer()
             }
             DrawerMenuItem(Icons.Default.Analytics, "Statistics") {
@@ -95,7 +103,7 @@ fun DrawerContent(
                 closeDrawer()
             }
             DrawerMenuItem(Icons.Default.Settings, "Settings") {
-                onNavigate("settings")
+                onNavigate("settings_screen")
                 closeDrawer()
             }
 
