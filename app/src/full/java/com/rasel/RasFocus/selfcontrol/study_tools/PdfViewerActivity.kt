@@ -50,9 +50,7 @@ import androidx.compose.ui.unit.*
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import io.legere.pdfiumandroid.PdfDocument
-import io.legere.pdfiumandroid.PdfTextPage
-import io.legere.pdfiumandroid.PdfiumCore
+import com.artifex.mupdf.viewer.Document
 import kotlinx.coroutines.*
 import kotlin.math.roundToInt
 
@@ -86,7 +84,7 @@ private val HL_PINK    = Color(0xAAFF6B9D)
 private const val MAX_RENDER_DIM = 4096
 
 data class PageData(
-    val textPage:  PdfTextPage?,
+    val textPage:  Any?, // unused in MuPDF
     val pageIndex: Int,
     val widthPx:   Int,
     val heightPx:  Int,
@@ -239,9 +237,8 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
     var showToolbar     by remember { mutableStateOf(false) }
     var selectedColor   by remember { mutableStateOf(HL_YELLOW) }
 
-    // PdfiumCore instance
-    val pdfCore  = remember { PdfiumCore(context) }
-    var pdfDoc   by remember { mutableStateOf<PdfDocument?>(null) }
+    // MuPDF Document
+    var pdfDoc   by remember { mutableStateOf<Document?>(null) }
 
     val listState = rememberLazyListState()
     val screenW   = context.resources.displayMetrics.widthPixels
@@ -274,9 +271,9 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
             try {
                 val pfd = context.contentResolver.openFileDescriptor(uri, "r")
                     ?: throw IllegalStateException("File খুলতে পারিনি")
-                val doc = pdfCore.newDocument(pfd)
+                val doc = Document.openDocument("/proc/self/fd/${pfd.fd}")
                 pdfDoc  = doc
-                val count = doc.getPageCount()
+                val count = doc.countPages()
 
                 withContext(Dispatchers.Main) {
                     pages.clear()
@@ -288,19 +285,18 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
 
                 // Render pages one by one
                 for (i in 0 until count) {
-                    val page     = doc.openPage(i)
-                    val screenDpi = context.resources.displayMetrics.densityDpi
-                    val origW = page.getPageWidth(screenDpi).coerceAtLeast(1)
-                    val origH = page.getPageHeight(screenDpi).coerceAtLeast(1)
-                    val scale = screenW.toFloat() / origW
-                    val bmpW  = screenW
-                    val bmpH  = (origH * scale).roundToInt().coerceAtLeast(1)
-                    val textPage: PdfTextPage? = try { page.openTextPage() } catch (_: Exception) { null }
+                    val page   = doc.loadPage(i)
+                    val bounds = page.bounds
+                    val origW  = (bounds.x1 - bounds.x0).coerceAtLeast(1f)
+                    val origH  = (bounds.y1 - bounds.y0).coerceAtLeast(1f)
+                    val scale  = screenW.toFloat() / origW
+                    val bmpW   = screenW
+                    val bmpH   = (origH * scale).roundToInt().coerceAtLeast(1)
                     withContext(Dispatchers.Main) {
                         if (i < pages.size)
-                            pages[i] = PageData(textPage, i, bmpW, bmpH)
+                            pages[i] = PageData(null, i, bmpW, bmpH)
                     }
-                    page.close()
+                    page.destroy()
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
@@ -316,10 +312,10 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
         val doc = pdfDoc ?: return
         withContext(Dispatchers.IO) {
             try {
-                val page = doc.openPage(pageIndex)
-                val screenDpi = context.resources.displayMetrics.densityDpi
-                val origW = page.getPageWidth(screenDpi).coerceAtLeast(1)
-                val origH = page.getPageHeight(screenDpi).coerceAtLeast(1)
+                val page   = doc.loadPage(pageIndex)
+                val bounds = page.bounds
+                val origW  = (bounds.x1 - bounds.x0).coerceAtLeast(1f)
+                val origH  = (bounds.y1 - bounds.y0).coerceAtLeast(1f)
                 val baseScale = screenW.toFloat() / origW
 
                 var bmpW = (screenW * targetScale).roundToInt()
@@ -333,8 +329,9 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
 
                 val sharperBmp = Bitmap.createBitmap(bmpW, bmpH, Bitmap.Config.ARGB_8888)
                 sharperBmp.eraseColor(AColor.WHITE)
-                page.renderPageBitmap(sharperBmp, 0, 0, bmpW, bmpH, true)
-                page.close()
+                // MuPDF — vector-accurate rendering
+                doc.drawPage(sharperBmp, pageIndex, bmpW, bmpH, 0, 0, bmpW, bmpH, null)
+                page.destroy()
 
                 withContext(Dispatchers.Main) {
                     bitmapCache.put(pageIndex, sharperBmp)
@@ -383,7 +380,7 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
         onDispose {
             bitmapCache.evictAll()
             pages.forEach { it?.textPage?.close() }
-            pdfDoc?.let { pdfCore.closeDocument(it) }
+            pdfDoc?.destroy()
         }
     }
 

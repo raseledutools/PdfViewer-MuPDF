@@ -293,7 +293,6 @@ dependencies {
 
     // ✅ PDF — শুধু full flavor-এ include হবে
     "fullImplementation"("com.tom-roush:pdfbox-android:2.0.27.0")
-    "fullImplementation"("io.legere:pdfiumandroid:1.0.24")
 
     // ✅ MuPDF — official Artifex viewer SDK (full flavor only)
     // True vector rendering: sharp at any zoom (re-renders from vectors, not bitmap-stretch)
