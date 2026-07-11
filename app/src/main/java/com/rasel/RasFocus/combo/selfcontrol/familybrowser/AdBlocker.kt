@@ -1,4 +1,4 @@
-package com.rasel.pdfviewer.combo.selfcontrol.familybrowser
+package com.rasel.RasFocus.combo.selfcontrol.familybrowser
 
 import android.content.Context
 import android.content.SharedPreferences
@@ -9,7 +9,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
-import com.rasel.pdfviewer.combo.selfcontrol.FirebaseKeywordSync
+import com.rasel.RasFocus.combo.selfcontrol.FirebaseKeywordSync
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
