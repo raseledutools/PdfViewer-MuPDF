@@ -85,7 +85,7 @@ private val BlueGrad   = Brush.linearGradient(listOf(T_BLUE, INDIGO2))
 // ─────────────────────────────────────────────────────────────────────────────
 // DATA MODELS
 // ─────────────────────────────────────────────────────────────────────────────
-private enum class PdfScreen { HOME, VIEWER, MERGE, SPLIT, COMPRESS, PDF_TO_IMG, IMG_TO_PDF, RESIZE, SCAN_TO_PDF }
+private enum class PdfScreen { HOME, VIEWER, MERGE, SPLIT, COMPRESS, PDF_TO_IMG, IMG_TO_PDF, RESIZE, SCAN_TO_PDF, CALCULATOR }
 
 // WPS bottom nav tabs
 private enum class HomeTab { RECENT, FILES, TOOLS, TEMPLATES }
@@ -122,6 +122,7 @@ private val BOTTOM_TOOLS = listOf(
     QuickTool("Compress",       "🗜️", PdfScreen.COMPRESS,  T_YELLOW, "pdf_compress"),
     QuickTool("Image\nResize",  "📐", PdfScreen.RESIZE,    T_PURPLE, "img_resize"),
     QuickTool("PDF\nMerge",     "🔀", PdfScreen.MERGE,     T_GREEN,  ""),
+    QuickTool("Calculator", "🔢", PdfScreen.CALCULATOR, T_BLUE,   "calculator"),
 )
 
 private val ALL_TOOLS = TOP_TOOLS + BOTTOM_TOOLS
@@ -331,6 +332,9 @@ fun PdfToolsScreen(onBack: () -> Unit = {}) {
                     onBack = { screen = PdfScreen.HOME }
                 )
                 PdfScreen.SCAN_TO_PDF -> ScanToPdfScreen(
+                    onBack = { screen = PdfScreen.HOME }
+                )
+                PdfScreen.CALCULATOR -> ScientificCalculatorScreen(
                     onBack = { screen = PdfScreen.HOME }
                 )
             }
