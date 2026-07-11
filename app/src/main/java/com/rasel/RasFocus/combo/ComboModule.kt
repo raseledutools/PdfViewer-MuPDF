@@ -33,8 +33,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.rasel.pdfviewer.MainViewModel
-import com.rasel.pdfviewer.RasFocusColors
+import com.rasel.RasFocus.MainViewModel
+import com.rasel.RasFocus.RasFocusColors
 
 // ─────────────────────────────────────────────────────────────
 // RASFOCUS BRAND PALETTE — mirrors SelfControlModule.kt exactly
