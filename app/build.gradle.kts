@@ -9,9 +9,8 @@ plugins {
     // to copy from there, this is specific to this project's newer Kotlin
     // version). Version already declared with apply false at the root
     // build.gradle.kts, just needed to actually be applied here.
-    id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.gms.google-services")
-    id("com.google.devtools.ksp")
+    id("kotlin-kapt")
 }
 
 android {
@@ -142,6 +141,10 @@ android {
         )
     }
 
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.14"
+    }
+
     buildFeatures {
         compose = true
         buildConfig = true
@@ -224,7 +227,7 @@ dependencies {
     // Room
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
-    ksp("androidx.room:room-compiler:2.6.1")
+    kapt("androidx.room:room-compiler:2.6.1")
 
     // Firebase & Play Services
     implementation(platform("com.google.firebase:firebase-bom:32.7.3"))
