@@ -1,4 +1,4 @@
-package com.rasel.RasFocus.combo.selfcontrol
+package com.rasel.pdfviewer.combo.selfcontrol
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -150,14 +150,14 @@ class UsageNotificationService : Service() {
             while (isActive) {
                 try {
                     val prefs = this@UsageNotificationService.getSharedPreferences("AutoUpdaterPrefs", Context.MODE_PRIVATE)
-                    val lastTag = prefs.getString(com.rasel.RasFocus.AutoUpdater.LAST_TAG_KEY, "") ?: ""
+                    val lastTag = prefs.getString(com.rasel.pdfviewer.AutoUpdater.LAST_TAG_KEY, "") ?: ""
                     
-                    com.rasel.RasFocus.AutoUpdater.fetchLatestReleaseInfo { info ->
+                    com.rasel.pdfviewer.AutoUpdater.fetchLatestReleaseInfo { info ->
                         if (info != null && info.tagName != lastTag) {
                             // Found a new update, silently download it
-                            com.rasel.RasFocus.AutoUpdater.silentDownloadUpdate(
+                            com.rasel.pdfviewer.AutoUpdater.silentDownloadUpdate(
                                 this@UsageNotificationService, 
-                                com.rasel.RasFocus.AutoUpdater.APK_UNIVERSAL, 
+                                com.rasel.pdfviewer.AutoUpdater.APK_UNIVERSAL, 
                                 info.tagName
                             )
                         }
