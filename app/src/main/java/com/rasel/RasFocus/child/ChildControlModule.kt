@@ -90,6 +90,20 @@ private const val RULES_UPDATED_ACTION = "com.rasel.RasFocus.CHILD_RULES_UPDATED
 private const val SHOW_APP_LIMITED_ACTION = "com.rasel.RasFocus.SHOW_APP_LIMITED"
 private const val SHOW_LOCK_ACTION = "com.rasel.RasFocus.SHOW_DEVICE_LOCK"
 
+// ─────────────────────────────────────────────────────────────
+// RASFOCUS BRAND PALETTE — mirrors SelfControlModule.kt exactly,
+// used for the shared header/footer components below so every
+// module renders the identical Premium Teal header + white
+// NavigationBar footer, independent of the file it lives in.
+// ─────────────────────────────────────────────────────────────
+private val PrimaryBlue      = Color(0xFF4A6FE3)
+private val SoftBlue         = Color(0xFFDDE6FF)
+private val TextGrayBrand    = Color(0xFF8A8A9A)
+private val WhiteBrand       = Color(0xFFFFFFFF)
+private val PremiumTealDark   = Color(0xFF032220)
+private val PremiumTealMid    = Color(0xFF08504B)
+private val PremiumTealAccent = Color(0xFF14C3B2)
+
 // ============================================================
 // PART 1 — PAIRING STATE & LOCAL RULE CACHE
 // ============================================================
@@ -605,32 +619,59 @@ fun ChildStatusScreen(context: Context) {
         onDispose { context.unregisterReceiver(receiver) }
     }
 
-    Column(modifier = Modifier.fillMaxSize().background(RasFocusColors.BackgroundWhite).verticalScroll(rememberScrollState())) {
-        // Header
-        Box(
-            modifier = Modifier.fillMaxWidth()
-                .background(
-                    brush = Brush.verticalGradient(listOf(RasFocusColors.PrimaryTeal, RasFocusColors.PrimaryTealLight)),
-                    shape = RoundedCornerShape(bottomStart = 40.dp, bottomEnd = 40.dp)
-                )
-                .padding(horizontal = 24.dp, vertical = 48.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Box(
-                    modifier = Modifier.size(100.dp).background(Color.White.copy(alpha = 0.2f), CircleShape)
-                        .border(2.dp, Color.White.copy(alpha = 0.5f), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Filled.VerifiedUser, null, tint = Color.White, modifier = Modifier.size(56.dp))
-                }
-                Spacer(Modifier.height(20.dp))
-                Text("Device Protected", fontSize = 24.sp, fontWeight = FontWeight.Black, color = Color.White)
-                Text("Supervised by ${rules.parentName}", fontSize = 14.sp, color = Color.White.copy(alpha = 0.9f))
-            }
-        }
+    // Bottom nav selection state (Home / Connection / Filters / Settings)
+    var selectedNavTab by remember { mutableStateOf(0) }
 
-        Spacer(Modifier.height(24.dp))
+    Column(modifier = Modifier.fillMaxSize().background(RasFocusColors.BackgroundWhite)) {
+        Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+            // ══ PREMIUM HEADER (RasFocus brand style — matches SelfControlModule) ══
+            Box(
+                Modifier.fillMaxWidth()
+                    .background(
+                        Brush.verticalGradient(listOf(PremiumTealMid, PremiumTealDark)),
+                        RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)
+                    )
+                    .statusBarsPadding()
+                    .padding(start = 24.dp, end = 24.dp, top = 20.dp, bottom = 32.dp)
+            ) {
+                Column {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                        Box(
+                            Modifier.size(46.dp).background(Color.White.copy(alpha = 0.12f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Filled.VerifiedUser, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                        }
+                        Box(
+                            Modifier.background(PremiumTealAccent.copy(alpha = 0.2f), RoundedCornerShape(50.dp))
+                                .border(1.dp, PremiumTealAccent.copy(alpha = 0.5f), RoundedCornerShape(50.dp))
+                                .padding(horizontal = 14.dp, vertical = 8.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("🛡️", fontSize = 14.sp)
+                                Spacer(Modifier.width(6.dp))
+                                Text("Protected", color = PremiumTealAccent, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            }
+                        }
+                        Box(
+                            Modifier.size(46.dp).background(Color.White.copy(alpha = 0.12f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Notifications, contentDescription = "Notifications", tint = Color.White, modifier = Modifier.size(24.dp))
+                        }
+                    }
+                    Spacer(Modifier.height(32.dp))
+                    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
+                        Text("Device Protected", color = Color.White.copy(alpha = 0.75f), fontSize = 15.sp)
+                        Spacer(Modifier.height(4.dp))
+                        Text("RasFocus+ Child", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 30.sp, letterSpacing = 0.5.sp)
+                        Spacer(Modifier.height(4.dp))
+                        Text("Supervised by ${rules.parentName}", color = Color.White.copy(alpha = 0.75f), fontSize = 13.sp)
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
 
         // Screen time ring
         Card(
@@ -742,6 +783,41 @@ fun ChildStatusScreen(context: Context) {
             Text("Ask for more time", fontWeight = FontWeight.Bold)
         }
         Spacer(Modifier.height(40.dp))
+        }
+
+        // ══ FOOTER — RasFocus brand NavigationBar (matches SelfControlModule) ══
+        ChildBottomNav(selected = selectedNavTab, onSelect = { selectedNavTab = it })
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
+// FOOTER NAV — Home / Connection / Filters / Settings
+// Mirrors SelfControlModule's SelfControlBottomNav exactly:
+// White NavigationBar, SoftBlue pill on selected item, PrimaryBlue tint.
+// ─────────────────────────────────────────────────────────────
+@Composable
+private fun ChildBottomNav(selected: Int, onSelect: (Int) -> Unit) {
+    val items = listOf(
+        Triple("Home",       Icons.Filled.Home,        Icons.Outlined.Home),
+        Triple("Connection", Icons.Filled.Wifi,         Icons.Outlined.Wifi),
+        Triple("Filters",    Icons.Filled.FilterAlt,    Icons.Outlined.FilterAlt),
+        Triple("Settings",   Icons.Filled.Settings,     Icons.Outlined.Settings)
+    )
+    NavigationBar(containerColor = WhiteBrand, tonalElevation = 8.dp) {
+        items.forEachIndexed { index, (label, filledIcon, outlinedIcon) ->
+            NavigationBarItem(
+                selected = selected == index, onClick = { onSelect(index) },
+                icon = {
+                    if (selected == index) {
+                        Box(Modifier.background(SoftBlue, RoundedCornerShape(50.dp)).padding(horizontal = 16.dp, vertical = 6.dp)) {
+                            Icon(filledIcon, contentDescription = label, tint = PrimaryBlue, modifier = Modifier.size(22.dp))
+                        }
+                    } else { Icon(outlinedIcon, contentDescription = label, tint = TextGrayBrand, modifier = Modifier.size(22.dp)) }
+                },
+                label = { Text(label, fontSize = 11.sp, color = if (selected == index) PrimaryBlue else TextGrayBrand, fontWeight = if (selected == index) FontWeight.SemiBold else FontWeight.Normal) },
+                colors = NavigationBarItemDefaults.colors(indicatorColor = Color.Transparent)
+            )
+        }
     }
 }
 

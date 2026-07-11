@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.*
 import androidx.compose.ui.text.style.*
 import androidx.compose.ui.unit.*
 import com.rasel.RasFocus.*
+import com.rasel.RasFocus.ui.theme.SoftWhite
 
 // ─────────────────────────────────────────────────────────────
 // THEME
@@ -40,6 +41,20 @@ private val PPurpleDim = Color(0x14A855F7)
 private val PAmber     = Color(0xFFF59E0B)
 
 // ─────────────────────────────────────────────────────────────
+// RASFOCUS BRAND PALETTE — mirrors SelfControlModule.kt exactly,
+// used for the shared header/footer components below so every
+// module renders the identical Premium Teal header + white
+// NavigationBar footer, independent of the file it lives in.
+// ─────────────────────────────────────────────────────────────
+private val PrimaryBlue      = Color(0xFF4A6FE3)
+private val SoftBlue         = Color(0xFFDDE6FF)
+private val TextGray         = Color(0xFF8A8A9A)
+private val White            = Color(0xFFFFFFFF)
+private val PremiumTealDark   = Color(0xFF032220)
+private val PremiumTealMid    = Color(0xFF08504B)
+private val PremiumTealAccent = Color(0xFF14C3B2)
+
+// ─────────────────────────────────────────────────────────────
 // NAV STATE
 // ─────────────────────────────────────────────────────────────
 private sealed class ParentalNav {
@@ -59,12 +74,18 @@ fun ParentalRootScreen(
 ) {
     var nav by remember { mutableStateOf<ParentalNav>(ParentalNav.PICKER) }
 
+    // Suppress this module's own footer whenever a container already provides navigation:
+    // ComboModule renders its own footer (isComboMode), and MainActivity's PersonaScaffold
+    // renders its own floating bottom bar around this screen (hideOwnFooter).
+    val suppressFooter = isComboMode || hideOwnFooter
+
     when (val state = nav) {
         ParentalNav.PICKER -> {
             ParentalPickerScreen(
-                viewModel    = viewModel,
-                onPickPc     = { id -> nav = ParentalNav.PC(id) },
-                onPickMobile = { id -> nav = ParentalNav.MOBILE(id) }
+                viewModel      = viewModel,
+                onPickPc       = { id -> nav = ParentalNav.PC(id) },
+                onPickMobile   = { id -> nav = ParentalNav.MOBILE(id) },
+                showFooterNav  = !suppressFooter
             )
         }
         is ParentalNav.PC -> {
@@ -97,7 +118,8 @@ fun ParentalRootScreen(
 private fun ParentalPickerScreen(
     viewModel: MainViewModel,
     onPickPc: (String) -> Unit,
-    onPickMobile: (String) -> Unit
+    onPickMobile: (String) -> Unit,
+    showFooterNav: Boolean = true
 ) {
     val devices       by viewModel.devices.collectAsState()
     val pcDevices     = devices.filter { it.type == DeviceType.PC }
@@ -106,9 +128,6 @@ private fun ParentalPickerScreen(
     val onlineCount   = devices.count { it.isOnline }
 
     val scrollState   = rememberScrollState()
-
-    // Header collapses when scrolled down
-    val isScrolled    = scrollState.value > 60
 
     // Pulse for online dot
     val pulse by rememberInfiniteTransition(label = "pulse").animateFloat(
@@ -120,101 +139,71 @@ private fun ParentalPickerScreen(
     // Confirm-remove dialog state
     var confirmRemoveDevice by remember { mutableStateOf<Device?>(null) }
 
-    Box(modifier = Modifier.fillMaxSize().background(PBg)) {
+    // Bottom nav selection state (Devices / Pair PC / Pair Phone / Settings)
+    var selectedNavTab by remember { mutableStateOf(0) }
 
-        // Subtle grid
-        Canvas(Modifier.fillMaxSize()) {
-            val step = 44.dp.toPx(); val lc = Color(0x07FFFFFF)
-            var x = 0f; while (x < size.width)  { drawLine(lc, Offset(x,0f), Offset(x,size.height), 1f); x += step }
-            var y = 0f; while (y < size.height) { drawLine(lc, Offset(0f,y), Offset(size.width,y), 1f); y += step }
-        }
-        // Teal ambient glow
-        Box(Modifier.size(300.dp).offset((-60).dp, (-60).dp)
-            .background(Brush.radialGradient(listOf(PTeal.copy(.08f), Color.Transparent)))
-            .blur(80.dp))
+    Box(modifier = Modifier.fillMaxSize().background(PBg)) {
 
         Column(modifier = Modifier.fillMaxSize()) {
 
-            // ══ DYNAMIC HEADER ════════════════════════════════
-            AnimatedContent(
-                targetState = isScrolled,
-                transitionSpec = { fadeIn(tween(200)) togetherWith fadeOut(tween(200)) },
-                label = "header"
-            ) { collapsed ->
-                Surface(
-                    color           = if (collapsed) PSurface.copy(.97f) else Color.Transparent,
-                    shadowElevation = if (collapsed) 8.dp else 0.dp,
-                    modifier        = Modifier.fillMaxWidth()
-                        .then(if (collapsed) Modifier.border(BorderStroke(1.dp, PBorder), RectangleShape) else Modifier)
-                ) {
-                    Column(Modifier.fillMaxWidth().statusBarsPadding()) {
-                        Row(
-                            modifier          = Modifier.fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = if (collapsed) 10.dp else 20.dp),
-                            verticalAlignment = Alignment.CenterVertically
+            // ══ PREMIUM HEADER (RasFocus brand style — matches SelfControlModule) ══
+            Box(
+                Modifier.fillMaxWidth()
+                    .background(
+                        Brush.verticalGradient(listOf(PremiumTealMid, PremiumTealDark)),
+                        RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)
+                    )
+                    .statusBarsPadding()
+                    .padding(start = 24.dp, end = 24.dp, top = 20.dp, bottom = 32.dp)
+            ) {
+                Column {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                        Box(
+                            Modifier.size(46.dp).background(SoftWhite.copy(alpha = 0.12f), CircleShape),
+                            contentAlignment = Alignment.Center
                         ) {
-                            // Icon
-                            Box(
-                                modifier = Modifier.size(if (collapsed) 34.dp else 44.dp)
-                                    .background(PTealDim, RoundedCornerShape(12.dp))
-                                    .border(BorderStroke(1.dp, PTeal.copy(.25f)), RoundedCornerShape(12.dp)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Filled.FamilyRestroom, null,
-                                    tint = PTealLight,
-                                    modifier = Modifier.size(if (collapsed) 18.dp else 24.dp))
-                            }
-                            Spacer(Modifier.width(12.dp))
-                            Column(Modifier.weight(1f)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text("Ras",     color = PText,     fontSize = if (collapsed) 15.sp else 19.sp, fontWeight = FontWeight.Bold)
-                                    Text("Focus",   color = PTeal,     fontSize = if (collapsed) 15.sp else 19.sp, fontWeight = FontWeight.Bold)
-                                    Text(" Parental", color = PSub,    fontSize = if (collapsed) 12.sp else 14.sp)
-                                }
-                                if (!collapsed)
-                                    Text("Manage your family devices", fontSize = 12.sp, color = PMuted)
-                            }
-                            // Device count chip — dynamic
-                            if (totalDevices > 0) {
-                                Surface(
-                                    shape  = RoundedCornerShape(50),
-                                    color  = PTealDim,
-                                    border = BorderStroke(1.dp, PTeal.copy(.3f))
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(5.dp)
-                                    ) {
-                                        Box(Modifier.size(6.dp).background(PTeal.copy(pulse), CircleShape))
-                                        Text("$totalDevices device${if(totalDevices!=1)"s" else ""}",
-                                            fontSize = 11.sp, color = PTealLight, fontWeight = FontWeight.SemiBold)
-                                    }
-                                }
-                            }
+                            Icon(Icons.Filled.FamilyRestroom, contentDescription = null, tint = SoftWhite, modifier = Modifier.size(24.dp))
                         }
-
-                        // Sub-row (online summary) — visible when NOT collapsed, AND devices exist
-                        if (!collapsed && totalDevices > 0) {
-                            HorizontalDivider(color = PBorder.copy(.5f))
-                            Row(
-                                modifier = Modifier.fillMaxWidth()
-                                    .background(PTeal.copy(.04f))
-                                    .padding(horizontal = 18.dp, vertical = 9.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(16.dp)
-                            ) {
-                                MiniChip(Icons.Filled.Computer,    "${pcDevices.size} PC${if(pcDevices.size!=1)"s" else ""}",       PTealLight)
-                                MiniChip(Icons.Filled.Smartphone,  "${mobileDevices.size} Phone${if(mobileDevices.size!=1)"s" else ""}", PPurple)
-                                Spacer(Modifier.weight(1f))
-                                Box(Modifier.size(7.dp).background(if(onlineCount>0) PGreen.copy(pulse) else PMuted.copy(.4f), CircleShape))
+                        // Device count badge — dynamic
+                        Box(
+                            Modifier.background(PremiumTealAccent.copy(alpha = 0.2f), RoundedCornerShape(50.dp))
+                                .border(1.dp, PremiumTealAccent.copy(alpha = 0.5f), RoundedCornerShape(50.dp))
+                                .padding(horizontal = 14.dp, vertical = 8.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(Modifier.size(6.dp).background(if (onlineCount > 0) PremiumTealAccent.copy(pulse) else Color(0xFFB0BEC5), CircleShape))
+                                Spacer(Modifier.width(6.dp))
                                 Text(
-                                    if (onlineCount > 0) "$onlineCount online" else "All offline",
-                                    fontSize = 11.sp,
-                                    color    = if (onlineCount > 0) PGreen else PMuted,
-                                    fontWeight = FontWeight.SemiBold
+                                    if (totalDevices > 0) "$totalDevices device${if (totalDevices != 1) "s" else ""} · $onlineCount online" else "No devices yet",
+                                    color = PremiumTealAccent, fontWeight = FontWeight.Bold, fontSize = 13.sp
                                 )
                             }
+                        }
+                        Box(
+                            Modifier.size(46.dp).background(SoftWhite.copy(alpha = 0.12f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Notifications, contentDescription = "Notifications", tint = SoftWhite, modifier = Modifier.size(24.dp))
+                        }
+                    }
+                    Spacer(Modifier.height(32.dp))
+                    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
+                        Text("Welcome to", color = SoftWhite.copy(alpha = 0.75f), fontSize = 15.sp)
+                        Spacer(Modifier.height(4.dp))
+                        Text("RasFocus+ Parental", color = SoftWhite, fontWeight = FontWeight.ExtraBold, fontSize = 30.sp, letterSpacing = 0.5.sp)
+                        Spacer(Modifier.height(4.dp))
+                        Text("Manage and protect your family's devices", color = SoftWhite.copy(alpha = 0.75f), fontSize = 13.sp)
+                    }
+
+                    // Device summary chips — visible when devices exist
+                    if (totalDevices > 0) {
+                        Spacer(Modifier.height(20.dp))
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            MiniChip(Icons.Filled.Computer,   "${pcDevices.size} PC${if (pcDevices.size != 1) "s" else ""}", SoftWhite)
+                            MiniChip(Icons.Filled.Smartphone, "${mobileDevices.size} Phone${if (mobileDevices.size != 1) "s" else ""}", SoftWhite)
                         }
                     }
                 }
@@ -284,43 +273,20 @@ private fun ParentalPickerScreen(
                 Spacer(Modifier.height(4.dp))
             }
 
-            // ══ FOOTER — always visible ════════════════════════
-            Surface(
-                color           = PSurface,
-                shadowElevation = 20.dp,
-                modifier        = Modifier
-                    .fillMaxWidth()
-                    .border(BorderStroke(1.dp, PBorder), RectangleShape)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding()
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Button(
-                        onClick  = { onPickPc("") },
-                        modifier = Modifier.weight(1f).height(50.dp),
-                        shape    = RoundedCornerShape(14.dp),
-                        colors   = ButtonDefaults.buttonColors(containerColor = PTeal, contentColor = Color.White)
-                    ) {
-                        Icon(Icons.Filled.Add, null, modifier = Modifier.size(17.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("Pair PC", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            // ══ FOOTER — RasFocus brand NavigationBar (matches SelfControlModule) ══
+            // Hidden when an outer container (Combo header/footer, or MainActivity's
+            // PersonaScaffold) already renders navigation for this screen.
+            if (showFooterNav) {
+                ParentalBottomNav(
+                    selected = selectedNavTab,
+                    onSelect = { index ->
+                        selectedNavTab = index
+                        when (index) {
+                            1 -> onPickPc("")
+                            2 -> onPickMobile("")
+                        }
                     }
-                    OutlinedButton(
-                        onClick  = { onPickMobile("") },
-                        modifier = Modifier.weight(1f).height(50.dp),
-                        shape    = RoundedCornerShape(14.dp),
-                        border   = BorderStroke(1.5.dp, PPurple.copy(.7f)),
-                        colors   = ButtonDefaults.outlinedButtonColors(contentColor = PPurple)
-                    ) {
-                        Icon(Icons.Filled.Add, null, modifier = Modifier.size(17.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("Pair Phone", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    }
-                }
+                )
             }
         }
 
@@ -496,5 +462,36 @@ private fun MiniChip(icon: androidx.compose.ui.graphics.vector.ImageVector, labe
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         Icon(icon, null, tint = tint.copy(.7f), modifier = Modifier.size(12.dp))
         Text(label, fontSize = 11.sp, color = tint.copy(.85f), fontWeight = FontWeight.SemiBold)
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
+// FOOTER NAV — Devices / Pair PC / Pair Phone / Settings
+// Mirrors SelfControlModule's SelfControlBottomNav exactly:
+// White NavigationBar, SoftBlue pill on selected item, PrimaryBlue tint.
+// ─────────────────────────────────────────────────────────────
+@Composable
+private fun ParentalBottomNav(selected: Int, onSelect: (Int) -> Unit) {
+    val items = listOf(
+        Triple("Devices",    Icons.Filled.DevicesOther, Icons.Outlined.DevicesOther),
+        Triple("Pair PC",    Icons.Filled.Computer,     Icons.Outlined.Computer),
+        Triple("Pair Phone", Icons.Filled.Smartphone,   Icons.Outlined.Smartphone),
+        Triple("Settings",   Icons.Filled.Settings,     Icons.Outlined.Settings)
+    )
+    NavigationBar(containerColor = White, tonalElevation = 8.dp) {
+        items.forEachIndexed { index, (label, filledIcon, outlinedIcon) ->
+            NavigationBarItem(
+                selected = selected == index, onClick = { onSelect(index) },
+                icon = {
+                    if (selected == index) {
+                        Box(Modifier.background(SoftBlue, RoundedCornerShape(50.dp)).padding(horizontal = 16.dp, vertical = 6.dp)) {
+                            Icon(filledIcon, contentDescription = label, tint = PrimaryBlue, modifier = Modifier.size(22.dp))
+                        }
+                    } else { Icon(outlinedIcon, contentDescription = label, tint = TextGray, modifier = Modifier.size(22.dp)) }
+                },
+                label = { Text(label, fontSize = 11.sp, color = if (selected == index) PrimaryBlue else TextGray, fontWeight = if (selected == index) FontWeight.SemiBold else FontWeight.Normal) },
+                colors = NavigationBarItemDefaults.colors(indicatorColor = Color.Transparent)
+            )
+        }
     }
 }

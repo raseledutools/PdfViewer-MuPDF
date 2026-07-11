@@ -1137,7 +1137,7 @@ fun RasFocusApp(viewModel: MainViewModel) {
                     is BottomNavTab.Family   -> navController.navigate(Routes.COMBO_FAMILY) { launchSingleTop = true }
                     is BottomNavTab.Settings -> navController.navigate(Routes.SETTINGS) { launchSingleTop = true }
                 }
-            }) { padding -> Box(Modifier.padding(padding)) { com.rasel.RasFocus.combo.ComboDashboardScreen(viewModel = viewModel, navController = navController) } }
+            }) { padding -> Box(Modifier.padding(padding)) { com.rasel.RasFocus.combo.ComboDashboardScreen(viewModel = viewModel, navController = navController, hideOwnFooter = true) } }
         }
 
         composable(Routes.COMBO_FAMILY) {
@@ -1147,7 +1147,7 @@ fun RasFocusApp(viewModel: MainViewModel) {
                     is BottomNavTab.Family   -> { }
                     is BottomNavTab.Settings -> navController.navigate(Routes.SETTINGS) { launchSingleTop = true }
                 }
-            }) { padding -> Box(Modifier.padding(padding)) { com.rasel.RasFocus.combo.ComboDashboardScreen(viewModel = viewModel, navController = navController) } }
+            }) { padding -> Box(Modifier.padding(padding)) { com.rasel.RasFocus.combo.ComboDashboardScreen(viewModel = viewModel, navController = navController, hideOwnFooter = true) } }
         }
 
         composable(Routes.CHILD_DASHBOARD) {
