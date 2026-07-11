@@ -1,4 +1,4 @@
-package com.rasel.RasFocus.combo.selfcontrol
+package com.rasel.pdfviewer.combo.selfcontrol
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import com.rasel.RasFocus.ui.theme.SoftWhite
+import com.rasel.pdfviewer.ui.theme.SoftWhite
 
 private val DrawerBg = Color(0xFF1A1A2E)
 private val TextWhite = SoftWhite
