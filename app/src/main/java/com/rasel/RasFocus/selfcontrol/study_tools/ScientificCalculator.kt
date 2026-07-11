@@ -31,7 +31,7 @@ private val BtnOrange   = Color(0xFFFF6600)
 private val ShiftColor  = Color(0xFFFFCC00)
 private val AlphaColor  = Color(0xFFFF3399)
 private val TextLight   = Color(0xFFE0E0E0)
-private val CalcCalcTextDim     = Color(0xFF888899)
+private val CalcTextDim     = Color(0xFF888899)
 
 // ─── Calculator State ─────────────────────────────────────────────────────────
 
