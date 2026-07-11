@@ -298,9 +298,28 @@
         android:theme="@style/Theme.RasFocus"
         android:configChanges="orientation|screenSize|keyboardHidden" />
 
+    <!-- COMBO: BlockingProfile in-app WebView -->
+    <activity
+        android:name=".combo.selfcontrol.BpWebViewActivity"
+        android:exported="false"
+        android:theme="@style/Theme.RasFocus"
+        android:configChanges="orientation|screenSize|keyboardHidden" />
+
     <!-- ✅ RasBrowser Quick Settings Tile — Quick panel থেকে সরাসরি browser খোলা -->
     <service
         android:name=".selfcontrol.familybrowser.RasBrowserTileService"
+        android:exported="true"
+        android:icon="@drawable/ic_splash"
+        android:label="RasBrowser"
+        android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+        <intent-filter>
+            <action android:name="android.service.quicksettings.action.QS_TILE" />
+        </intent-filter>
+    </service>
+
+    <!-- COMBO: RasBrowser Quick Settings Tile -->
+    <service
+        android:name=".combo.selfcontrol.familybrowser.RasBrowserTileService"
         android:exported="true"
         android:icon="@drawable/ic_splash"
         android:label="RasBrowser"
@@ -331,6 +350,18 @@
         </intent-filter>
     </activity>
 
+    <!-- ✅ COMBO: RasBrowser — same browser for combo/self mode -->
+    <activity
+        android:name=".combo.selfcontrol.familybrowser.FamilyBrowserActivity"
+        android:exported="false"
+        android:theme="@style/Theme.RasFocus"
+        android:hardwareAccelerated="true"
+        android:launchMode="singleTask"
+        android:taskAffinity="${applicationId}.combo.browser"
+        android:supportsPictureInPicture="true"
+        android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize"
+        android:windowSoftInputMode="adjustResize" />
+
     <!-- ✅ YouTube Native Activity — browser UI ছাড়া fullscreen YouTube -->
     <activity
         android:name=".selfcontrol.familybrowser.YoutubeActivity"
@@ -353,9 +384,37 @@
         android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize"
         android:windowSoftInputMode="adjustResize" />
 
+    <!-- ✅ COMBO: YouTube Activity -->
+    <activity
+        android:name=".combo.selfcontrol.familybrowser.YoutubeActivity"
+        android:exported="false"
+        android:theme="@style/Theme.RasFocus"
+        android:hardwareAccelerated="true"
+        android:launchMode="singleTask"
+        android:taskAffinity="${applicationId}.combo.youtube"
+        android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize"
+        android:windowSoftInputMode="adjustResize" />
+
+    <!-- ✅ COMBO: Facebook Activity -->
+    <activity
+        android:name=".combo.selfcontrol.familybrowser.FacebookActivity"
+        android:exported="false"
+        android:theme="@style/Theme.RasFocus"
+        android:hardwareAccelerated="true"
+        android:launchMode="singleTask"
+        android:taskAffinity="${applicationId}.combo.facebook"
+        android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize"
+        android:windowSoftInputMode="adjustResize" />
+
     <!-- ✅ RasBrowser background audio service -->
     <service
         android:name=".selfcontrol.familybrowser.service.BackgroundAudioService"
+        android:exported="false"
+        android:foregroundServiceType="mediaPlayback" />
+
+    <!-- ✅ COMBO: RasBrowser background audio service -->
+    <service
+        android:name=".combo.selfcontrol.familybrowser.service.BackgroundAudioService"
         android:exported="false"
         android:foregroundServiceType="mediaPlayback" />
 
@@ -369,9 +428,26 @@
             android:value="RasBrowser floating tab window" />
     </service>
 
+    <!-- ✅ COMBO: RasBrowser floating window service -->
+    <service
+        android:name=".combo.selfcontrol.familybrowser.service.FloatingWindowService"
+        android:exported="false"
+        android:foregroundServiceType="specialUse">
+        <property
+            android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+            android:value="RasBrowser combo floating tab window" />
+    </service>
+
     <!-- ✅ YouTube Floating Window Service — native YouTube UI + minimize/drag/resize -->
     <service
         android:name=".selfcontrol.familybrowser.service.YoutubeFloatingWindowService"
+        android:exported="false"
+        android:foregroundServiceType="mediaPlayback">
+    </service>
+
+    <!-- ✅ COMBO: YouTube Floating Window Service -->
+    <service
+        android:name=".combo.selfcontrol.familybrowser.service.YoutubeFloatingWindowService"
         android:exported="false"
         android:foregroundServiceType="mediaPlayback">
     </service>
@@ -384,6 +460,16 @@
         <property
             android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
             android:value="RasFocus Facebook floating bubble" />
+    </service>
+
+    <!-- ✅ COMBO: Facebook Floating Window Service -->
+    <service
+        android:name=".combo.selfcontrol.familybrowser.service.FacebookFloatingWindowService"
+        android:exported="false"
+        android:foregroundServiceType="specialUse">
+        <property
+            android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+            android:value="RasFocus combo Facebook floating bubble" />
     </service>
 
     <service
@@ -431,6 +517,24 @@
         <property
             android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
             android:value="RasFocus accessibility-based content blocker (adult/website/reels/app block)" />
+    </service>
+
+    <!-- ✅ COMBO: Unified Blocker Service -->
+    <service
+        android:name=".combo.selfcontrol.UnifiedBlockerService"
+        android:label="RasFocus Protection (Combo)"
+        android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+        android:foregroundServiceType="specialUse"
+        android:exported="true">
+        <intent-filter>
+            <action android:name="android.accessibilityservice.AccessibilityService" />
+        </intent-filter>
+        <meta-data
+            android:name="android.accessibilityservice"
+            android:resource="@xml/accessibility_unified_config" />
+        <property
+            android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+            android:value="RasFocus combo accessibility-based content blocker" />
     </service>
 
     <!-- ✅ Extreme Block Settings Activity -->
