@@ -1,4 +1,4 @@
-package com.rasel.RasFocus.combo.selfcontrol.study_tools
+package com.rasel.pdfviewer.combo.selfcontrol.study_tools
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Scientific Calculator — Casio 991 ES Plus Clone
