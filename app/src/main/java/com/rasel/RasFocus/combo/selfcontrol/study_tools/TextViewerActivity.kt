@@ -3,6 +3,11 @@ package com.rasel.RasFocus.combo.selfcontrol.study_tools
 import android.net.Uri
 import android.os.Bundle
 import android.view.WindowManager
+import android.webkit.WebResourceRequest
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -153,6 +158,7 @@ fun TextViewerScreen(uri: Uri?, fileName: String, onClose: () -> Unit) {
     val ext        = fileName.substringAfterLast('.', "").lowercase()
     val isKotlin   = ext == "kt"
     val isMarkdown = ext in listOf("md", "markdown")
+    val isHtml     = ext in listOf("html", "htm")
     val isEditable = ext in listOf("kt", "txt", "md", "markdown", "py", "js", "ts",
                                    "html", "htm", "css", "xml", "json", "yaml", "yml",
                                    "toml", "ini", "sh", "bat", "log", "csv", "java",
@@ -357,6 +363,14 @@ fun TextViewerScreen(uri: Uri?, fileName: String, onClose: () -> Unit) {
                             .navigationBarsPadding()
 
                         when {
+                            isHtml && !isEditMode ->
+                                HtmlWebView(
+                                    html     = rawText,
+                                    baseUri  = uri,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .navigationBarsPadding()
+                                )
                             isMarkdown ->
                                 MarkdownContent(rawText, baseMod)
                             isKotlin ->
@@ -602,4 +616,70 @@ private fun mdInline(text: String): AnnotatedString = buildAnnotatedString {
             else -> { append(text[i]); i++ }
         }
     }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HTML WEBVIEW — native fast rendering, local file support
+// ─────────────────────────────────────────────────────────────────────────────
+@Composable
+fun HtmlWebView(
+    html: String,
+    baseUri: Uri?,
+    modifier: Modifier = Modifier
+) {
+    AndroidView(
+        factory = { ctx ->
+            WebView(ctx).apply {
+                // ── Settings — fast + capable ──────────────────────────
+                settings.apply {
+                    javaScriptEnabled      = true          // JS চালাবে
+                    domStorageEnabled      = true          // localStorage support
+                    allowFileAccess        = true          // local assets/files
+                    allowContentAccess     = true          // content:// URIs
+                    loadWithOverviewMode   = true          // zoom to fit
+                    useWideViewPort        = true          // desktop-width viewport
+                    setSupportZoom(true)
+                    builtInZoomControls    = true
+                    displayZoomControls    = false         // ভাসমান +/- hide
+                    cacheMode              = WebSettings.LOAD_NO_CACHE
+                    mixedContentMode       = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                    textZoom               = 100           // system font size effect off
+                    mediaPlaybackRequiresUserGesture = false
+                }
+
+                // ── Dark background যাতে load হওয়ার আগে flash না করে ──
+                setBackgroundColor(0xFF0D1117.toInt())
+
+                // ── WebViewClient — external links block করে আর forward নেয় না ──
+                webViewClient = object : WebViewClient() {
+                    override fun shouldOverrideUrlLoading(
+                        view: WebView,
+                        request: WebResourceRequest
+                    ): Boolean {
+                        val url = request.url.toString()
+                        // local content:// বা file:// হলে load করবে, বাকি block
+                        return !(url.startsWith("file://") || url.startsWith("content://") || url.startsWith("about:"))
+                    }
+                }
+
+                // ── Load HTML ──────────────────────────────────────────
+                // baseUrl = file path দিলে relative images/CSS/JS কাজ করে
+                val base = when {
+                    baseUri?.scheme == "file" -> baseUri.toString().substringBeforeLast('/') + "/"
+                    baseUri?.scheme == "content" -> "file:///android_asset/"
+                    else -> "file:///android_asset/"
+                }
+                loadDataWithBaseURL(base, html, "text/html", "UTF-8", null)
+            }
+        },
+        update = { webView ->
+            // HTML বদলালে reload (edit করে preview করলে)
+            val base = when {
+                baseUri?.scheme == "file" -> baseUri.toString().substringBeforeLast('/') + "/"
+                else -> "file:///android_asset/"
+            }
+            webView.loadDataWithBaseURL(base, html, "text/html", "UTF-8", null)
+        },
+        modifier = modifier
+    )
 }
