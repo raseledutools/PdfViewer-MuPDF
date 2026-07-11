@@ -1,4 +1,4 @@
-package com.rasel.RasFocus.combo.selfcontrol.familybrowser
+package com.rasel.pdfviewer.combo.selfcontrol.familybrowser
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -41,7 +41,7 @@ class FacebookActivity : ComponentActivity() {
 
     // Feed/search এ visible content (post caption, image alt, video title) scan
     // করে adult content ধরার জন্য — AdBlocker.kt এর existing multi-layer scanner
-    private val adBlocker by lazy { com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker(this) }
+    private val adBlocker by lazy { com.rasel.pdfviewer.selfcontrol.familybrowser.AdBlocker(this) }
 
     // Floating bubble মোডে চলে গেলে true — WebView তখন service এর দখলে
     private var isFloatingActive = false
@@ -90,7 +90,7 @@ class FacebookActivity : ComponentActivity() {
         // এর keyword_data/adult_keywords node), তাই আর manual sync লাগবে না —
         // Firebase console এ update করলেই সব জায়গায় সাথে সাথে reflect হবে।
         private val ADULT_SEARCH_KEYWORDS: Set<String>
-            get() = com.rasel.RasFocus.selfcontrol.FirebaseKeywordSync.getAdultKeywords()
+            get() = com.rasel.pdfviewer.selfcontrol.FirebaseKeywordSync.getAdultKeywords()
 
         fun launch(activity: Activity) {
             val intent = Intent(activity, FacebookActivity::class.java)
@@ -140,9 +140,9 @@ class FacebookActivity : ComponentActivity() {
         setContentView(rootFrame)
 
         // ── আগের floating session থেকে ফেরত আসা WebView থাকলে সেটাই ব্যবহার করো ──
-        val pending = com.rasel.RasFocus.selfcontrol.familybrowser.service.FacebookFloatingWindowService.pendingWebView
+        val pending = com.rasel.pdfviewer.selfcontrol.familybrowser.service.FacebookFloatingWindowService.pendingWebView
         if (pending != null) {
-            com.rasel.RasFocus.selfcontrol.familybrowser.service.FacebookFloatingWindowService.pendingWebView = null
+            com.rasel.pdfviewer.selfcontrol.familybrowser.service.FacebookFloatingWindowService.pendingWebView = null
             (pending.parent as? ViewGroup)?.removeView(pending)
             webView = pending
             rootFrame.addView(pending, FrameLayout.LayoutParams(
@@ -211,7 +211,7 @@ class FacebookActivity : ComponentActivity() {
             // page দেখানোর পর WebView চিরকালের জন্য আটকে থাকতো।
             addJavascriptInterface(FbBlockBridge(this), "RasFbBlockBridge")
             addJavascriptInterface(
-                com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.BlockOverlayBridge(
+                com.rasel.pdfviewer.selfcontrol.familybrowser.AdBlocker.BlockOverlayBridge(
                     this, "https://m.facebook.com/", { block -> runOnUiThread(block) }
                 ),
                 "RasBlockBridge"
@@ -312,8 +312,8 @@ class FacebookActivity : ComponentActivity() {
         val currentUrl   = wv.url   ?: "https://m.facebook.com/"
         val currentTitle = wv.title ?: "Facebook"
 
-        com.rasel.RasFocus.selfcontrol.familybrowser.service.FacebookFloatingWindowService.pendingWebView = wv
-        com.rasel.RasFocus.selfcontrol.familybrowser.service.FacebookFloatingWindowService.launchNoReload(
+        com.rasel.pdfviewer.selfcontrol.familybrowser.service.FacebookFloatingWindowService.pendingWebView = wv
+        com.rasel.pdfviewer.selfcontrol.familybrowser.service.FacebookFloatingWindowService.launchNoReload(
             this, currentUrl, currentTitle
         )
 
@@ -350,7 +350,7 @@ class FacebookActivity : ComponentActivity() {
         try {
             stopService(Intent(
                 this,
-                com.rasel.RasFocus.selfcontrol.familybrowser.service.FacebookFloatingWindowService::class.java
+                com.rasel.pdfviewer.selfcontrol.familybrowser.service.FacebookFloatingWindowService::class.java
             ))
         } catch (_: Exception) {}
         finish()
@@ -366,16 +366,16 @@ class FacebookActivity : ComponentActivity() {
             try {
                 stopService(Intent(
                     this,
-                    com.rasel.RasFocus.selfcontrol.familybrowser.service.FacebookFloatingWindowService::class.java
+                    com.rasel.pdfviewer.selfcontrol.familybrowser.service.FacebookFloatingWindowService::class.java
                 ))
             } catch (_: Exception) {}
 
             if (webView == null) {
                 val rootFrame = getRootFrame()
                 rootFrame?.postDelayed({
-                    val pendingWv = com.rasel.RasFocus.selfcontrol.familybrowser.service.FacebookFloatingWindowService.pendingWebView
+                    val pendingWv = com.rasel.pdfviewer.selfcontrol.familybrowser.service.FacebookFloatingWindowService.pendingWebView
                     if (pendingWv != null && webView == null) {
-                        com.rasel.RasFocus.selfcontrol.familybrowser.service.FacebookFloatingWindowService.pendingWebView = null
+                        com.rasel.pdfviewer.selfcontrol.familybrowser.service.FacebookFloatingWindowService.pendingWebView = null
                         webView = pendingWv
                         (pendingWv.parent as? ViewGroup)?.removeView(pendingWv)
                         rootFrame.addView(pendingWv, FrameLayout.LayoutParams(
