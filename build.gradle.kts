@@ -9,4 +9,5 @@ plugins {
     // way of saying "I don't know what version to use". Version matched to
     // what the sibling RasFocus-final project already uses.
     id("com.google.gms.google-services") version "4.4.2" apply false
+    id("com.google.devtools.ksp") version "2.1.10-1.0.31" apply false
 }
