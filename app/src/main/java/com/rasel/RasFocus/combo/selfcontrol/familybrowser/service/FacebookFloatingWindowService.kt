@@ -1,4 +1,4 @@
-package com.rasel.pdfviewer.combo.selfcontrol.familybrowser.service
+package com.rasel.RasFocus.combo.selfcontrol.familybrowser.service
 
 import android.annotation.SuppressLint
 import android.app.*
@@ -222,7 +222,7 @@ class FacebookFloatingWindowService : Service() {
     private fun returnToActivity() {
         val resumeIntent = Intent(
             this,
-            com.rasel.pdfviewer.selfcontrol.familybrowser.FacebookActivity::class.java
+            com.rasel.RasFocus.selfcontrol.familybrowser.FacebookActivity::class.java
         ).apply {
             addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_NEW_TASK)
         }
@@ -473,12 +473,12 @@ class FacebookFloatingWindowService : Service() {
                     // search box. Added the same FirebaseKeywordSync check the
                     // full-page browser already has, and a real blocked page
                     // instead of blank content.
-                    val isDomainBlocked  = com.rasel.pdfviewer.selfcontrol.familybrowser.AdBlocker.isAdultSite(url)
-                    val isKeywordBlocked = com.rasel.pdfviewer.selfcontrol.FirebaseKeywordSync.containsAdultKeyword(url)
+                    val isDomainBlocked  = com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.isAdultSite(url)
+                    val isKeywordBlocked = com.rasel.RasFocus.selfcontrol.FirebaseKeywordSync.containsAdultKeyword(url)
                     if (isDomainBlocked || isKeywordBlocked) {
                         return if (request.isForMainFrame) {
-                           val blockedHtml = com.rasel.pdfviewer.selfcontrol.familybrowser.AdBlocker
-                               .buildBlockedPage(url, com.rasel.pdfviewer.selfcontrol.familybrowser.BlockReason.ADULT)
+                           val blockedHtml = com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker
+                               .buildBlockedPage(url, com.rasel.RasFocus.selfcontrol.familybrowser.BlockReason.ADULT)
                            WebResourceResponse("text/html", "UTF-8", blockedHtml.byteInputStream())
                        } else {
                            WebResourceResponse("text/plain", "UTF-8", null)
@@ -498,11 +498,11 @@ class FacebookFloatingWindowService : Service() {
 
                 override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                     val url = request.url.toString()
-                    val isDomainBlocked  = com.rasel.pdfviewer.selfcontrol.familybrowser.AdBlocker.isAdultSite(url)
-                    val isKeywordBlocked = com.rasel.pdfviewer.selfcontrol.FirebaseKeywordSync.containsAdultKeyword(url)
+                    val isDomainBlocked  = com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.isAdultSite(url)
+                    val isKeywordBlocked = com.rasel.RasFocus.selfcontrol.FirebaseKeywordSync.containsAdultKeyword(url)
                     if (isDomainBlocked || isKeywordBlocked) {
-                        val blockedHtml = com.rasel.pdfviewer.selfcontrol.familybrowser.AdBlocker
-                            .buildBlockedPage(url, com.rasel.pdfviewer.selfcontrol.familybrowser.BlockReason.ADULT)
+                        val blockedHtml = com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker
+                            .buildBlockedPage(url, com.rasel.RasFocus.selfcontrol.familybrowser.BlockReason.ADULT)
                         view.loadDataWithBaseURL(null, blockedHtml, "text/html", "UTF-8", null)
                         return true
                     }
