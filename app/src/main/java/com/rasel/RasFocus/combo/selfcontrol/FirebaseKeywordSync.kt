@@ -26,7 +26,7 @@
 //           gambling: "Gambling content blocked"
 // ============================================================
 
-package com.rasel.RasFocus.combo.selfcontrol
+package com.rasel.pdfviewer.combo.selfcontrol
 
 import android.content.Context
 import android.util.Log
