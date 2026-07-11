@@ -1,4 +1,4 @@
-package com.rasel.pdfviewer.combo.selfcontrol
+package com.rasel.RasFocus.combo.selfcontrol
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
@@ -492,7 +492,7 @@ fun ProfileCardItem(
                     Icon(
                         if (profile.profileType == "Block") Icons.Default.Block else Icons.Default.CheckCircleOutline,
                         contentDescription = null,
-                        tint = if (profile.profileType == "Block") Color(0xFFEF4444) else com.rasel.pdfviewer.ui.theme.RasFocusTheme.colors.primary,
+                        tint = if (profile.profileType == "Block") Color(0xFFEF4444) else com.rasel.RasFocus.ui.theme.RasFocusTheme.colors.primary,
                         modifier = Modifier.size(14.dp)
                     )
                 }
@@ -1376,7 +1376,7 @@ object BlockingManager {
             android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
         ) ?: return false
         // UnifiedBlockerService handles website block — check that
-        val unifiedTarget = "${context.packageName}/com.rasel.pdfviewer.selfcontrol.UnifiedBlockerService"
+        val unifiedTarget = "${context.packageName}/com.rasel.RasFocus.selfcontrol.UnifiedBlockerService"
         // Also accept the old WebsiteBlockingAccessibilityService if somehow still enabled
         val websiteTarget = "${context.packageName}/${WebsiteBlockingAccessibilityService::class.java.name}"
         return enabledServices.split(":").any {
