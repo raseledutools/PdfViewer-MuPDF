@@ -55,6 +55,7 @@ import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import com.rasel.RasFocus.selfcontrol.study_tools.ScanToPdfScreen
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Color tokens

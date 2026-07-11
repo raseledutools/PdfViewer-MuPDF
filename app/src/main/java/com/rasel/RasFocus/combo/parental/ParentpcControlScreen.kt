@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.*
 import kotlinx.coroutines.*
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.DisposableEffect
+import com.rasel.RasFocus.MainViewModel
 
 // ══════════════════════════════════════════════════════════════
 //  THEME COLORS
@@ -101,7 +102,7 @@ data class ParentControls(
 fun ParentControlScreen(
     onBack: () -> Unit = {},
     deviceId: String? = null,
-    viewModel: com.rasel.pdfviewer.MainViewModel? = null,
+    viewModel: MainViewModel? = null,
     pin: String = "------",
     devices: List<Pair<String, Boolean>> = emptyList(),
     selectedDevice: String? = null,

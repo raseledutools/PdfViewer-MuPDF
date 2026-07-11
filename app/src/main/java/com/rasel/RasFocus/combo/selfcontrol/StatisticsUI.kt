@@ -60,7 +60,7 @@ data class AppUsageStat(
 private val EXCLUDED_PACKAGES = setOf(
     "com.android.systemui", "com.android.launcher", "com.android.launcher3",
     "com.sec.android.app.launcher", "com.miui.home", "com.huawei.android.launcher",
-    "android", "com.android.settings", "com.rasel.pdfviewer"
+    "android", "com.android.settings", "com.rasel.RasFocus"
 )
 
 /**

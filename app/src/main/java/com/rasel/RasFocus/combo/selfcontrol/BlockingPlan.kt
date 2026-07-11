@@ -1621,7 +1621,7 @@ class WebsiteBlockingAccessibilityService : AccessibilityService() {
             "com.android.chrome", "org.mozilla.firefox", "com.microsoft.emmx",
             "com.opera.browser", "com.opera.mini.native", "com.brave.browser",
             "com.UCMobile.intl", "com.uc.browser.en", "com.kiwibrowser.browser",
-            "com.sec.android.app.sbrowser", "com.rasel.pdfviewer.selfcontrol"
+            "com.sec.android.app.sbrowser", "com.rasel.RasFocus.selfcontrol"
         )
 
         fun cleanDomain(raw: String): String =

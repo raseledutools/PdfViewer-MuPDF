@@ -14,6 +14,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import com.rasel.RasFocus.AutoUpdater
 
 /**
  * BpAppBlockerService — ButtonPhone focus lock এর সহায়ক service।
@@ -150,14 +151,14 @@ class UsageNotificationService : Service() {
             while (isActive) {
                 try {
                     val prefs = this@UsageNotificationService.getSharedPreferences("AutoUpdaterPrefs", Context.MODE_PRIVATE)
-                    val lastTag = prefs.getString(com.rasel.pdfviewer.AutoUpdater.LAST_TAG_KEY, "") ?: ""
+                    val lastTag = prefs.getString(AutoUpdater.LAST_TAG_KEY, "") ?: ""
                     
-                    com.rasel.pdfviewer.AutoUpdater.fetchLatestReleaseInfo { info ->
+                    AutoUpdater.fetchLatestReleaseInfo { info ->
                         if (info != null && info.tagName != lastTag) {
                             // Found a new update, silently download it
-                            com.rasel.pdfviewer.AutoUpdater.silentDownloadUpdate(
+                            AutoUpdater.silentDownloadUpdate(
                                 this@UsageNotificationService, 
-                                com.rasel.pdfviewer.AutoUpdater.APK_UNIVERSAL, 
+                                AutoUpdater.APK_UNIVERSAL, 
                                 info.tagName
                             )
                         }

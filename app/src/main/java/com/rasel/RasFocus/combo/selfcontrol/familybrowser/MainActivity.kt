@@ -3824,7 +3824,7 @@ fun DownloadPanel(vm: BrowserViewModel, onDismiss: () -> Unit) {
 
 @Composable
 private fun DownloadItemRow(
-    item:     com.rasel.RasFocus.selfcontrol.familybrowser.DownloadItem,
+    item:     DownloadItem,
     context:  android.content.Context,
     onOpen:   () -> Unit,
     onDelete: () -> Unit

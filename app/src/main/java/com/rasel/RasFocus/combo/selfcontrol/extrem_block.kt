@@ -397,7 +397,7 @@ class RasFocusBlockingService : AccessibilityService() {
         event ?: return
         val pkg0 = event.packageName?.toString() ?: return
 
-        if (pkg0 == "com.rasel.pdfviewer" ||
+        if (pkg0 == "com.rasel.RasFocus" ||
             pkg0 == "com.rasfocus" ||
             pkg0 == "android" ||
             pkg0 == "com.android.systemui" ||
@@ -508,7 +508,7 @@ class RasFocusBlockingService : AccessibilityService() {
     fun checkCurrentWindow() {
         val root = rootInActiveWindow ?: return
         val pkg = root.packageName?.toString() ?: run { root.recycle(); return }
-        if (pkg == "com.rasel.pdfviewer" || pkg == "android" ||
+        if (pkg == "com.rasel.RasFocus" || pkg == "android" ||
             pkg == "com.android.systemui" || pkg == "com.samsung.android.systemui") {
             root.recycle(); return
         }

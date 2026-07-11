@@ -81,6 +81,10 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.draw.alpha
 import com.rasel.RasFocus.ui.theme.SoftWhite
+import com.rasel.RasFocus.R
+import com.rasel.RasFocus.BuildConfig
+import com.rasel.RasFocus.ReleaseInfo
+import com.rasel.RasFocus.AutoUpdater
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -1258,7 +1262,7 @@ fun pinHomeScreenShortcuts(context: Context) {
     }
 
     val icon = androidx.core.graphics.drawable.IconCompat.createWithResource(
-        context, com.rasel.pdfviewer.R.mipmap.ic_launcher
+        context, R.mipmap.ic_launcher
     )
 
     val rasBrowserIntent = Intent(context, FamilyBrowserActivity::class.java).apply {
@@ -2273,14 +2277,14 @@ fun BrowserAppRow(
 // ── Update Center Section inside dashboard ──
 @Composable
 fun UpdateCenterSection(context: Context) {
-    var releaseInfo by remember { mutableStateOf<com.rasel.pdfviewer.ReleaseInfo?>(null) }
+    var releaseInfo by remember { mutableStateOf<ReleaseInfo?>(null) }
     var checking by remember { mutableStateOf(true) }
     
     val prefs = context.getSharedPreferences("AutoUpdaterPrefs", Context.MODE_PRIVATE)
-    val lastTag = prefs.getString(com.rasel.pdfviewer.AutoUpdater.LAST_TAG_KEY, "") ?: ""
+    val lastTag = prefs.getString(AutoUpdater.LAST_TAG_KEY, "") ?: ""
 
     LaunchedEffect(Unit) {
-        com.rasel.pdfviewer.AutoUpdater.fetchLatestReleaseInfo { info ->
+        AutoUpdater.fetchLatestReleaseInfo { info ->
             releaseInfo = info
             checking = false
         }
@@ -2303,7 +2307,7 @@ fun UpdateCenterSection(context: Context) {
             if (checking) {
                 Text("Checking for updates...", color = Color.LightGray, fontSize = 14.sp)
             } else if (releaseInfo != null) {
-                val currentVersion = "v" + com.rasel.pdfviewer.BuildConfig.VERSION_NAME
+                val currentVersion = "v" + BuildConfig.VERSION_NAME
                 val isLatest = releaseInfo!!.tagName == currentVersion
                 if (isLatest) {
                     Text("Latest version installed ✓", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 15.sp)
@@ -2315,11 +2319,11 @@ fun UpdateCenterSection(context: Context) {
                     Text("Released: ${releaseInfo!!.publishedAt}", color = Color.LightGray, fontSize = 12.sp)
                     Spacer(Modifier.height(16.dp))
                     
-                    val downloadedFile = com.rasel.pdfviewer.AutoUpdater.getDownloadedUpdateFile(context, releaseInfo!!.tagName)
+                    val downloadedFile = AutoUpdater.getDownloadedUpdateFile(context, releaseInfo!!.tagName)
                     
                     if (downloadedFile != null) {
                         Button(
-                            onClick = { com.rasel.pdfviewer.AutoUpdater.installDownloadedUpdate(context, downloadedFile) },
+                            onClick = { AutoUpdater.installDownloadedUpdate(context, downloadedFile) },
                             modifier = Modifier.fillMaxWidth().height(50.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
                             shape = RoundedCornerShape(12.dp)
@@ -2331,7 +2335,7 @@ fun UpdateCenterSection(context: Context) {
                     } else {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                             Button(
-                                onClick = { com.rasel.pdfviewer.AutoUpdater.downloadAndInstallUpdate(context, com.rasel.pdfviewer.AutoUpdater.APK_UNIVERSAL, releaseInfo!!.tagName) },
+                                onClick = { AutoUpdater.downloadAndInstallUpdate(context, AutoUpdater.APK_UNIVERSAL, releaseInfo!!.tagName) },
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE)),
                                 shape = RoundedCornerShape(12.dp)
@@ -2339,7 +2343,7 @@ fun UpdateCenterSection(context: Context) {
                                 Text("Universal", fontSize = 12.sp, maxLines = 1)
                             }
                             Button(
-                                onClick = { com.rasel.pdfviewer.AutoUpdater.downloadAndInstallUpdate(context, com.rasel.pdfviewer.AutoUpdater.APK_LIGHT, releaseInfo!!.tagName) },
+                                onClick = { AutoUpdater.downloadAndInstallUpdate(context, AutoUpdater.APK_LIGHT, releaseInfo!!.tagName) },
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE)),
                                 shape = RoundedCornerShape(12.dp)
@@ -2347,7 +2351,7 @@ fun UpdateCenterSection(context: Context) {
                                 Text("Light", fontSize = 12.sp, maxLines = 1)
                             }
                             Button(
-                                onClick = { com.rasel.pdfviewer.AutoUpdater.downloadAndInstallUpdate(context, com.rasel.pdfviewer.AutoUpdater.APK_FULL_SPLIT, releaseInfo!!.tagName) },
+                                onClick = { AutoUpdater.downloadAndInstallUpdate(context, AutoUpdater.APK_FULL_SPLIT, releaseInfo!!.tagName) },
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE)),
                                 shape = RoundedCornerShape(12.dp)
@@ -2373,7 +2377,7 @@ fun pinSingleHomeShortcut(context: Context, appType: String) {
     }
 
     val icon = androidx.core.graphics.drawable.IconCompat.createWithResource(
-        context, com.rasel.pdfviewer.R.mipmap.ic_launcher
+        context, R.mipmap.ic_launcher
     )
 
     when (appType) {

@@ -1269,7 +1269,7 @@ class UnifiedBlockerService : AccessibilityService() {
         return packageName.contains("launcher") || packageName.contains("systemui") ||
                 packageName.contains("dialer") || packageName.contains("messaging") ||
                 packageName.contains("inputmethod") || packageName.contains("keyboard") ||
-                packageName == "com.rasel.pdfviewer"
+                packageName == "com.rasel.RasFocus"
     }
 
     private fun isBrowserApp(packageName: String): Boolean {
@@ -1404,7 +1404,7 @@ class UnifiedBlockerService : AccessibilityService() {
         // ── Main tap → RasFocus MainActivity ──────────────────────────────────
         val mainIntent = PendingIntent.getActivity(
             this, 0,
-            Intent(this, Class.forName("com.rasel.pdfviewer.MainActivity")),
+            Intent(this, Class.forName("com.rasel.RasFocus.MainActivity")),
             PendingIntent.FLAG_IMMUTABLE
         )
 

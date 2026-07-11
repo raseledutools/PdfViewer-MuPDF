@@ -56,6 +56,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.rasel.RasFocus.DataManager
 
 // ════════════════════════════════════════════════════════════════════
 //  1. CONSTANTS & KEYS
@@ -175,11 +176,11 @@ class RasFocusAccessibilityService : AccessibilityService() {
     fun startDeepStudySession(focusMinutes: Int, playSound: Boolean) {
         // BlockerAccessibilityService এর পরিবর্তে এখানে Deep Study logic handle হয়
         // DataManager দিয়ে state set করা হয়
-        com.rasel.pdfviewer.DataManager.isDeepStudyStrict = true
+        DataManager.isDeepStudyStrict = true
     }
 
     fun stopDeepStudySession() {
-        com.rasel.pdfviewer.DataManager.isDeepStudyStrict = false
+        DataManager.isDeepStudyStrict = false
     }
 
     // ── Extreme Block এর checkCurrentWindow stub ──

@@ -200,7 +200,7 @@ private fun schedulePomodoroAlarms(context: Context, count: Int, sessionMs: Long
         t += sessionMs
         val pi = PendingIntent.getBroadcast(
             context, 1000 + i,
-            Intent("com.rasel.pdfviewer.POMODORO_ALARM").putExtra("index", i),
+            Intent("com.rasel.RasFocus.POMODORO_ALARM").putExtra("index", i),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         try {
@@ -222,7 +222,7 @@ private fun cancelPomodoroAlarms(context: Context, sessions: Triple<Int, Long, L
     for (i in 0 until sessions.first) {
         am.cancel(PendingIntent.getBroadcast(
             context, 1000 + i,
-            Intent("com.rasel.pdfviewer.POMODORO_ALARM"),
+            Intent("com.rasel.RasFocus.POMODORO_ALARM"),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         ))
     }

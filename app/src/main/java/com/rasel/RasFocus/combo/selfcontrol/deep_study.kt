@@ -272,7 +272,7 @@ fun Deep_study() {
     var totalSessions     by remember { mutableIntStateOf(4) }
     var currentSession    by remember { mutableIntStateOf(1) }
     var timeLeftMillis    by remember { mutableLongStateOf(25 * 60 * 1000L) }
-    var isStrict          by remember { mutableStateOf(com.rasel.pdfviewer.DataManager.isDeepStudyStrict) }
+    var isStrict          by remember { mutableStateOf(DataManager.isDeepStudyStrict) }
     
     var chkSound          by remember { mutableStateOf(false) }
     var chkFloat          by remember { mutableStateOf(false) }
@@ -298,8 +298,8 @@ fun Deep_study() {
                 timeLeftMillis = maxOf(0L, targetTime - System.currentTimeMillis())
             }
             if (timeLeftMillis <= 0 && isFocusMode) {
-                com.rasel.pdfviewer.DataManager.totalFocusTimeMillis += (focusMin * 60 * 1000L)
-                com.rasel.pdfviewer.DataManager.totalSessions++
+                DataManager.totalFocusTimeMillis += (focusMin * 60 * 1000L)
+                DataManager.totalSessions++
                 if (currentSession < totalSessions) {
                     isFocusMode = false
                     isBreak = true
@@ -426,7 +426,7 @@ fun Deep_study() {
                         checked = isStrict, enabled = !isFocusMode && !isBreak,
                         onCheckedChange = { 
                             isStrict = it
-                            com.rasel.pdfviewer.DataManager.isDeepStudyStrict = it 
+                            DataManager.isDeepStudyStrict = it 
                         }
                     )
                 }
