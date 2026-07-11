@@ -1,4 +1,4 @@
-package com.rasel.RasFocus.combo.selfcontrol
+package com.rasel.pdfviewer.combo.selfcontrol
 
 import android.app.usage.UsageStatsManager
 import android.content.Context
@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
 import androidx.navigation.NavController
-import com.rasel.RasFocus.DataManager
+import com.rasel.pdfviewer.DataManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.Calendar
@@ -60,7 +60,7 @@ data class AppUsageStat(
 private val EXCLUDED_PACKAGES = setOf(
     "com.android.systemui", "com.android.launcher", "com.android.launcher3",
     "com.sec.android.app.launcher", "com.miui.home", "com.huawei.android.launcher",
-    "android", "com.android.settings", "com.rasel.RasFocus"
+    "android", "com.android.settings", "com.rasel.pdfviewer"
 )
 
 /**
