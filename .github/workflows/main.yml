@@ -31,13 +31,22 @@ jobs:
         with:
           cache-read-only: false
 
-      - name: Build Release APK
+      # FIX: app/build.gradle.kts declares light/full product flavors
+      # (mirroring RasFocus-final) — MuPDF itself is scoped to
+      # "fullImplementation" only. Plain `assembleRelease` with flavors
+      # declared becomes a lifecycle task that tries to build EVERY flavor's
+      # release variant, and the output path below (apk/release/*.apk)
+      # never matches the real flavor-qualified paths
+      # (apk/full/release/*.apk, apk/light/release/*.apk) either way.
+      # Building assembleFullRelease specifically — matching RasFocus-final's
+      # own working CI job — is what actually contains MuPDF.
+      - name: Build Full Release APK (with MuPDF)
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew assembleRelease --build-cache --parallel
+        run: ./gradlew assembleFullRelease --build-cache --parallel
 
       - name: Debug — list generated APKs
         run: find app/build/outputs/apk -name "*.apk" -print
@@ -45,8 +54,8 @@ jobs:
       - name: Upload APK as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PdfViewer-release
-          path: app/build/outputs/apk/release/*.apk
+          name: PdfViewer-full-release
+          path: app/build/outputs/apk/full/release/*.apk
           retention-days: 30
 
       - name: Publish to GitHub Release
@@ -54,7 +63,7 @@ jobs:
         with:
           tag_name: v1.0.${{ github.run_number }}
           name: PdfViewer v1.0.${{ github.run_number }}
-          files: app/build/outputs/apk/release/*.apk
+          files: app/build/outputs/apk/full/release/*.apk
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
