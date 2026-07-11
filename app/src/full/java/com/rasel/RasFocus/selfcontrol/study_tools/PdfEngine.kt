@@ -5,24 +5,9 @@ import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
 import android.os.ParcelFileDescriptor
 import android.util.Base64
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.tom_roush.pdfbox.pdmodel.PDDocument
@@ -46,6 +31,13 @@ import kotlin.math.roundToInt
 
 // ═════════════════════════════════════════════════════════════════════════════
 // STATE
+// FIX: the in-app PDF-viewing responsibility (page bitmaps, scroll position,
+// zoom) has moved to PdfViewerActivity.kt, which uses MuPDF fitz for accurate
+// rendering, working pinch-zoom pan, and a foundation for real text selection.
+// fileName/totalPages/fileSizeKb stay here — they're shared "loaded file"
+// info that Split and Compress also populate (via loadPdfForSplit /
+// loadPdfForCompress) to show the user what they just picked. currentPage
+// and zoomPct were viewer-only scroll/zoom state and are gone.
 // ═════════════════════════════════════════════════════════════════════════════
 data class PdfEngineState(
     val isReady:         Boolean = true,
@@ -53,11 +45,8 @@ data class PdfEngineState(
     val errorMsg:        String  = "",
     val operationResult: String  = "",
 
-    // viewer
     val fileName:    String = "",
     val totalPages:  Int    = 0,
-    val currentPage: Int    = 1,
-    val zoomPct:     Int    = 100,
     val fileSizeKb:  Int    = 0,
 )
 
@@ -108,28 +97,6 @@ class PdfEngineController {
 
     private val docs = EngineDocs()
 
-    // WPS-style: all pages as bitmaps list
-    private var viewerRenderer: PdfRenderer?           = null
-    private var viewerFd:       ParcelFileDescriptor?  = null
-    private var viewerFile:     File?                  = null
-
-    // All rendered pages stored here for LazyColumn display
-    internal val viewerPages = mutableStateListOf<Bitmap?>()
-
-    // One-shot scroll request for the viewer's LazyColumn. gotoPage() previously
-    // only updated state.currentPage (the page NUMBER shown in the top bar) but
-    // never told the LazyColumn to actually scroll — so Prev/Next changed the
-    // page indicator text while the visible page stayed put. This holds a
-    // (targetPageIndex, requestId) pair; requestId always increments so the
-    // viewer's LaunchedEffect fires even if the same page is requested twice in
-    // a row (a plain state-equality check wouldn't re-trigger for a repeat value).
-    internal var scrollRequest by mutableStateOf<Pair<Int, Int>?>(null)
-        private set
-    private var scrollRequestId = 0
-
-    // screen width in px (set from Composable)
-    internal var screenWidthPx: Int = 1080
-
     private fun setLoading(loading: Boolean) { state = state.copy(isLoading = loading) }
     private fun setError(msg: String)  { state = state.copy(isLoading = false, errorMsg = msg, operationResult = "error:$msg") }
     private fun setResult(result: String) { state = state.copy(isLoading = false, errorMsg = "", operationResult = result) }
@@ -137,56 +104,9 @@ class PdfEngineController {
     private fun b64ToBytes(b64: String): ByteArray = Base64.decode(b64, Base64.DEFAULT)
     private fun cacheFile(prefix: String): File = File.createTempFile(prefix, ".pdf", appContext.cacheDir)
 
-    // ───────────────────────────────────────────────────────────────────────
-    // PDF VIEWER — WPS-style: render ALL pages into bitmap list
-    // ───────────────────────────────────────────────────────────────────────
-    fun loadPdfInViewer(b64: String, name: String) {
-        setLoading(true)
-        scope.launch(Dispatchers.IO) {
-            try {
-                val bytes = b64ToBytes(b64)
-                closeViewer()
-
-                val file = cacheFile("viewer_")
-                FileOutputStream(file).use { it.write(bytes) }
-                viewerFile = file
-
-                val fd       = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
-                viewerFd     = fd
-                val renderer = PdfRenderer(fd)
-                viewerRenderer = renderer
-
-                val pageCount = renderer.pageCount
-
-                // Pre-fill list with nulls so LazyColumn has correct count immediately
-                withContext(Dispatchers.Main) {
-                    viewerPages.clear()
-                    repeat(pageCount) { viewerPages.add(null) }
-                    state = state.copy(
-                        isLoading = false,
-                        errorMsg  = "",
-                        fileName  = name,
-                        totalPages  = pageCount,
-                        currentPage = 1,
-                        zoomPct     = 100,
-                        fileSizeKb  = bytes.size / 1024,
-                        operationResult = ""
-                    )
-                }
-
-                // Render pages progressively (first page immediately, rest async)
-                for (i in 0 until pageCount) {
-                    val bmp = renderSinglePage(renderer, i, screenWidthPx)
-                    withContext(Dispatchers.Main) {
-                        if (i < viewerPages.size) viewerPages[i] = bmp
-                    }
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) { setError("PDF খোলা যায়নি: ${e.message}") }
-            }
-        }
-    }
-
+    // Used by pdfToImages() below to rasterize each page of a PDF into a
+    // bitmap for JPG export. (Previously also used by the in-app PDF viewer,
+    // which now lives in PdfViewerActivity.kt using MuPDF instead.)
     private fun renderSinglePage(renderer: PdfRenderer, pageIndex: Int, targetWidth: Int): Bitmap {
         val page       = renderer.openPage(pageIndex)
         val origWidth  = page.width.coerceAtLeast(1)
@@ -200,35 +120,6 @@ class PdfEngineController {
         page.render(bmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
         page.close()
         return bmp
-    }
-
-    fun gotoPage(pageIndex: Int) {
-        if (pageIndex in 0 until state.totalPages) {
-            state = state.copy(currentPage = pageIndex + 1)
-            scrollRequestId += 1
-            scrollRequest = pageIndex to scrollRequestId
-        }
-    }
-
-    fun zoomViewer(delta: Int) {
-        state = state.copy(zoomPct = (state.zoomPct + delta).coerceIn(50, 400))
-    }
-
-    fun updateCurrentPage(pageIndex: Int) {
-        if (pageIndex + 1 != state.currentPage) {
-            state = state.copy(currentPage = pageIndex + 1)
-        }
-    }
-
-    fun closeViewer() {
-        viewerRenderer?.runCatching { close() }
-        viewerFd?.runCatching { close() }
-        viewerFile?.runCatching { delete() }
-        viewerPages.forEach { it?.recycle() }
-        viewerPages.clear()
-        viewerRenderer = null
-        viewerFd       = null
-        viewerFile     = null
     }
 
     // ───────────────────────────────────────────────────────────────────────
@@ -614,7 +505,6 @@ class PdfEngineController {
     }
 
     fun release() {
-        closeViewer()
         docs.closeAll()
     }
 }
@@ -626,142 +516,9 @@ class PdfEngineController {
 @Composable
 fun PdfEngine(controller: PdfEngineController) {
     val context = LocalContext.current
-    val density = LocalDensity.current
     DisposableEffect(controller) {
         controller.appContext = context.applicationContext
         PDFBoxResourceLoader.init(context.applicationContext)
         onDispose { controller.release() }
-    }
-    // Pass real screen width to controller for correct bitmap sizing
-    BoxWithConstraints(Modifier) {
-        val widthPx = with(density) { maxWidth.toPx() }.toInt().coerceAtLeast(720)
-        LaunchedEffect(widthPx) { controller.screenWidthPx = widthPx }
-    }
-}
-
-/**
- * WPS-style viewer:
- * - Continuous vertical scroll through all pages (LazyColumn)
- * - Pinch-to-zoom on individual page
- * - Pages render progressively (null = placeholder)
- * - Correct aspect ratio per page
- */
-@Composable
-fun PdfViewerWebView(controller: PdfEngineController, modifier: Modifier = Modifier) {
-    val pages     = controller.viewerPages
-    val listState = rememberLazyListState()
-
-    // FIX: gotoPage() (called by the Prev/Next buttons) previously only updated
-    // the page-NUMBER shown in the top bar (engineState.currentPage) — nothing
-    // ever told this LazyColumn to actually scroll, so pressing Prev/Next moved
-    // the displayed number while the visible page stayed exactly where it was.
-    // This reacts to controller.scrollRequest (a (pageIndex, requestId) pair)
-    // and performs the real scroll. Keyed on the full pair, not just pageIndex,
-    // so a second tap that requests the same page again still re-triggers —
-    // requestId always increments even for a repeat page value.
-    LaunchedEffect(controller.scrollRequest) {
-        controller.scrollRequest?.let { (pageIndex, _) ->
-            listState.animateScrollToItem(pageIndex)
-        }
-    }
-
-    // Update current page indicator as user scrolls
-    val visibleIndex by remember {
-        derivedStateOf { listState.firstVisibleItemIndex }
-    }
-    LaunchedEffect(visibleIndex) {
-        controller.updateCurrentPage(visibleIndex)
-    }
-
-    LazyColumn(
-        state   = listState,
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color(0xFF111111)),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-        contentPadding      = PaddingValues(vertical = 4.dp)
-    ) {
-        itemsIndexed(pages) { _, bmp ->
-            if (bmp == null) {
-                // Placeholder while page renders
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(0.707f) // A4 ratio fallback
-                        .background(Color(0xFF1A1A1A)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    androidx.compose.material3.CircularProgressIndicator(
-                        modifier    = Modifier.size(28.dp),
-                        color       = Color(0xFF4FACFE),
-                        strokeWidth = 2.dp
-                    )
-                }
-            } else {
-                // Per-page pinch zoom
-                var scale   by remember { mutableStateOf(1f) }
-                var offsetX by remember { mutableStateOf(0f) }
-                var offsetY by remember { mutableStateOf(0f) }
-
-                // FIX: swiping up/down previously did nothing because
-                // detectTransformGestures ran on every page unconditionally and
-                // claims pointer input the moment it starts — a plain
-                // single-finger vertical drag was being consumed here as a pan
-                // gesture instead of ever reaching the parent LazyColumn's scroll.
-                // Checking pointer count *inside* detectTransformGestures's
-                // callback doesn't help either, since arbitration already
-                // happened by the time the callback runs.
-                // Fix: a custom detector using PointerEventPass.Initial, which
-                // runs BEFORE normal gesture arbitration. With fewer than 2
-                // pointers down, it does nothing and never calls consume() — the
-                // touch passes straight through untouched, so the LazyColumn is
-                // free to claim it as a scroll. Only once a second finger is down
-                // (an actual pinch) does this start tracking centroid pan and
-                // inter-finger distance for zoom. Works from any zoom level,
-                // including 100% — no need to zoom via button first.
-                val zoomModifier = Modifier.pointerInput(bmp) {
-                    awaitPointerEventScope {
-                        while (true) {
-                            val event = awaitPointerEvent(PointerEventPass.Initial)
-                            val down = event.changes.filter { it.pressed }
-                            if (down.size < 2) continue  // let the LazyColumn handle it
-
-                            val p1 = down[0]
-                            val p2 = down[1]
-                            val prevDist = (p1.previousPosition - p2.previousPosition).getDistance()
-                            val currDist = (p1.position - p2.position).getDistance()
-                            val prevCentroid = (p1.previousPosition + p2.previousPosition) / 2f
-                            val currCentroid = (p1.position + p2.position) / 2f
-
-                            if (prevDist > 0f) {
-                                val zoomFactor = currDist / prevDist
-                                scale = (scale * zoomFactor).coerceIn(1f, 4f)
-                            }
-                            offsetX += currCentroid.x - prevCentroid.x
-                            offsetY += currCentroid.y - prevCentroid.y
-                            if (scale == 1f) { offsetX = 0f; offsetY = 0f }
-
-                            event.changes.forEach { it.consume() }
-                        }
-                    }
-                }
-
-                Image(
-                    bitmap              = bmp.asImageBitmap(),
-                    contentDescription  = null,
-                    contentScale        = ContentScale.FillWidth,
-                    modifier            = Modifier
-                        .fillMaxWidth()
-                        .wrapContentHeight()
-                        .then(zoomModifier)
-                        .graphicsLayer(
-                            scaleX       = scale,
-                            scaleY       = scale,
-                            translationX = offsetX,
-                            translationY = offsetY
-                        )
-                )
-            }
-        }
     }
 }

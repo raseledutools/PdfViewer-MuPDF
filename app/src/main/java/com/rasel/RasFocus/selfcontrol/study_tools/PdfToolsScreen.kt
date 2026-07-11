@@ -122,10 +122,20 @@ private val BOTTOM_TOOLS = listOf(
     QuickTool("Compress",       "🗜️", PdfScreen.COMPRESS,  T_YELLOW, "pdf_compress"),
     QuickTool("Image\nResize",  "📐", PdfScreen.RESIZE,    T_PURPLE, "img_resize"),
     QuickTool("PDF\nMerge",     "🔀", PdfScreen.MERGE,     T_GREEN,  ""),
-    QuickTool("Calculator", "🔢", PdfScreen.CALCULATOR, T_BLUE,   "calculator"),
 )
 
-private val ALL_TOOLS = TOP_TOOLS + BOTTOM_TOOLS
+// FIX: Calculator was appended as a 5th item into BOTTOM_TOOLS, but that
+// row's layout (Row + Modifier.weight(1f) per item, see the "2 rows × 4"
+// grid below) was built for exactly 4 columns. A 5th weighted item in the
+// same Row squeezed every cell narrower, so the fixed 52.dp icon box +
+// label no longer fit and got clipped/overlapped — the calculator LOOKED
+// missing even though it was wired up correctly. Moving it into its own
+// row keeps every row at 4 columns, same as the existing design.
+private val THIRD_ROW_TOOLS = listOf(
+    QuickTool("Calculator", "🔢", PdfScreen.CALCULATOR, T_BLUE, "calculator"),
+)
+
+private val ALL_TOOLS = TOP_TOOLS + BOTTOM_TOOLS + THIRD_ROW_TOOLS
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ROOT SCREEN
@@ -242,6 +252,20 @@ fun PdfToolsScreen(onBack: () -> Unit = {}) {
         }
     }
 
+    // PDF viewing now opens PdfViewerActivity (MuPDF) directly by URI — no
+    // base64 round-trip needed, since the Activity reads the URI itself.
+    val viewerPdfPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri ?: return@rememberLauncherForActivityResult
+        val name = getFileName(context, uri)
+        addRecent(name, "pdf", "")
+        val intent = android.content.Intent(context, PdfViewerActivity::class.java).apply {
+            action = android.content.Intent.ACTION_VIEW
+            setDataAndType(uri, "application/pdf")
+            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(intent)
+    }
+
     fun pickPdf(cb: (String, String) -> Unit)            { pendingPdfCallback = cb; singlePdfPicker.launch(arrayOf("application/pdf")) }
     fun pickImg(cb: (String, String) -> Unit)            { pendingImgsCallback = { list -> cb(list[0].first, list[0].second) }; singleImgPicker.launch(arrayOf("image/*")) }
     fun pickMultiPdf(cb: (List<Pair<String,String>>) -> Unit) { pendingImgsCallback = cb; multiDocPicker.launch(arrayOf("application/pdf")) }
@@ -278,15 +302,15 @@ fun PdfToolsScreen(onBack: () -> Unit = {}) {
                     },
                     onBack      = onBack,
                 )
-                PdfScreen.VIEWER -> PdfViewerScreen(
-                    controller  = controller,
-                    engineState = engineState,
-                    onPickPdf   = { pickPdf { b64, name ->
-                        addRecent(name, "pdf", "${b64.length * 3 / 4 / 1024} KB")
-                        controller.loadPdfInViewer(b64, name)
-                    }},
-                    onBack = { screen = PdfScreen.HOME }
-                )
+                PdfScreen.VIEWER -> {
+                    // Opening the viewer is now a one-shot action (launch the
+                    // picker, then PdfViewerActivity), not a screen to sit on
+                    // — so bounce straight back to HOME underneath it.
+                    LaunchedEffect(Unit) {
+                        viewerPdfPicker.launch(arrayOf("application/pdf"))
+                        screen = PdfScreen.HOME
+                    }
+                }
                 PdfScreen.MERGE -> MergeScreen(
                     controller  = controller,
                     engineState = engineState,
@@ -450,6 +474,28 @@ private fun HomeScreen(
                                 modifier    = Modifier.weight(1f)
                             )
                         }
+                    }
+
+                    Spacer(Modifier.height(4.dp))
+
+                    // Row 3 — Calculator (kept in its own row so every row
+                    // stays at 4 columns; see THIRD_ROW_TOOLS comment above)
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        THIRD_ROW_TOOLS.forEach { tool ->
+                            WpsToolCell(
+                                tool        = tool,
+                                onClick     = { onToolClick(tool.screen) },
+                                onLongClick = { if (tool.shortcutId.isNotEmpty()) shortcutTarget = tool },
+                                modifier    = Modifier.weight(1f)
+                            )
+                        }
+                        // Pad the remaining 3 slots so the calculator cell
+                        // stays the same size/position as the rows above
+                        // instead of stretching to fill the whole width.
+                        repeat(3) { Spacer(Modifier.weight(1f)) }
                     }
                 }
 
@@ -769,134 +815,6 @@ private fun WpsBottomNav(active: HomeTab, onChange: (HomeTab) -> Unit, modifier:
                     color      = if (isActive) INDIGO2 else MUTED,
                     fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal
                 )
-            }
-        }
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// PDF VIEWER SCREEN  — WPS style
-// Full page, tap = show/hide controls, scroll = auto-hide controls
-// ─────────────────────────────────────────────────────────────────────────────
-@Composable
-private fun PdfViewerScreen(
-    controller:  PdfEngineController,
-    engineState: PdfEngineState,
-    onPickPdf:   ((String, String) -> Unit) -> Unit,
-    onBack:      () -> Unit,
-) {
-    var controlsVisible by remember { mutableStateOf(true) }
-
-    // Auto-hide controls while scrolling
-    var lastPage by remember { mutableStateOf(engineState.currentPage) }
-    LaunchedEffect(engineState.currentPage) {
-        if (engineState.currentPage != lastPage && engineState.totalPages > 0) {
-            controlsVisible = false
-            lastPage = engineState.currentPage
-        }
-    }
-
-    Box(Modifier.fillMaxSize().background(Color(0xFF111111))) {
-
-        if (engineState.totalPages == 0) {
-            // ── Empty state ───────────────────────────────────────────────────
-            Column(
-                Modifier
-                    .fillMaxSize()
-                    .background(BG)
-                    .padding(32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Box(
-                    Modifier
-                        .size(80.dp)
-                        .background(T_RED.copy(0.12f), RoundedCornerShape(20.dp))
-                        .border(1.dp, T_RED.copy(0.25f), RoundedCornerShape(20.dp)),
-                    contentAlignment = Alignment.Center
-                ) { Text("📄", fontSize = 36.sp) }
-
-                Spacer(Modifier.height(20.dp))
-                Text("PDF ফাইল খুলুন", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = WHITE)
-                Spacer(Modifier.height(6.dp))
-                Text("Pinch to zoom  ·  Swipe to scroll", fontSize = 11.sp, color = MUTED)
-                Spacer(Modifier.height(28.dp))
-
-                GradientButton(
-                    text    = "📂  Select PDF",
-                    brush   = RedGrad,
-                    onClick = { onPickPdf { b64, name -> controller.loadPdfInViewer(b64, name) } }
-                )
-                Spacer(Modifier.height(10.dp))
-                OutlinedButton(
-                    onClick  = onBack,
-                    modifier = Modifier.fillMaxWidth().height(44.dp),
-                    shape    = RoundedCornerShape(12.dp),
-                    border   = BorderStroke(1.dp, BORDER)
-                ) {
-                    Text("← Back", fontSize = 12.sp, color = MUTED)
-                }
-            }
-
-        } else {
-            // ── Full-screen page view ─────────────────────────────────────────
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .clickable(
-                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                        indication = null
-                    ) { controlsVisible = !controlsVisible }
-            ) {
-                PdfViewerWebView(controller = controller, modifier = Modifier.fillMaxSize())
-            }
-
-            // ── Floating top bar (WPS: filename + page number + open icon) ────
-            AnimatedVisibility(
-                visible  = controlsVisible,
-                enter    = slideInVertically { -it } + fadeIn(),
-                exit     = slideOutVertically { -it } + fadeOut(),
-                modifier = Modifier.align(Alignment.TopCenter)
-            ) {
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .background(BG.copy(0.93f))
-                        .padding(horizontal = 6.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
-                        Icon(Icons.Default.ArrowBack, "Back", tint = WHITE, modifier = Modifier.size(22.dp))
-                    }
-                    Column(Modifier.weight(1f).padding(start = 2.dp)) {
-                        Text(
-                            engineState.fileName.ifBlank { "PDF Viewer" },
-                            fontSize   = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            color      = WHITE,
-                            maxLines   = 1,
-                            overflow   = TextOverflow.Ellipsis
-                        )
-                    }
-                    Spacer(Modifier.width(4.dp))
-                    IconButton(
-                        onClick  = { onPickPdf { b64, name -> controller.loadPdfInViewer(b64, name) } },
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Icon(Icons.Default.FolderOpen, "Open", tint = INDIGO2, modifier = Modifier.size(20.dp))
-                    }
-                }
-            }
-
-            // Loading spinner
-            if (engineState.isLoading) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(
-                        modifier    = Modifier.size(42.dp),
-                        color       = INDIGO2,
-                        strokeWidth = 2.5.dp
-                    )
-                }
             }
         }
     }
