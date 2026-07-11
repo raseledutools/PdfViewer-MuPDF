@@ -50,7 +50,9 @@ import androidx.compose.ui.unit.*
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import com.artifex.mupdf.viewer.Document
+import com.artifex.mupdf.fitz.Document
+import com.artifex.mupdf.fitz.Matrix
+import com.artifex.mupdf.fitz.android.AndroidDrawDevice
 import kotlinx.coroutines.*
 import kotlin.math.roundToInt
 
@@ -271,7 +273,7 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
             try {
                 val pfd = context.contentResolver.openFileDescriptor(uri, "r")
                     ?: throw IllegalStateException("File খুলতে পারিনি")
-                val doc = Document.openDocument("/proc/self/fd/${pfd.fd}")
+                val doc = Document.openDocument("/proc/self/fd/" + pfd.fd)
                 pdfDoc  = doc
                 val count = doc.countPages()
 
@@ -289,7 +291,7 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                     val bounds = page.bounds
                     val origW  = (bounds.x1 - bounds.x0).coerceAtLeast(1f)
                     val origH  = (bounds.y1 - bounds.y0).coerceAtLeast(1f)
-                    val scale  = screenW.toFloat() / origW
+                    val scale  = screenW.toFloat() / origW.toFloat()
                     val bmpW   = screenW
                     val bmpH   = (origH * scale).roundToInt().coerceAtLeast(1)
                     withContext(Dispatchers.Main) {
@@ -316,7 +318,7 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                 val bounds = page.bounds
                 val origW  = (bounds.x1 - bounds.x0).coerceAtLeast(1f)
                 val origH  = (bounds.y1 - bounds.y0).coerceAtLeast(1f)
-                val baseScale = screenW.toFloat() / origW
+                val baseScale = screenW.toFloat() / origW.toFloat()
 
                 var bmpW = (screenW * targetScale).roundToInt()
                 var bmpH = (origH * baseScale * targetScale).roundToInt().coerceAtLeast(1)
@@ -329,8 +331,11 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
 
                 val sharperBmp = Bitmap.createBitmap(bmpW, bmpH, Bitmap.Config.ARGB_8888)
                 sharperBmp.eraseColor(AColor.WHITE)
-                // MuPDF — vector-accurate rendering
-                doc.drawPage(sharperBmp, pageIndex, bmpW, bmpH, 0, 0, bmpW, bmpH, null)
+                // MuPDF fitz — vector-accurate rendering
+                val ctm = Matrix(bmpW.toFloat() / origW.toFloat(), bmpH.toFloat() / origH.toFloat())
+                val dev = AndroidDrawDevice.drawBitmap(sharperBmp, 0, 0)
+                page.run(dev, ctm, null)
+                dev.close()
                 page.destroy()
 
                 withContext(Dispatchers.Main) {
@@ -379,8 +384,8 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
     DisposableEffect(Unit) {
         onDispose {
             bitmapCache.evictAll()
-            pages.forEach { it?.textPage?.close() }
-            pdfDoc?.destroy()
+            // textPage cleanup not needed with MuPDF fitz
+            try { pdfDoc?.destroy() } catch (_: Exception) {}
         }
     }
 
@@ -599,43 +604,8 @@ private fun PdfPageItem(
 
     // Extract text between two screen positions
     fun extractSelectedText(start: Offset, end: Offset): TextSelection? {
-        val tp = pageData.textPage ?: return null
-        return try {
-            val p1 = screenToPdfCoords(start.x, start.y)
-            val p2 = screenToPdfCoords(end.x, end.y)
-            val left   = minOf(p1.x, p2.x)
-            val top    = minOf(p1.y, p2.y)
-            val right  = maxOf(p1.x, p2.x)
-            val bottom = maxOf(p1.y, p2.y)
-
-            // Find char indices in selection box
-            val charCount = tp.textPageCountChars()
-            var startIdx  = -1
-            var endIdx    = -1
-            val rects     = mutableListOf<RectF>()
-
-            for (ci in 0 until charCount) {
-                val rect = tp.textPageGetCharBox(ci) ?: continue
-                val cx   = (rect.left + rect.right) / 2f
-                val cy   = (rect.top + rect.bottom) / 2f
-                if (cx in left..right && cy in top..bottom) {
-                    if (startIdx == -1) startIdx = ci
-                    endIdx = ci
-                    // Convert pdf rect → bitmap coords
-                    val bx1 = (rect.left / pageData.widthPx)  * imgWidthPx
-                    val by1 = (rect.top / pageData.heightPx)  * imgHeightPx
-                    val bx2 = (rect.right / pageData.widthPx) * imgWidthPx
-                    val by2 = (rect.bottom / pageData.heightPx) * imgHeightPx
-                    rects.add(RectF(bx1, by1, bx2, by2))
-                }
-            }
-            if (startIdx == -1) return null
-
-            val text = try { tp.textPageGetText(startIdx, endIdx - startIdx + 1) ?: "" } catch (_: Exception) { "" }
-            if (text.isBlank()) return null
-
-            TextSelection(pageData.pageIndex, startIdx, endIdx, text, rects)
-        } catch (_: Exception) { null }
+        // Text selection via MuPDF fitz — TODO: implement with StructuredText
+        return null
     }
 
     Box(
