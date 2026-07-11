@@ -1,4 +1,4 @@
-package com.rasel.pdfviewer.combo.selfcontrol
+package com.rasel.RasFocus.combo.selfcontrol
 
 // ============================================================
 // UnifiedBlockerService.kt
@@ -28,7 +28,7 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.TextView
 import androidx.core.app.NotificationCompat
-import com.rasel.pdfviewer.DataManager
+import com.rasel.RasFocus.DataManager
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -1412,7 +1412,7 @@ class UnifiedBlockerService : AccessibilityService() {
         val browserIntent = PendingIntent.getActivity(
             this, 10,
             Intent(this, Class.forName(
-                "com.rasel.pdfviewer.selfcontrol.familybrowser.FamilyBrowserActivity"
+                "com.rasel.RasFocus.selfcontrol.familybrowser.FamilyBrowserActivity"
             )).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
                 action = Intent.ACTION_MAIN
