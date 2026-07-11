@@ -9,7 +9,7 @@
 //  D. Settings UI (Compose)
 // ============================================================
 
-package com.rasel.RasFocus.combo.selfcontrol
+package com.rasel.pdfviewer.combo.selfcontrol
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
@@ -60,7 +60,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import android.provider.Settings
 import android.app.Activity
 import android.content.Intent
-import com.rasel.RasFocus.R
+import com.rasel.pdfviewer.R
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
 
@@ -397,7 +397,7 @@ class RasFocusBlockingService : AccessibilityService() {
         event ?: return
         val pkg0 = event.packageName?.toString() ?: return
 
-        if (pkg0 == "com.rasel.RasFocus" ||
+        if (pkg0 == "com.rasel.pdfviewer" ||
             pkg0 == "com.rasfocus" ||
             pkg0 == "android" ||
             pkg0 == "com.android.systemui" ||
@@ -508,7 +508,7 @@ class RasFocusBlockingService : AccessibilityService() {
     fun checkCurrentWindow() {
         val root = rootInActiveWindow ?: return
         val pkg = root.packageName?.toString() ?: run { root.recycle(); return }
-        if (pkg == "com.rasel.RasFocus" || pkg == "android" ||
+        if (pkg == "com.rasel.pdfviewer" || pkg == "android" ||
             pkg == "com.android.systemui" || pkg == "com.samsung.android.systemui") {
             root.recycle(); return
         }
@@ -1922,7 +1922,7 @@ fun ExtremeBlockScreen() {
     var blockFbVideo     by remember { mutableStateOf(prefs.blockFbVideo) }
 
     val dpm = remember { ctx.getSystemService(android.content.Context.DEVICE_POLICY_SERVICE) as android.app.admin.DevicePolicyManager }
-    val adminComponent = remember { android.content.ComponentName(ctx, com.rasel.RasFocus.features.MyDeviceAdminReceiver::class.java) }
+    val adminComponent = remember { android.content.ComponentName(ctx, com.rasel.pdfviewer.features.MyDeviceAdminReceiver::class.java) }
     fun isAdminActive() = dpm.isAdminActive(adminComponent)
     fun isAccessibilityActive(): Boolean {
         val fullName = "${ctx.packageName}/.selfcontrol.RasFocusBlockingService"
@@ -2362,7 +2362,7 @@ fun FocusLockSetupDialog(prefs: BlockerPrefs, onDismiss: () -> Unit, onActivated
                     val modes = listOf(ModeItem("self", "⏱", "Self Mode", "Set day / hour / minute"), ModeItem("parents", "🔐", "Parents Mode", "Password protected lock"), ModeItem("longtext", "📝", "Long Text Mode", "Unlock by typing 100 words"))
                     modes.forEach { modeItem ->
                         val sel = selectedMode == modeItem.code
-                        Box(modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp).background(if (sel) ACCENT.copy(0.1f) else com.rasel.RasFocus.ui.theme.RasFocusTheme.colors.surfaceVariant, RoundedCornerShape(12.dp)).border(1.5.dp, if (sel) ACCENT else Color(0xFF2A3040), RoundedCornerShape(12.dp)).clickable { selectedMode = modeItem.code }.padding(14.dp)) {
+                        Box(modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp).background(if (sel) ACCENT.copy(0.1f) else com.rasel.pdfviewer.ui.theme.RasFocusTheme.colors.surfaceVariant, RoundedCornerShape(12.dp)).border(1.5.dp, if (sel) ACCENT else Color(0xFF2A3040), RoundedCornerShape(12.dp)).clickable { selectedMode = modeItem.code }.padding(14.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(text = modeItem.icon, fontSize = 22.sp); Spacer(Modifier.width(12.dp))
                                 Column { Text(text = modeItem.title, color = if (sel) ACCENT else TEXT_PRIMARY, fontSize = 14.sp, fontWeight = FontWeight.SemiBold); Text(text = modeItem.sub, color = TEXT_SEC, fontSize = 11.sp) }
@@ -2461,7 +2461,7 @@ fun FocusLockUnlockDialog(prefs: BlockerPrefs, onDismiss: () -> Unit, onUnlocked
                         Text("Type the full passage below ($requiredWordCount words):", color = TEXT_SEC, fontSize = 11.sp); Spacer(Modifier.height(8.dp))
                         Box(modifier = Modifier.fillMaxWidth().background(Color(0xFF0D1117), RoundedCornerShape(10.dp)).border(1.dp, ACCENT.copy(0.3f), RoundedCornerShape(10.dp)).padding(10.dp).heightIn(max = 120.dp)) { Text(requiredText, color = TEXT_SEC, fontSize = 10.sp, lineHeight = 15.sp) }
                         Spacer(Modifier.height(8.dp))
-                        Box(modifier = Modifier.fillMaxWidth().background(com.rasel.RasFocus.ui.theme.RasFocusTheme.colors.surface, RoundedCornerShape(10.dp)).border(1.dp, if (inputWordCount >= requiredWordCount) ACCENT else Color(0xFF2A3040), RoundedCornerShape(10.dp)).padding(10.dp).heightIn(min = 80.dp, max = 140.dp)) {
+                        Box(modifier = Modifier.fillMaxWidth().background(com.rasel.pdfviewer.ui.theme.RasFocusTheme.colors.surface, RoundedCornerShape(10.dp)).border(1.dp, if (inputWordCount >= requiredWordCount) ACCENT else Color(0xFF2A3040), RoundedCornerShape(10.dp)).padding(10.dp).heightIn(min = 80.dp, max = 140.dp)) {
                             BasicTextField(value = textInput, onValueChange = { textInput = it }, textStyle = TextStyle(color = TEXT_PRIMARY, fontSize = 12.sp, lineHeight = 18.sp), modifier = Modifier.fillMaxWidth(), decorationBox = { inner -> if (textInput.isEmpty()) Text("Type here...", color = TEXT_SEC, fontSize = 12.sp); inner() })
                         }
                         Spacer(Modifier.height(6.dp))
@@ -2488,14 +2488,14 @@ fun FocusDialogButton(label: String, enabled: Boolean, modifier: Modifier = Modi
 
 @Composable
 fun FocusPasswordField(value: String, placeholder: String, onValueChange: (String) -> Unit) {
-    Box(modifier = Modifier.fillMaxWidth().background(com.rasel.RasFocus.ui.theme.RasFocusTheme.colors.surface, RoundedCornerShape(10.dp)).border(1.dp, Color(0xFF2A3040), RoundedCornerShape(10.dp)).padding(horizontal = 14.dp, vertical = 12.dp)) {
+    Box(modifier = Modifier.fillMaxWidth().background(com.rasel.pdfviewer.ui.theme.RasFocusTheme.colors.surface, RoundedCornerShape(10.dp)).border(1.dp, Color(0xFF2A3040), RoundedCornerShape(10.dp)).padding(horizontal = 14.dp, vertical = 12.dp)) {
         BasicTextField(value = value, onValueChange = onValueChange, textStyle = TextStyle(color = TEXT_PRIMARY, fontSize = 14.sp), modifier = Modifier.fillMaxWidth(), decorationBox = { inner -> if (value.isEmpty()) Text(placeholder, color = TEXT_SEC, fontSize = 14.sp); inner() })
     }
 }
 
 @Composable
 fun FocusNumberPicker(label: String, value: Int, min: Int, max: Int, onValueChange: (Int) -> Unit, modifier: Modifier = Modifier) {
-    Column(modifier = modifier.background(com.rasel.RasFocus.ui.theme.RasFocusTheme.colors.surfaceVariant, RoundedCornerShape(12.dp)).border(1.dp, DIVIDER, RoundedCornerShape(12.dp)).padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(modifier = modifier.background(com.rasel.pdfviewer.ui.theme.RasFocusTheme.colors.surfaceVariant, RoundedCornerShape(12.dp)).border(1.dp, DIVIDER, RoundedCornerShape(12.dp)).padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(label, color = TEXT_SEC, fontSize = 10.sp, letterSpacing = 0.5.sp); Spacer(Modifier.height(6.dp))
         Box(modifier = Modifier.size(32.dp).background(Color(0xFF1E2330), CircleShape).clickable { if (value < max) onValueChange(value + 1) }, contentAlignment = Alignment.Center) { Text("▲", color = ACCENT, fontSize = 10.sp) }
         Spacer(Modifier.height(4.dp))
