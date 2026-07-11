@@ -1,4 +1,4 @@
-package com.rasel.pdfviewer.combo.selfcontrol
+package com.rasel.RasFocus.combo.selfcontrol
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
@@ -80,13 +80,13 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.draw.alpha
-import com.rasel.pdfviewer.ui.theme.SoftWhite
+import com.rasel.RasFocus.ui.theme.SoftWhite
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.*
-import com.rasel.pdfviewer.combo.selfcontrol.familybrowser.FamilyBrowserActivity
+import com.rasel.RasFocus.combo.selfcontrol.familybrowser.FamilyBrowserActivity
 
 private val PrimaryBlue    = Color(0xFF4A6FE3)
 private val DarkBlue       = Color(0xFF2E4BC6)
@@ -559,7 +559,7 @@ fun TopHeader(navController: NavController? = null, onMenuClick: () -> Unit = {}
             Spacer(Modifier.height(16.dp))
             PremiumFeatureWrapper(
                 featureName = "Study Tools",
-                onClick = { val intent = Intent(context, com.rasel.pdfviewer.selfcontrol.StudyToolsActivity::class.java); intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); context.startActivity(intent) }
+                onClick = { val intent = Intent(context, com.rasel.RasFocus.selfcontrol.StudyToolsActivity::class.java); intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); context.startActivity(intent) }
             ) {
                 StudyToolsCard(context)
             }
@@ -572,7 +572,7 @@ fun TopHeader(navController: NavController? = null, onMenuClick: () -> Unit = {}
 // ─────────────────────────────────────────────────────────────────────────────
 @Composable
 fun StudyToolsCard(context: Context) {
-    com.rasel.pdfviewer.ui.theme.PremiumCard(Modifier.fillMaxWidth().padding(horizontal = 20.dp), onClick = { val intent = Intent(context, com.rasel.pdfviewer.selfcontrol.StudyToolsActivity::class.java); intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); context.startActivity(intent) }) {
+    com.rasel.RasFocus.ui.theme.PremiumCard(Modifier.fillMaxWidth().padding(horizontal = 20.dp), onClick = { val intent = Intent(context, com.rasel.RasFocus.selfcontrol.StudyToolsActivity::class.java); intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); context.startActivity(intent) }) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -811,8 +811,8 @@ fun AnalyticsSection(navController: NavController? = null) {
 
 @Composable
 fun AnalyticsCard(modifier: Modifier, icon: String, label: String, value: String, change: String, positive: Boolean) {
-    com.rasel.pdfviewer.ui.theme.PremiumCard(modifier) {
-        Box(Modifier.fillMaxWidth().background(Brush.horizontalGradient(listOf(com.rasel.pdfviewer.ui.theme.RasFocusTheme.colors.primary, com.rasel.pdfviewer.ui.theme.RasFocusTheme.colors.primary.copy(alpha = 0.8f)))).padding(16.dp)) {
+    com.rasel.RasFocus.ui.theme.PremiumCard(modifier) {
+        Box(Modifier.fillMaxWidth().background(Brush.horizontalGradient(listOf(com.rasel.RasFocus.ui.theme.RasFocusTheme.colors.primary, com.rasel.RasFocus.ui.theme.RasFocusTheme.colors.primary.copy(alpha = 0.8f)))).padding(16.dp)) {
             Column {
                 Text(icon, fontSize = 24.sp)
                 Spacer(Modifier.height(8.dp))
@@ -1158,7 +1158,7 @@ fun FamilyBrowserCard(context: Context) {
     val gradientStart = Color(0xFF0D47A1)
     val gradientEnd   = Color(0xFF1565C0)
 
-    com.rasel.pdfviewer.ui.theme.PremiumCard(Modifier.fillMaxWidth().padding(horizontal = 20.dp), onClick = { showChooser = true }) {
+    com.rasel.RasFocus.ui.theme.PremiumCard(Modifier.fillMaxWidth().padding(horizontal = 20.dp), onClick = { showChooser = true }) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1273,7 +1273,7 @@ fun pinHomeScreenShortcuts(context: Context) {
         .build()
     androidx.core.content.pm.ShortcutManagerCompat.requestPinShortcut(context, rasBrowserShortcut, null)
 
-    val youtubeIntent = Intent(context, com.rasel.pdfviewer.selfcontrol.familybrowser.YoutubeActivity::class.java).apply {
+    val youtubeIntent = Intent(context, com.rasel.RasFocus.selfcontrol.familybrowser.YoutubeActivity::class.java).apply {
         action = Intent.ACTION_MAIN
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
@@ -1285,7 +1285,7 @@ fun pinHomeScreenShortcuts(context: Context) {
         .build()
     androidx.core.content.pm.ShortcutManagerCompat.requestPinShortcut(context, youtubeShortcut, null)
 
-    val facebookIntent = Intent(context, com.rasel.pdfviewer.selfcontrol.familybrowser.FacebookActivity::class.java).apply {
+    val facebookIntent = Intent(context, com.rasel.RasFocus.selfcontrol.familybrowser.FacebookActivity::class.java).apply {
         action = Intent.ACTION_MAIN
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
@@ -1364,7 +1364,7 @@ fun BrowserChooserDialog(context: Context, onDismiss: () -> Unit) {
                     title = "YouTube Premium",
                     onLaunch = {
                         onDismiss()
-                        val intent = Intent(context, com.rasel.pdfviewer.selfcontrol.familybrowser.YoutubeActivity::class.java).apply {
+                        val intent = Intent(context, com.rasel.RasFocus.selfcontrol.familybrowser.YoutubeActivity::class.java).apply {
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         }
                         context.startActivity(intent)
@@ -1380,7 +1380,7 @@ fun BrowserChooserDialog(context: Context, onDismiss: () -> Unit) {
                     title = "Facebook",
                     onLaunch = {
                         onDismiss()
-                        val intent = Intent(context, com.rasel.pdfviewer.selfcontrol.familybrowser.FacebookActivity::class.java).apply {
+                        val intent = Intent(context, com.rasel.RasFocus.selfcontrol.familybrowser.FacebookActivity::class.java).apply {
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         }
                         context.startActivity(intent)
@@ -1407,7 +1407,7 @@ fun ExtremBlockCard(onClick: () -> Unit) {
     val gradientStart = Color(0xFF7B0000)
     val gradientEnd   = Color(0xFFB71C1C)
 
-    com.rasel.pdfviewer.ui.theme.PremiumCard(Modifier.fillMaxWidth().padding(horizontal = 20.dp), onClick = onClick) {
+    com.rasel.RasFocus.ui.theme.PremiumCard(Modifier.fillMaxWidth().padding(horizontal = 20.dp), onClick = onClick) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1487,7 +1487,7 @@ fun BlockingPlanCard(navController: NavController) {
     val gradientStart = Color(0xFF1565C0)
     val gradientEnd   = Color(0xFF0D47A1)
 
-    com.rasel.pdfviewer.ui.theme.PremiumCard(Modifier.fillMaxWidth().padding(horizontal = 20.dp), onClick = { navController.navigate("blocking_plan") }) {
+    com.rasel.RasFocus.ui.theme.PremiumCard(Modifier.fillMaxWidth().padding(horizontal = 20.dp), onClick = { navController.navigate("blocking_plan") }) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1555,7 +1555,7 @@ fun TakeRestCard() {
     val gradientStart = Color(0xFF1A237E)
     val gradientEnd   = Color(0xFF3949AB)
 
-    com.rasel.pdfviewer.ui.theme.PremiumCard(Modifier.fillMaxWidth().padding(horizontal = 20.dp), onClick = { val intent = Intent(context, com.rasel.pdfviewer.selfcontrol.TakeRestActivity::class.java); intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); context.startActivity(intent) }) {
+    com.rasel.RasFocus.ui.theme.PremiumCard(Modifier.fillMaxWidth().padding(horizontal = 20.dp), onClick = { val intent = Intent(context, com.rasel.RasFocus.selfcontrol.TakeRestActivity::class.java); intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); context.startActivity(intent) }) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1716,7 +1716,7 @@ fun DomainListSheet(context: Context, mode: String, onDismiss: () -> Unit) {
     var newDomain by remember { mutableStateOf("") }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Surface(modifier = Modifier.fillMaxSize(), color = com.rasel.pdfviewer.ui.theme.RasFocusTheme.colors.surface) {
+        Surface(modifier = Modifier.fillMaxSize(), color = com.rasel.RasFocus.ui.theme.RasFocusTheme.colors.surface) {
             Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = onDismiss) {
@@ -1800,7 +1800,7 @@ fun ToggleLockModeSheet(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Surface(modifier = Modifier.fillMaxSize(), color = com.rasel.pdfviewer.ui.theme.RasFocusTheme.colors.surface) {
+        Surface(modifier = Modifier.fillMaxSize(), color = com.rasel.RasFocus.ui.theme.RasFocusTheme.colors.surface) {
             Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = onDismiss) {
@@ -2391,7 +2391,7 @@ fun pinSingleHomeShortcut(context: Context, appType: String) {
             androidx.core.content.pm.ShortcutManagerCompat.requestPinShortcut(context, rasBrowserShortcut, null)
         }
         "YouTube" -> {
-            val youtubeIntent = Intent(context, com.rasel.pdfviewer.selfcontrol.familybrowser.YoutubeActivity::class.java).apply {
+            val youtubeIntent = Intent(context, com.rasel.RasFocus.selfcontrol.familybrowser.YoutubeActivity::class.java).apply {
                 action = Intent.ACTION_MAIN
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
@@ -2404,7 +2404,7 @@ fun pinSingleHomeShortcut(context: Context, appType: String) {
             androidx.core.content.pm.ShortcutManagerCompat.requestPinShortcut(context, youtubeShortcut, null)
         }
         "Facebook" -> {
-            val facebookIntent = Intent(context, com.rasel.pdfviewer.selfcontrol.familybrowser.FacebookActivity::class.java).apply {
+            val facebookIntent = Intent(context, com.rasel.RasFocus.selfcontrol.familybrowser.FacebookActivity::class.java).apply {
                 action = Intent.ACTION_MAIN
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
