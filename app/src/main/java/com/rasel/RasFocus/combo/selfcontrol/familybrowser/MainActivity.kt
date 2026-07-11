@@ -1,4 +1,4 @@
-package com.rasel.RasFocus.combo.selfcontrol.familybrowser
+package com.rasel.pdfviewer.combo.selfcontrol.familybrowser
 
 /**
  * ============================================================
@@ -146,7 +146,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
-import com.rasel.RasFocus.R
+import com.rasel.pdfviewer.R
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.webkit.WebSettingsCompat
 import androidx.webkit.WebViewFeature
@@ -493,13 +493,13 @@ class FamilyBrowserActivity : ComponentActivity() {
                 """.trimIndent(), null)
 
                 // ── KEY: actual WebView pass করো — service নতুন বানাবে না, reload নেই ──
-                com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService
+                com.rasel.pdfviewer.selfcontrol.familybrowser.service.YoutubeFloatingWindowService
                     .pendingWebView = activeWebView
 
-                com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService
+                com.rasel.pdfviewer.selfcontrol.familybrowser.service.YoutubeFloatingWindowService
                     .launchNoReload(this, activeUrl, activeTitle.ifEmpty { "YouTube" })
             } else {
-                com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService
+                com.rasel.pdfviewer.selfcontrol.familybrowser.service.YoutubeFloatingWindowService
                     .launch(this, activeUrl, activeTitle.ifEmpty { "YouTube" })
             }
         } else {
@@ -700,9 +700,9 @@ class FamilyBrowserActivity : ComponentActivity() {
 
 
     private fun startBgAudioService() {
-        val svc = Intent(this, com.rasel.RasFocus.selfcontrol.familybrowser.service.BackgroundAudioService::class.java).apply {
+        val svc = Intent(this, com.rasel.pdfviewer.selfcontrol.familybrowser.service.BackgroundAudioService::class.java).apply {
             putExtra(
-                com.rasel.RasFocus.selfcontrol.familybrowser.service.BackgroundAudioService.EXTRA_TITLE,
+                com.rasel.pdfviewer.selfcontrol.familybrowser.service.BackgroundAudioService.EXTRA_TITLE,
                 "Playing in background"
             )
         }
@@ -714,7 +714,7 @@ class FamilyBrowserActivity : ComponentActivity() {
 
     private fun stopBgAudioService() {
         try {
-            stopService(Intent(this, com.rasel.RasFocus.selfcontrol.familybrowser.service.BackgroundAudioService::class.java))
+            stopService(Intent(this, com.rasel.pdfviewer.selfcontrol.familybrowser.service.BackgroundAudioService::class.java))
         } catch (_: Exception) {}
     }
 }
@@ -820,7 +820,7 @@ fun BrowserScaffold(vm: BrowserViewModel) {
         vm.floatingTabId = null   // reset
 
         if (activity?.hasOverlayPermission() == true) {
-            com.rasel.RasFocus.selfcontrol.familybrowser.service.FloatingWindowService.launch(
+            com.rasel.pdfviewer.selfcontrol.familybrowser.service.FloatingWindowService.launch(
                 context, tab.url, tab.title.ifEmpty { "Tab" }
             )
             vm.showTabSwitcher = false
@@ -879,10 +879,10 @@ fun BrowserScaffold(vm: BrowserViewModel) {
                     val currentUrl   = vm.currentUrl
                     val currentTitle = vm.pageTitle.ifEmpty { "YouTube" }
                     vm.activeWebView?.let { wv ->
-                        com.rasel.RasFocus.selfcontrol.familybrowser.service
+                        com.rasel.pdfviewer.selfcontrol.familybrowser.service
                             .YoutubeFloatingWindowService.pendingWebView = wv
                     }
-                    com.rasel.RasFocus.selfcontrol.familybrowser.service
+                    com.rasel.pdfviewer.selfcontrol.familybrowser.service
                         .YoutubeFloatingWindowService.launchNoReload(
                             context, currentUrl, currentTitle
                         )
@@ -1277,10 +1277,10 @@ fun TopBrowserBar(vm: BrowserViewModel) {
                                 """.trimIndent(), null)
                                 // actual WebView pass করো → service reload করবে না
                                 vm.activeWebView?.let {
-                                    com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService
+                                    com.rasel.pdfviewer.selfcontrol.familybrowser.service.YoutubeFloatingWindowService
                                         .pendingWebView = it
                                 }
-                                com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService
+                                com.rasel.pdfviewer.selfcontrol.familybrowser.service.YoutubeFloatingWindowService
                                     .launchNoReload(context, activeUrl, activeTitle.ifEmpty { "YouTube" })
                                 // FIX: WebView টা floating window এ চলে গেছে —
                                 // browser এ এই tab এর জায়গায় placeholder inject করো
@@ -1304,7 +1304,7 @@ fun TopBrowserBar(vm: BrowserViewModel) {
                                 // non-YouTube tab → FloatingWindowService
                                 val activeTab = vm.tabManager.activeTab
                                 if (activeTab != null) {
-                                    com.rasel.RasFocus.selfcontrol.familybrowser.service.FloatingWindowService.launch(
+                                    com.rasel.pdfviewer.selfcontrol.familybrowser.service.FloatingWindowService.launch(
                                         context, activeTab.url, activeTab.title.ifEmpty { "Tab" }
                                     )
                                 }
@@ -2426,7 +2426,7 @@ fun BottomNavigationBar(vm: BrowserViewModel) {
                             } catch(e) {}
                         })();
                     """.trimIndent(), null)
-                    com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService
+                    com.rasel.pdfviewer.selfcontrol.familybrowser.service.YoutubeFloatingWindowService
                         .launchNoReload(context, activeUrl, activeTitle.ifEmpty { "YouTube" })
                 }
                 vm.goHome()
@@ -3824,13 +3824,13 @@ fun DownloadPanel(vm: BrowserViewModel, onDismiss: () -> Unit) {
 
 @Composable
 private fun DownloadItemRow(
-    item:     com.rasel.RasFocus.selfcontrol.familybrowser.DownloadItem,
+    item:     com.rasel.pdfviewer.selfcontrol.familybrowser.DownloadItem,
     context:  android.content.Context,
     onOpen:   () -> Unit,
     onDelete: () -> Unit
 ) {
-    val isDone   = item.status == com.rasel.RasFocus.selfcontrol.familybrowser.DownloadStatus.COMPLETED
-    val isFailed = item.status == com.rasel.RasFocus.selfcontrol.familybrowser.DownloadStatus.FAILED
+    val isDone   = item.status == com.rasel.pdfviewer.selfcontrol.familybrowser.DownloadStatus.COMPLETED
+    val isFailed = item.status == com.rasel.pdfviewer.selfcontrol.familybrowser.DownloadStatus.FAILED
     val progress = if (item.totalBytes > 0) (item.downloadedBytes.toFloat() / item.totalBytes) else 0f
 
     Surface(
