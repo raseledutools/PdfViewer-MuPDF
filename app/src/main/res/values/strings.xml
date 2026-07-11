@@ -1,16 +1,36 @@
 <resources>
-    <string name="app_name">PDF Viewer</string>
+    <string name="app_name">Rasfocus</string>
 
-    <!-- Accessibility Service descriptions -->
-    <string name="accessibility_extreme_description">RasFocus Extreme Block Service monitors app usage to block restricted content</string>
-    <string name="accessibility_appblocker_description">RasFocus App Blocker Service monitors and blocks restricted applications</string>
-    <string name="accessibility_focus_description">RasFocus Focus Service helps you stay focused by blocking distractions</string>
-    <string name="accessibility_reels_description">RasFocus Reels Block Service monitors and controls short video content</string>
-    <string name="accessibility_selffocus_description">RasFocus Self Focus Service helps you maintain focus and productivity</string>
-    <string name="extreme_block_service_label">RasFocus Extreme Block</string>
+    <string name="please_wait">Please wait</string>
+    <string name="error_permission_required">Permission Required</string>
+    <string name="error_no_internet">No Internet Connection</string>
+    <string name="error_something_went_wrong">Something went wrong</string>
+    <string name="tap_to_retry">Tap to Retry</string>
 
-    <!-- Shortcuts -->
+    <string name="registered_users">Registered Users</string>
+    <string name="img_description">this is an imageView</string>
+    <string name="please_check_back_later">Please check back later.</string>
+    <string name="no_data">No Data</string>
+
+    <!-- Accessibility Service Descriptions — Settings page এ দেখাবে -->
+    <string name="accessibility_focus_description">RasFocus Student/Child Focus Monitor — শুধু Child/Student mode এ enable করুন</string>
+    <string name="accessibility_appblocker_description">RasFocus App Blocker — Self Control বা Combo mode এ enable করুন</string>
+    <string name="accessibility_reels_description">RasFocus Reels Blocker — Self Control বা Combo mode এ enable করুন (optional)</string>
+
+    <string name="accessibility_selffocus_description">RasFocus Self Focus — Self Control mode এ keyword ও app overlay blocking</string>
+
+    <string name="accessibility_extreme_description">RasFocus Extreme Block — ডিস্ট্র্যাকশন সম্পূর্ণ ব্লক করে (Extreme Focus mode)</string>
+    <string name="accessibility_unified_description">RasFocus Protection — website, adult content, reels, shorts এবং app block করে</string>
+
+    <!-- Device Admin strings — uninstall protection -->
+    <string name="admin_label">RasFocus Uninstall Protection</string>
+    <string name="admin_description">RasFocus-কে uninstall থেকে রক্ষা করে। Extreme Block চালু থাকলে এই permission ছাড়া app delete করা সম্ভব হবে না।</string>
+
+    <!-- Extreme Block Service label — settings page এ দেখাবে -->
+    <string name="extreme_block_service_label">RasFocus+ Extreme Block</string>
+
+    <!-- PDF Viewer Shortcut -->
     <string name="shortcut_pdf_label">PDF Viewer</string>
-    <string name="shortcut_pdf_long_label">Open PDF Viewer</string>
+    <string name="shortcut_pdf_long_label">RasFocus PDF Viewer</string>
     <string name="shortcut_pdf_disabled">PDF Viewer unavailable</string>
 </resources>

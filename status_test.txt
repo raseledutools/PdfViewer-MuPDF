@@ -1,0 +1,24 @@
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add/rm <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   app/app_build.gradle.kts
+	modified:   app/build.gradle.kts
+	modified:   app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfEngine.kt
+	modified:   app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfViewerActivity.kt
+	modified:   app/src/main/AndroidManifest.xml
+	deleted:    app/src/main/java/com/rasel/pdfviewer/PdfViewerActivity.kt
+	modified:   app/src/main/res/values/strings.xml
+	modified:   app/src/main/res/values/themes.xml
+	modified:   app/src/main/res/xml/file_paths.xml
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	app/src/main/java/com/rasel/RasFocus/
+	app/src/main/res/raw/
+	gitlog_check.txt
+	status_test.txt
+
+no changes added to commit (use "git add" and/or "git commit -a")

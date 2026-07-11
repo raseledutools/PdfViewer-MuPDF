@@ -27,3 +27,4 @@ local.properties
 
 # Kotlin
 **/*.kotlin_module
+app/src/main/res/raw/service_account.json  

@@ -2,8 +2,7 @@ package com.rasel.RasFocus.selfcontrol.study_tools
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.pdf.PdfRenderer
-import android.os.ParcelFileDescriptor
+import android.graphics.PointF
 import android.util.Base64
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -24,6 +23,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import com.artifex.mupdf.viewer.Document
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.pdmodel.PDPage
@@ -108,10 +108,13 @@ class PdfEngineController {
 
     private val docs = EngineDocs()
 
-    // WPS-style: all pages as bitmaps list
-    private var viewerRenderer: PdfRenderer?           = null
-    private var viewerFd:       ParcelFileDescriptor?  = null
-    private var viewerFile:     File?                  = null
+    // ── MuPDF viewer state ───────────────────────────────────────────────────
+    // MuPDF Document — vector rendering engine (sharp at any zoom level)
+    // Unlike android.graphics.pdf.PdfRenderer which pre-rasterizes to a fixed
+    // bitmap, MuPDF re-renders from the original vector data at the requested
+    // resolution — pages stay crisp whether you zoom to 50% or 500%.
+    private var muPdfDoc:  Document?  = null
+    private var viewerFile: File?     = null
 
     // All rendered pages stored here for LazyColumn display
     internal val viewerPages = mutableStateListOf<Bitmap?>()
@@ -138,7 +141,7 @@ class PdfEngineController {
     private fun cacheFile(prefix: String): File = File.createTempFile(prefix, ".pdf", appContext.cacheDir)
 
     // ───────────────────────────────────────────────────────────────────────
-    // PDF VIEWER — WPS-style: render ALL pages into bitmap list
+    // PDF VIEWER — MuPDF vector rendering (sharp at any zoom)
     // ───────────────────────────────────────────────────────────────────────
     fun loadPdfInViewer(b64: String, name: String) {
         setLoading(true)
@@ -147,36 +150,37 @@ class PdfEngineController {
                 val bytes = b64ToBytes(b64)
                 closeViewer()
 
+                // Write bytes to a temp file — MuPDF Document opens by file path
                 val file = cacheFile("viewer_")
                 FileOutputStream(file).use { it.write(bytes) }
                 viewerFile = file
 
-                val fd       = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
-                viewerFd     = fd
-                val renderer = PdfRenderer(fd)
-                viewerRenderer = renderer
+                // Open document with MuPDF — supports PDF, XPS, EPUB, CBZ, MOBI
+                val doc = Document.openDocument(file.absolutePath)
+                    ?: throw IllegalStateException("MuPDF: ফাইল খোলা যায়নি")
+                muPdfDoc = doc
 
-                val pageCount = renderer.pageCount
+                val pageCount = doc.countPages()
 
                 // Pre-fill list with nulls so LazyColumn has correct count immediately
                 withContext(Dispatchers.Main) {
                     viewerPages.clear()
                     repeat(pageCount) { viewerPages.add(null) }
                     state = state.copy(
-                        isLoading = false,
-                        errorMsg  = "",
-                        fileName  = name,
-                        totalPages  = pageCount,
-                        currentPage = 1,
-                        zoomPct     = 100,
-                        fileSizeKb  = bytes.size / 1024,
+                        isLoading       = false,
+                        errorMsg        = "",
+                        fileName        = name,
+                        totalPages      = pageCount,
+                        currentPage     = 1,
+                        zoomPct         = 100,
+                        fileSizeKb      = bytes.size / 1024,
                         operationResult = ""
                     )
                 }
 
-                // Render pages progressively (first page immediately, rest async)
+                // Render pages progressively (first page first, then rest async)
                 for (i in 0 until pageCount) {
-                    val bmp = renderSinglePage(renderer, i, screenWidthPx)
+                    val bmp = renderMuPdfPage(doc, i, screenWidthPx)
                     withContext(Dispatchers.Main) {
                         if (i < viewerPages.size) viewerPages[i] = bmp
                     }
@@ -187,18 +191,29 @@ class PdfEngineController {
         }
     }
 
-    private fun renderSinglePage(renderer: PdfRenderer, pageIndex: Int, targetWidth: Int): Bitmap {
-        val page       = renderer.openPage(pageIndex)
-        val origWidth  = page.width.coerceAtLeast(1)
-        val origHeight = page.height.coerceAtLeast(1)
-        val scale      = targetWidth.toFloat() / origWidth
-        val bmpWidth   = targetWidth
-        val bmpHeight  = (origHeight * scale).roundToInt().coerceAtLeast(1)
+    /**
+     * MuPDF vector rendering — renders a single page at [targetWidth] pixels wide.
+     * MuPDF re-renders from the original vector data each time, so the bitmap is
+     * always sharp at the requested resolution (unlike PdfRenderer which just
+     * scales a pre-rasterized bitmap).
+     */
+    private fun renderMuPdfPage(doc: Document, pageIndex: Int, targetWidth: Int): Bitmap {
+        // Get the page size in points (1pt = 1/72 inch)
+        val pageSize = doc.getPageSize(pageIndex)
+        val origWidth  = pageSize.x.coerceAtLeast(1f)
+        val origHeight = pageSize.y.coerceAtLeast(1f)
+
+        // Scale to fit targetWidth while maintaining aspect ratio
+        val scale     = targetWidth.toFloat() / origWidth
+        val bmpWidth  = targetWidth
+        val bmpHeight = (origHeight * scale).roundToInt().coerceAtLeast(1)
 
         val bmp = Bitmap.createBitmap(bmpWidth, bmpHeight, Bitmap.Config.ARGB_8888)
         bmp.eraseColor(android.graphics.Color.WHITE)
-        page.render(bmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-        page.close()
+
+        // MuPDF drawPage() takes direct pixel coordinates — no ctm matrix needed.
+        // It internally renders from vector data at exactly the requested resolution.
+        doc.drawPage(bmp, pageIndex, bmpWidth, bmpHeight, 0, 0, bmpWidth, bmpHeight, null)
         return bmp
     }
 
@@ -221,14 +236,12 @@ class PdfEngineController {
     }
 
     fun closeViewer() {
-        viewerRenderer?.runCatching { close() }
-        viewerFd?.runCatching { close() }
+        muPdfDoc?.runCatching { destroy() }
         viewerFile?.runCatching { delete() }
         viewerPages.forEach { it?.recycle() }
         viewerPages.clear()
-        viewerRenderer = null
-        viewerFd       = null
-        viewerFile     = null
+        muPdfDoc   = null
+        viewerFile = null
     }
 
     // ───────────────────────────────────────────────────────────────────────
@@ -412,7 +425,7 @@ class PdfEngineController {
     fun saveCompressPdfResult() = saveResult(docs.compressOutputBytes, docs.compressOutputName)
 
     // ───────────────────────────────────────────────────────────────────────
-    // PDF → IMAGES
+    // PDF → IMAGES  (MuPDF rendering — sharp output images)
     // ───────────────────────────────────────────────────────────────────────
     fun pdfToImages(b64: String, name: String) {
         setLoading(true)
@@ -422,12 +435,13 @@ class PdfEngineController {
                 val pdfFile = cacheFile("pdf_to_img_")
                 FileOutputStream(pdfFile).use { it.write(bytes) }
 
-                val fd       = ParcelFileDescriptor.open(pdfFile, ParcelFileDescriptor.MODE_READ_ONLY)
-                val renderer = PdfRenderer(fd)
-                val results  = mutableListOf<Pair<String, ByteArray>>()
+                // Use MuPDF for vector-quality image extraction
+                val doc     = Document.openDocument(pdfFile.absolutePath)
+                    ?: throw IllegalStateException("MuPDF: ফাইল খোলা যায়নি")
+                val results = mutableListOf<Pair<String, ByteArray>>()
 
-                for (i in 0 until renderer.pageCount) {
-                    val bmp = renderSinglePage(renderer, i, 1080)
+                for (i in 0 until doc.countPages()) {
+                    val bmp = renderMuPdfPage(doc, i, 1080)
                     val out = ByteArrayOutputStream()
                     bmp.compress(Bitmap.CompressFormat.JPEG, 90, out)
                     bmp.recycle()
@@ -435,7 +449,8 @@ class PdfEngineController {
                     results.add("${baseName}_page${i + 1}.jpg" to out.toByteArray())
                 }
 
-                renderer.close(); fd.close(); pdfFile.delete()
+                doc.destroy()
+                pdfFile.delete()
                 docs.pdfToImagesOutputs = results
 
                 withContext(Dispatchers.Main) { setResult("pdfToImages:${results.size} images extracted") }

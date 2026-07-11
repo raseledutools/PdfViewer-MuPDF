@@ -325,10 +325,6 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                 var bmpW = (screenW * targetScale).roundToInt()
                 var bmpH = (origH * baseScale * targetScale).roundToInt().coerceAtLeast(1)
 
-                // Safety cap — keeps a single page bitmap's memory bounded
-                // (MAX_RENDER_DIM² × 4 bytes ARGB_8888 ≈ 64MB at the ceiling,
-                // and PDFs are near-always far from square so real usage
-                // stays well under that).
                 if (bmpW > MAX_RENDER_DIM || bmpH > MAX_RENDER_DIM) {
                     val shrink = MAX_RENDER_DIM.toFloat() / maxOf(bmpW, bmpH)
                     bmpW = (bmpW * shrink).roundToInt().coerceAtLeast(1)
