@@ -1,4 +1,4 @@
-package com.rasel.pdfviewer.combo.selfcontrol.familybrowser.service
+package com.rasel.RasFocus.combo.selfcontrol.familybrowser.service
 
 import android.annotation.SuppressLint
 import android.app.*
@@ -13,7 +13,7 @@ import android.media.session.PlaybackState
 import android.view.*
 import android.webkit.*
 import androidx.core.app.NotificationCompat
-import com.rasel.pdfviewer.combo.selfcontrol.familybrowser.FamilyBrowserActivity
+import com.rasel.RasFocus.combo.selfcontrol.familybrowser.FamilyBrowserActivity
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.abs
@@ -702,7 +702,7 @@ class YoutubeFloatingWindowService : Service() {
         // YoutubeActivity কে FLAG_ACTIVITY_REORDER_TO_FRONT দিয়ে resume করো
         val resumeIntent = Intent(
             this,
-            com.rasel.pdfviewer.selfcontrol.familybrowser.YoutubeActivity::class.java
+            com.rasel.RasFocus.selfcontrol.familybrowser.YoutubeActivity::class.java
         ).apply {
             addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_NEW_TASK)
             // YoutubeActivity.onResume() এ mini player mode detect করার জন্য
@@ -1023,11 +1023,11 @@ class YoutubeFloatingWindowService : Service() {
                     // keywords via FirebaseKeywordSync. Added that same check
                     // here, and upgraded the response from blank HTML to a
                     // real blocked page.
-                    val isDomainBlocked  = com.rasel.pdfviewer.selfcontrol.familybrowser.AdBlocker.isAdultSite(reqUrl)
-                    val isKeywordBlocked = com.rasel.pdfviewer.selfcontrol.FirebaseKeywordSync.containsAdultKeyword(reqUrl)
+                    val isDomainBlocked  = com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.isAdultSite(reqUrl)
+                    val isKeywordBlocked = com.rasel.RasFocus.selfcontrol.FirebaseKeywordSync.containsAdultKeyword(reqUrl)
                     if (isDomainBlocked || isKeywordBlocked) {
-                        val blockedHtml = com.rasel.pdfviewer.selfcontrol.familybrowser.AdBlocker
-                            .buildBlockedPage(reqUrl, com.rasel.pdfviewer.selfcontrol.familybrowser.BlockReason.ADULT)
+                        val blockedHtml = com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker
+                            .buildBlockedPage(reqUrl, com.rasel.RasFocus.selfcontrol.familybrowser.BlockReason.ADULT)
                         return android.webkit.WebResourceResponse(
                             "text/html", "UTF-8",
                             blockedHtml.byteInputStream()
@@ -1052,7 +1052,7 @@ class YoutubeFloatingWindowService : Service() {
 
                     if (url.contains("youtube.com") || url.contains("youtu.be")) {
                         view.evaluateJavascript(
-                            com.rasel.pdfviewer.selfcontrol.familybrowser.YouTubeAdPruner
+                            com.rasel.RasFocus.selfcontrol.familybrowser.YouTubeAdPruner
                                 .getJsInjectScript(),
                             null
                         )
@@ -1064,16 +1064,16 @@ class YoutubeFloatingWindowService : Service() {
                 override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                     val url = request.url.toString()
 
-                    val isDomainBlocked  = com.rasel.pdfviewer.selfcontrol.familybrowser.AdBlocker.isAdultSite(url)
-                    val isKeywordBlocked = com.rasel.pdfviewer.selfcontrol.FirebaseKeywordSync.containsAdultKeyword(url)
+                    val isDomainBlocked  = com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.isAdultSite(url)
+                    val isKeywordBlocked = com.rasel.RasFocus.selfcontrol.FirebaseKeywordSync.containsAdultKeyword(url)
                     if (isDomainBlocked || isKeywordBlocked) {
-                        val blockedHtml = com.rasel.pdfviewer.selfcontrol.familybrowser.AdBlocker
-                            .buildBlockedPage(url, com.rasel.pdfviewer.selfcontrol.familybrowser.BlockReason.ADULT)
+                        val blockedHtml = com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker
+                            .buildBlockedPage(url, com.rasel.RasFocus.selfcontrol.familybrowser.BlockReason.ADULT)
                         view.loadDataWithBaseURL(null, blockedHtml, "text/html", "UTF-8", null)
                         return true
                     }
 
-                    val safeUrl = com.rasel.pdfviewer.selfcontrol.familybrowser.SafeSearchEnforcer
+                    val safeUrl = com.rasel.RasFocus.selfcontrol.familybrowser.SafeSearchEnforcer
                         .enforceIfNeeded(url)
                     if (safeUrl != null) {
                         view.loadUrl(safeUrl)
