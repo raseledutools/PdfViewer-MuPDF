@@ -1,4 +1,4 @@
-package com.rasel.pdfviewer.combo.selfcontrol
+package com.rasel.RasFocus.combo.selfcontrol
 
 import android.app.AlarmManager
 import android.app.Notification
@@ -247,7 +247,7 @@ private fun BpAppIconImage(drawable: android.graphics.drawable.Drawable?, modifi
 @Composable
 fun FocusLauncherCard(onSessionStart: () -> Unit) {
     var showSetup by remember { mutableStateOf(false) }
-    com.rasel.pdfviewer.ui.theme.PremiumCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp), onClick = { showSetup = true },
+    com.rasel.RasFocus.ui.theme.PremiumCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp), onClick = { showSetup = true },
         colors = CardDefaults.cardColors(containerColor = BpTealMid),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
@@ -280,7 +280,7 @@ fun TakeABreakCard(onSessionStart: () -> Unit = {}) {
     val endMs = context.getSharedPreferences(BpC.PREFS, Context.MODE_PRIVATE).getLong(BpC.KEY_BREAK_END, 0L)
     var isActive by remember { mutableStateOf(endMs > System.currentTimeMillis()) }
 
-    com.rasel.pdfviewer.ui.theme.PremiumCard(Modifier.fillMaxWidth().padding(horizontal = 20.dp), onClick = { showDialog = true },
+    com.rasel.RasFocus.ui.theme.PremiumCard(Modifier.fillMaxWidth().padding(horizontal = 20.dp), onClick = { showDialog = true },
         colors = CardDefaults.cardColors(containerColor = if (isActive) BpTealMid else Color(0xFFE8D5F5)),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
