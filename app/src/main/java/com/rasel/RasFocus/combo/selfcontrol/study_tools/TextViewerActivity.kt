@@ -353,47 +353,50 @@ fun TextViewerScreen(uri: Uri?, fileName: String, onClose: () -> Unit) {
                 }
                 else -> {
                     // ── VIEW MODE ──────────────────────────────────────────
-                    SelectionContainer {
-                        val vScroll = rememberScrollState()
-                        val hScroll = rememberScrollState()
-                        val baseMod = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(vScroll)
-                            .padding(horizontal = 14.dp, vertical = 12.dp)
-                            .navigationBarsPadding()
+                    // HTML: WebView — SelectionContainer এর বাইরে রাখতে হবে
+                    if (isHtml) {
+                        HtmlWebView(
+                            html     = rawText,
+                            baseUri  = uri,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .navigationBarsPadding()
+                        )
+                    } else {
+                        SelectionContainer {
+                            val vScroll = rememberScrollState()
+                            val hScroll = rememberScrollState()
+                            val baseMod = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(vScroll)
+                                .padding(horizontal = 14.dp, vertical = 12.dp)
+                                .navigationBarsPadding()
 
-                        when {
-                            isHtml && !isEditMode ->
-                                HtmlWebView(
-                                    html     = rawText,
-                                    baseUri  = uri,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .navigationBarsPadding()
-                                )
-                            isMarkdown ->
-                                MarkdownContent(rawText, baseMod)
-                            isKotlin ->
-                                Text(
-                                    text      = buildKotlinAnnotated(rawText),
-                                    modifier  = baseMod.horizontalScroll(hScroll),
-                                    softWrap  = false,
-                                    style     = TextStyle(
-                                        fontSize   = 13.sp,
-                                        lineHeight = 20.sp,
-                                        fontFamily = FontFamily.Monospace
+                            when {
+                                isMarkdown ->
+                                    MarkdownContent(rawText, baseMod)
+                                isKotlin ->
+                                    Text(
+                                        text      = buildKotlinAnnotated(rawText),
+                                        modifier  = baseMod.horizontalScroll(hScroll),
+                                        softWrap  = false,
+                                        style     = TextStyle(
+                                            fontSize   = 13.sp,
+                                            lineHeight = 20.sp,
+                                            fontFamily = FontFamily.Monospace
+                                        )
                                     )
-                                )
-                            else ->
-                                Text(
-                                    text     = rawText,
-                                    modifier = baseMod,
-                                    style    = TextStyle(
-                                        fontSize   = 14.sp,
-                                        lineHeight = 22.sp,
-                                        color      = TEXT_MAIN
+                                else ->
+                                    Text(
+                                        text     = rawText,
+                                        modifier = baseMod,
+                                        style    = TextStyle(
+                                            fontSize   = 14.sp,
+                                            lineHeight = 22.sp,
+                                            color      = TEXT_MAIN
+                                        )
                                     )
-                                )
+                            }
                         }
                     }
                 }
