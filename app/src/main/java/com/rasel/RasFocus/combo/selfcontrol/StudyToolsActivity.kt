@@ -1,4 +1,4 @@
-package com.rasel.RasFocus.combo.selfcontrol
+package com.rasel.pdfviewer.combo.selfcontrol
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -8,8 +8,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.rasel.RasFocus.combo.selfcontrol.study_tools.ProfessionalDiaryScreen
-import com.rasel.RasFocus.combo.selfcontrol.study_tools.StudyToolsScreen
+import com.rasel.pdfviewer.combo.selfcontrol.study_tools.ProfessionalDiaryScreen
+import com.rasel.pdfviewer.combo.selfcontrol.study_tools.StudyToolsScreen
 
 /**
  * StudyToolsActivity — SelfControlModule এর StudyToolsCard এই Activity launch করে।
