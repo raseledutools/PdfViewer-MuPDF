@@ -14,7 +14,7 @@
 //   BlockPage.dismiss(service)
 // ============================================================
 
-package com.rasel.RasFocus.combo.selfcontrol
+package com.rasel.pdfviewer.combo.selfcontrol
 
 import android.accessibilityservice.AccessibilityService
 import android.content.Context
@@ -29,7 +29,7 @@ import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
 import android.widget.*
-import com.rasel.RasFocus.DataManager
+import com.rasel.pdfviewer.DataManager
 
 object BlockPage {
 
