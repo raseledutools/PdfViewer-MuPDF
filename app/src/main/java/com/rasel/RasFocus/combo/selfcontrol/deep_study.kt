@@ -1,4 +1,4 @@
-package com.rasel.pdfviewer.combo.selfcontrol
+package com.rasel.RasFocus.combo.selfcontrol
 
 import android.app.AppOpsManager
 import android.app.usage.UsageStatsManager
@@ -35,7 +35,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.rasel.pdfviewer.DataManager
+import com.rasel.RasFocus.DataManager
 import kotlinx.coroutines.*
 import kotlin.math.*
 
@@ -356,7 +356,7 @@ fun Deep_study() {
         // Tab Bar
         TabBar(activeSubTab) { activeSubTab = it }
 
-        com.rasel.pdfviewer.ui.theme.AnimatedSwapContainer(targetState = activeSubTab) { tabIndex ->
+        com.rasel.RasFocus.ui.theme.AnimatedSwapContainer(targetState = activeSubTab) { tabIndex ->
         if (tabIndex == 0) {
             Column(
                 Modifier
@@ -638,7 +638,7 @@ private fun StartStopButton(isActive: Boolean, onClick: () -> Unit) {
 
 @Composable
 private fun SectionCard(title: String, icon: ImageVector, content: @Composable ColumnScope.() -> Unit) {
-    com.rasel.pdfviewer.ui.theme.PremiumCard(
+    com.rasel.RasFocus.ui.theme.PremiumCard(
         modifier = Modifier.fillMaxWidth(),
         containerColor = DClrSurface,
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
@@ -778,7 +778,7 @@ private fun PermBanner(color: Color, tint: Color, text: String, btnText: String,
 
 @Composable
 private fun AllowListCard(appCount: Int, siteCount: Int, enabled: Boolean, onClick: () -> Unit) {
-    com.rasel.pdfviewer.ui.theme.PremiumCard(
+    com.rasel.RasFocus.ui.theme.PremiumCard(
         modifier = Modifier.fillMaxWidth(),
         containerColor = if (enabled) DClrTeal.copy(alpha = 0.1f) else DClrSurface,
         onClick = onClick,
@@ -887,7 +887,7 @@ fun BlocklistPickerSheet(
                                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)
                                 ) { Text("Add", fontSize = 14.sp, fontWeight = FontWeight.Bold) }
                             }
-                            HorizontalDivider(color = com.rasel.pdfviewer.ui.theme.RasFocusTheme.colors.onBackground)
+                            HorizontalDivider(color = com.rasel.RasFocus.ui.theme.RasFocusTheme.colors.onBackground)
                         }
                     }
                 }
@@ -905,7 +905,7 @@ fun BlocklistPickerSheet(
                                 Icon(Icons.Default.RemoveCircleOutline, null, tint = DClrRed, modifier = Modifier.size(20.dp))
                             }
                         }
-                        HorizontalDivider(color = com.rasel.pdfviewer.ui.theme.RasFocusTheme.colors.onBackground)
+                        HorizontalDivider(color = com.rasel.RasFocus.ui.theme.RasFocusTheme.colors.onBackground)
                     }
                 }
             }
