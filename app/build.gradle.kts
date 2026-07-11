@@ -301,6 +301,13 @@ dependencies {
     // Version: 1.15.+ (floating — Gradle picks the latest 1.15.x that exists on the repo)
     "fullImplementation"("com.artifex.mupdf:viewer:1.15.+")
 
+    // ✅ Apache POI — docx/xlsx/pptx read করার জন্য (Android-compatible lite version)
+    implementation("org.apache.poi:poi:5.2.5")
+    implementation("org.apache.poi:poi-ooxml:5.2.5")
+
+    // ✅ Coil — JPG/PNG/GIF/WebP image loading (zoom/pan support)
+    implementation("io.coil-kt:coil-compose:2.6.0")
+
     // Testing
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
