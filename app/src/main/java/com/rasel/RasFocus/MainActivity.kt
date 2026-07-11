@@ -198,6 +198,9 @@ object Routes {
     const val SELF_CONTROL_DASH = "self_control_dashboard"
     const val PARENTAL_DASH     = "parental_dashboard"
     const val COMBO_DASH        = "combo_dashboard"
+    const val COMBO_HOME        = "combo_home"
+    const val COMBO_SELF        = "combo_self"
+    const val COMBO_PARENTAL    = "combo_parental"
 
     const val PARENTAL_FAMILY   = "parental_family"
     const val COMBO_FAMILY      = "combo_family"
@@ -1015,7 +1018,7 @@ fun RasFocusApp(viewModel: MainViewModel) {
                     viewModel.restorePersona(savedPersona)
                     val route = when (savedPersona) {
                         UserPersona.PARENTAL     -> Routes.PARENTAL_DASH
-                        UserPersona.COMBO        -> Routes.COMBO_DASH
+                        UserPersona.COMBO        -> Routes.COMBO_HOME
                         UserPersona.STUDENT      -> Routes.CHILD_DASHBOARD
                         UserPersona.SELF_CONTROL -> Routes.SELF_CONTROL_DASH
                     }
@@ -1058,7 +1061,7 @@ fun RasFocusApp(viewModel: MainViewModel) {
             val persona by viewModel.selectedPersona.collectAsState()
             val dashRoute = when (persona) {
                 UserPersona.PARENTAL -> Routes.PARENTAL_DASH
-                UserPersona.COMBO    -> Routes.COMBO_DASH
+                UserPersona.COMBO    -> Routes.COMBO_HOME
                 UserPersona.STUDENT  -> Routes.CHILD_DASHBOARD
                 else                 -> Routes.SELF_CONTROL_DASH
             }
@@ -1148,6 +1151,44 @@ fun RasFocusApp(viewModel: MainViewModel) {
                     is BottomNavTab.Settings -> navController.navigate(Routes.SETTINGS) { launchSingleTop = true }
                 }
             }) { padding -> Box(Modifier.padding(padding)) { com.rasel.RasFocus.combo.ComboDashboardScreen(viewModel = viewModel, navController = navController, hideOwnFooter = true) } }
+        }
+
+
+        // ── COMBO NEW ROUTES ────────────────────────────────────────────────
+        // combo_home  : Combo landing screen (brand header + footer visible)
+        // combo_self  : Full-screen Self Control (own header/footer, no outer scaffold)
+        // combo_parental: Full-screen Parental   (own header/footer, no outer scaffold)
+        composable(Routes.COMBO_HOME) {
+            com.rasel.RasFocus.combo.ComboDashboardScreen(
+                viewModel      = viewModel,
+                navController  = navController,
+                hideOwnFooter  = false
+            )
+        }
+
+        composable(Routes.COMBO_SELF) {
+            com.rasel.RasFocus.combo.selfcontrol.StayFocusedApp(
+                navController   = navController,
+                onSettingsClick = {
+                    navController.navigate(Routes.COMBO_HOME) {
+                        popUpTo(Routes.COMBO_HOME) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
+
+        composable(Routes.COMBO_PARENTAL) {
+            com.rasel.RasFocus.combo.parental.ParentalRootScreen(
+                viewModel     = viewModel,
+                hideOwnFooter = false,
+                onBackToCombo = {
+                    navController.navigate(Routes.COMBO_HOME) {
+                        popUpTo(Routes.COMBO_HOME) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                }
+            )
         }
 
         composable(Routes.CHILD_DASHBOARD) {

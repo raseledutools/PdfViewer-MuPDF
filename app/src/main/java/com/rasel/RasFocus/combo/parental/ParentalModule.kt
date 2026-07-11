@@ -70,7 +70,8 @@ private sealed class ParentalNav {
 fun ParentalRootScreen(
     viewModel: MainViewModel,
     isComboMode: Boolean = false,
-    hideOwnFooter: Boolean = false
+    hideOwnFooter: Boolean = false,
+    onBackToCombo: (() -> Unit)? = null   // non-null when launched from combo_parental route
 ) {
     var nav by remember { mutableStateOf<ParentalNav>(ParentalNav.PICKER) }
 
@@ -85,7 +86,8 @@ fun ParentalRootScreen(
                 viewModel      = viewModel,
                 onPickPc       = { id -> nav = ParentalNav.PC(id) },
                 onPickMobile   = { id -> nav = ParentalNav.MOBILE(id) },
-                showFooterNav  = !suppressFooter
+                showFooterNav  = !suppressFooter,
+                onBackToCombo  = onBackToCombo
             )
         }
         is ParentalNav.PC -> {
@@ -119,7 +121,8 @@ private fun ParentalPickerScreen(
     viewModel: MainViewModel,
     onPickPc: (String) -> Unit,
     onPickMobile: (String) -> Unit,
-    showFooterNav: Boolean = true
+    showFooterNav: Boolean = true,
+    onBackToCombo: (() -> Unit)? = null
 ) {
     val devices       by viewModel.devices.collectAsState()
     val pcDevices     = devices.filter { it.type == DeviceType.PC }
@@ -284,6 +287,7 @@ private fun ParentalPickerScreen(
                         when (index) {
                             1 -> onPickPc("")
                             2 -> onPickMobile("")
+                            3 -> onBackToCombo?.invoke()   // Settings → back to Combo home
                         }
                     }
                 )

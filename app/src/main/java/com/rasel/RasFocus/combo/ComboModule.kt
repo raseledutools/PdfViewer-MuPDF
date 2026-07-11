@@ -1,19 +1,24 @@
 package com.rasel.RasFocus.combo
 
 // ============================================================
-//  RasFocus+ — Pro Combo Module
-//  Self Control tab  → com.rasel.RasFocus.combo.selfcontrol
-//  Family Control tab → com.rasel.RasFocus.combo.parental
-//  Each is a full independent copy with its own package;
-//  Combo owns the brand header + NavigationBar footer.
+//  RasFocus+ — Pro Combo Module  (combo_home route)
+//
+//  Navigation flow:
+//    combo_home     → this screen (brand header + footer)
+//    combo_self     → full-screen Self Control  (own header/footer, no outer scaffold)
+//    combo_parental → full-screen Family Control (own header/footer, no outer scaffold)
+//
+//  Footer tab click replaces the entire screen — no nested headers/footers.
+//  Settings tab inside selfcontrol/parental navigates back to combo_home.
 // ============================================================
 
-import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
@@ -24,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -40,60 +46,76 @@ private val WhiteBrand        = Color(0xFFFFFFFF)
 private val PremiumTealDark   = Color(0xFF032220)
 private val PremiumTealMid    = Color(0xFF08504B)
 private val PremiumTealAccent = Color(0xFF14C3B2)
-
-enum class ComboMode { SELF, PARENTAL }
+private val CardBg            = Color(0xFFF4F6FA)
 
 // ============================================================
-//  ROOT SCREEN
+//  ROOT SCREEN  (combo_home)
 // ============================================================
 @Composable
 fun ComboDashboardScreen(
     viewModel: MainViewModel,
     navController: NavController,
-    hideOwnFooter: Boolean = false
+    hideOwnFooter: Boolean = false   // true when wrapped in PersonaScaffold
 ) {
-    var activeMode   by remember { mutableStateOf(ComboMode.SELF) }
-    var selectedTab  by remember { mutableStateOf(0) }
-
     Column(Modifier.fillMaxSize().background(RasFocusColors.BackgroundWhite)) {
 
         // ── 1. BRAND HEADER ──────────────────────────────────
-        ComboPremiumHeader(activeMode = activeMode)
+        ComboPremiumHeader()
 
-        // ── 2. CONTENT — switched by tab 0 / 1 ──────────────
-        Box(Modifier.weight(1f).fillMaxWidth()) {
-            Crossfade(targetState = activeMode, label = "combo_mode") { mode ->
-                when (mode) {
-                    // Uses the COPIED selfcontrol package inside combo/
-                    ComboMode.SELF ->
-                        com.rasel.RasFocus.combo.selfcontrol.StayFocusedApp(
-                            navController = navController,
-                            isComboMode   = true          // hides its own header/footer
-                        )
-                    // Uses the COPIED parental package inside combo/
-                    ComboMode.PARENTAL ->
-                        com.rasel.RasFocus.combo.parental.ParentalRootScreen(
-                            viewModel     = viewModel,
-                            isComboMode   = true          // hides its own header/footer
-                        )
-                }
-            }
-        }
+        // ── 2. LANDING CONTENT ───────────────────────────────
+        Column(
+            Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                "Choose your control mode",
+                fontSize   = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color      = Color(0xFF1A1A2E)
+            )
+            Text(
+                "Tap a card to enter full-screen mode. Use Settings inside each module to return here.",
+                fontSize = 13.sp,
+                color    = TextGrayBrand,
+                lineHeight = 20.sp
+            )
 
-        // ── 3. BRAND FOOTER (hidden when outer scaffold provides nav) ──
-        if (!hideOwnFooter) {
-            ComboBottomNav(
-                selected = selectedTab,
-                onSelect = { index ->
-                    selectedTab = index
-                    when (index) {
-                        0 -> activeMode = ComboMode.SELF
-                        1 -> activeMode = ComboMode.PARENTAL
-                        2 -> navController.navigate("statistics")
-                        3 -> navController.navigate("settings")
+            Spacer(Modifier.height(4.dp))
+
+            // Self Control card
+            ComboModeCard(
+                icon     = Icons.Filled.SelfImprovement,
+                title    = "Self Control",
+                subtitle = "Focus mode, app blocking,\nstudy tools & analytics",
+                accent   = PremiumTealMid,
+                onClick  = {
+                    navController.navigate("combo_self") {
+                        launchSingleTop = true
                     }
                 }
             )
+
+            // Family Control card
+            ComboModeCard(
+                icon     = Icons.Filled.FamilyRestroom,
+                title    = "Family Control",
+                subtitle = "Pair & monitor child devices,\nset rules & screen time",
+                accent   = Color(0xFF5B3FA6),
+                onClick  = {
+                    navController.navigate("combo_parental") {
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
+
+        // ── 3. FOOTER (hidden when outer PersonaScaffold provides nav) ──
+        if (!hideOwnFooter) {
+            ComboBottomNav(navController = navController)
         }
     }
 }
@@ -102,12 +124,7 @@ fun ComboDashboardScreen(
 //  HEADER — fixed Premium Teal gradient (brand standard)
 // ============================================================
 @Composable
-fun ComboPremiumHeader(activeMode: ComboMode) {
-    val isSelf   = activeMode == ComboMode.SELF
-    val title    = if (isSelf) "Self Control"              else "Family Control"
-    val subtitle = if (isSelf) "Stay focused on your goals" else "Monitor and protect family"
-    val icon     = if (isSelf) Icons.Filled.SelfImprovement else Icons.Filled.ChildCare
-
+fun ComboPremiumHeader() {
     Box(
         Modifier
             .fillMaxWidth()
@@ -119,7 +136,6 @@ fun ComboPremiumHeader(activeMode: ComboMode) {
             .padding(start = 24.dp, end = 24.dp, top = 20.dp, bottom = 32.dp)
     ) {
         Column {
-            // Top row — icon | badge | notification
             Row(
                 Modifier.fillMaxWidth(),
                 verticalAlignment    = Alignment.CenterVertically,
@@ -129,9 +145,8 @@ fun ComboPremiumHeader(activeMode: ComboMode) {
                     Modifier.size(46.dp).background(Color.White.copy(alpha = 0.12f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                    Icon(Icons.Filled.Bolt, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
                 }
-
                 Box(
                     Modifier
                         .background(PremiumTealAccent.copy(alpha = 0.2f), RoundedCornerShape(50.dp))
@@ -140,48 +155,103 @@ fun ComboPremiumHeader(activeMode: ComboMode) {
                 ) {
                     Text("Pro Combo", color = PremiumTealAccent, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 }
-
                 Box(
                     Modifier.size(46.dp).background(Color.White.copy(alpha = 0.12f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.Notifications, contentDescription = "Notifications", tint = Color.White, modifier = Modifier.size(24.dp))
+                    Icon(Icons.Default.Notifications, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
                 }
             }
 
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(28.dp))
 
-            // Title block
             Column(Modifier.fillMaxWidth()) {
-                Text("Welcome to",              color = Color.White.copy(alpha = 0.75f), fontSize = 15.sp)
+                Text("Welcome to",       color = Color.White.copy(alpha = 0.75f), fontSize = 15.sp)
                 Spacer(Modifier.height(4.dp))
-                Text("RasFocus+ $title",        color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 30.sp, letterSpacing = 0.5.sp)
+                Text("RasFocus+ Combo",  color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 30.sp, letterSpacing = 0.5.sp)
                 Spacer(Modifier.height(4.dp))
-                Text(subtitle,                  color = Color.White.copy(alpha = 0.75f), fontSize = 13.sp)
+                Text("Full power — self focus & family protection", color = Color.White.copy(alpha = 0.75f), fontSize = 13.sp)
             }
         }
     }
 }
 
 // ============================================================
-//  FOOTER — Self Control / Family Control / Reports / Settings
-//  Mirrors SelfControlModule's SelfControlBottomNav exactly.
+//  MODE CARD — tappable card that navigates to full screen
 // ============================================================
 @Composable
-private fun ComboBottomNav(selected: Int, onSelect: (Int) -> Unit) {
+private fun ComboModeCard(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+    accent: Color,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick    = onClick,
+        modifier   = Modifier.fillMaxWidth(),
+        shape      = RoundedCornerShape(20.dp),
+        colors     = CardDefaults.cardColors(containerColor = WhiteBrand),
+        elevation  = CardDefaults.cardElevation(defaultElevation = 3.dp)
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Box(
+                Modifier.size(56.dp).background(accent.copy(alpha = 0.12f), RoundedCornerShape(16.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(28.dp))
+            }
+            Column(Modifier.weight(1f)) {
+                Text(title,    fontWeight = FontWeight.Bold,  fontSize = 16.sp, color = Color(0xFF1A1A2E))
+                Spacer(Modifier.height(4.dp))
+                Text(subtitle, fontSize = 13.sp, color = TextGrayBrand, lineHeight = 19.sp)
+            }
+            Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = accent, modifier = Modifier.size(22.dp))
+        }
+    }
+}
+
+// ============================================================
+//  FOOTER NAV — Self Control / Family Control / Reports / Settings
+//  Tab click = full-screen route swap (no nested header/footer).
+// ============================================================
+@Composable
+private fun ComboBottomNav(navController: NavController) {
     val items = listOf(
         Triple("Self Control",   Icons.Filled.SelfImprovement, Icons.Outlined.SelfImprovement),
-        Triple("Family Control", Icons.Filled.ChildCare,       Icons.Outlined.ChildCare),
+        Triple("Family Control", Icons.Filled.FamilyRestroom,  Icons.Outlined.FamilyRestroom),
         Triple("Reports",        Icons.Filled.BarChart,        Icons.Outlined.BarChart),
         Triple("Settings",       Icons.Filled.Settings,        Icons.Outlined.Settings)
     )
+    // Determine which tab looks "selected" based on current back-stack route
+    val currentRoute = navController.currentBackStackEntry?.destination?.route
+    val selectedIndex = when (currentRoute) {
+        "combo_self"     -> 0
+        "combo_parental" -> 1
+        "statistics"     -> 2
+        "settings_screen"-> 3
+        else             -> -1   // combo_home itself: nothing highlighted
+    }
+
     NavigationBar(containerColor = WhiteBrand, tonalElevation = 8.dp) {
         items.forEachIndexed { index, (label, filled, outlined) ->
+            val isSelected = selectedIndex == index
             NavigationBarItem(
-                selected = selected == index,
-                onClick  = { onSelect(index) },
+                selected = isSelected,
+                onClick  = {
+                    when (index) {
+                        0 -> navController.navigate("combo_self")     { launchSingleTop = true }
+                        1 -> navController.navigate("combo_parental") { launchSingleTop = true }
+                        2 -> navController.navigate("statistics")     { launchSingleTop = true }
+                        3 -> navController.navigate("settings_screen"){ launchSingleTop = true }
+                    }
+                },
                 icon = {
-                    if (selected == index) {
+                    if (isSelected) {
                         Box(
                             Modifier
                                 .background(SoftBlue, RoundedCornerShape(50.dp))
@@ -197,8 +267,8 @@ private fun ComboBottomNav(selected: Int, onSelect: (Int) -> Unit) {
                     Text(
                         label,
                         fontSize   = 11.sp,
-                        color      = if (selected == index) PrimaryBlue else TextGrayBrand,
-                        fontWeight = if (selected == index) FontWeight.SemiBold else FontWeight.Normal
+                        color      = if (isSelected) PrimaryBlue else TextGrayBrand,
+                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                     )
                 },
                 colors = NavigationBarItemDefaults.colors(indicatorColor = Color.Transparent)
