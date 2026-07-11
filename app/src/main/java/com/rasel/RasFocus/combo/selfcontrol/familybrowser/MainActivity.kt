@@ -3829,8 +3829,8 @@ private fun DownloadItemRow(
     onOpen:   () -> Unit,
     onDelete: () -> Unit
 ) {
-    val isDone   = item.status == com.rasel.RasFocus.selfcontrol.familybrowser.DownloadStatus.COMPLETED
-    val isFailed = item.status == com.rasel.RasFocus.selfcontrol.familybrowser.DownloadStatus.FAILED
+    val isDone   = item.status == com.rasel.RasFocus.combo.selfcontrol.familybrowser.DownloadStatus.COMPLETED
+    val isFailed = item.status == com.rasel.RasFocus.combo.selfcontrol.familybrowser.DownloadStatus.FAILED
     val progress = if (item.totalBytes > 0) (item.downloadedBytes.toFloat() / item.totalBytes) else 0f
 
     Surface(

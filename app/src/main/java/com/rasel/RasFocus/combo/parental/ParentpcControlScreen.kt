@@ -155,9 +155,51 @@ fun ParentControlScreen(
         }
     }
 
-    val firebaseControls = (viewModel?.pcControls
-        ?: kotlinx.coroutines.flow.MutableStateFlow(ParentControls())).collectAsState(ParentControls()).value
-    val activeControls = if (isFirebaseMode) firebaseControls else controls
+    // Map parental.ParentControls (ViewModel) → local combo ParentControls
+    val _rawControls = viewModel?.pcControls?.collectAsState(
+        com.rasel.RasFocus.parental.ParentControls()
+    )?.value
+    val firebaseControlsMapped: ParentControls = if (_rawControls != null) ParentControls(
+        lockAllTabs          = _rawControls.lockAllTabs,
+        forceAdultBlock      = _rawControls.forceAdultBlock,
+        forceReelsBlock      = _rawControls.forceReelsBlock,
+        forceShortsBlock     = _rawControls.forceShortsBlock,
+        appControlEnabled    = _rawControls.appControlEnabled,
+        appMode              = _rawControls.appMode,
+        allowedAppsCsv       = _rawControls.allowedAppsCsv,
+        blockedAppsCsv       = _rawControls.blockedAppsCsv,
+        webBlockEnabled      = _rawControls.webBlockEnabled,
+        blockedWebsCsv       = _rawControls.blockedWebsCsv,
+        blockTaskManager     = _rawControls.blockTaskManager,
+        blockSettings        = _rawControls.blockSettings,
+        blockFileManager     = _rawControls.blockFileManager,
+        blockedFoldersCsv    = _rawControls.blockedFoldersCsv,
+        internetFasting      = _rawControls.internetFasting,
+        timeLimitMinutes     = _rawControls.timeLimitMinutes,
+        powerAction          = _rawControls.powerAction,
+        lockUntilEpoch       = _rawControls.lockUntilEpoch,
+        lockType             = _rawControls.lockType,
+        newInstalledAppsCsv  = _rawControls.newInstalledAppsCsv,
+        fbEnabled            = _rawControls.fbEnabled,
+        fbStartTime          = _rawControls.fbStartTime,
+        fbEndTime            = _rawControls.fbEndTime,
+        fbLiteEnabled        = _rawControls.fbLiteEnabled,
+        fbLiteStartTime      = _rawControls.fbLiteStartTime,
+        fbLiteEndTime        = _rawControls.fbLiteEndTime,
+        ytEnabled            = _rawControls.ytEnabled,
+        ytStartTime          = _rawControls.ytStartTime,
+        ytEndTime            = _rawControls.ytEndTime,
+        chromeEnabled        = _rawControls.chromeEnabled,
+        chromeStartTime      = _rawControls.chromeStartTime,
+        chromeEndTime        = _rawControls.chromeEndTime,
+        deepStudyEnabled           = _rawControls.deepStudyEnabled,
+        buttonPhoneEnabled         = _rawControls.buttonPhoneEnabled,
+        singleAppsBlockEnabled     = _rawControls.singleAppsBlockEnabled,
+        extremeBlockEnabled        = _rawControls.extremeBlockEnabled,
+        singleWebsiteBlockEnabled  = _rawControls.singleWebsiteBlockEnabled,
+        familyBrowserEnabled       = _rawControls.familyBrowserEnabled
+    ) else ParentControls()
+    val activeControls: ParentControls = if (isFirebaseMode) firebaseControlsMapped else controls
 
     val activeRules = if (isFirebaseMode) listOf(
         activeControls.lockAllTabs, activeControls.forceAdultBlock, activeControls.forceReelsBlock,
@@ -167,7 +209,46 @@ fun ParentControlScreen(
     ).count { it } else activeRulesCount
 
     val onControlChangeActive: (ParentControls) -> Unit = if (isFirebaseMode)
-        { c -> viewModel!!.updatePcControls(deviceId!!, c) } else onControlChange
+        { c -> viewModel!!.updatePcControls(deviceId!!, com.rasel.RasFocus.parental.ParentControls(
+            lockAllTabs         = c.lockAllTabs,
+            forceAdultBlock     = c.forceAdultBlock,
+            forceReelsBlock     = c.forceReelsBlock,
+            forceShortsBlock    = c.forceShortsBlock,
+            appControlEnabled   = c.appControlEnabled,
+            appMode             = c.appMode,
+            allowedAppsCsv      = c.allowedAppsCsv,
+            blockedAppsCsv      = c.blockedAppsCsv,
+            webBlockEnabled     = c.webBlockEnabled,
+            blockedWebsCsv      = c.blockedWebsCsv,
+            blockTaskManager    = c.blockTaskManager,
+            blockSettings       = c.blockSettings,
+            blockFileManager    = c.blockFileManager,
+            blockedFoldersCsv   = c.blockedFoldersCsv,
+            internetFasting     = c.internetFasting,
+            timeLimitMinutes    = c.timeLimitMinutes,
+            powerAction         = c.powerAction,
+            lockUntilEpoch      = c.lockUntilEpoch,
+            lockType            = c.lockType,
+            newInstalledAppsCsv = c.newInstalledAppsCsv,
+            fbEnabled           = c.fbEnabled,
+            fbStartTime         = c.fbStartTime,
+            fbEndTime           = c.fbEndTime,
+            fbLiteEnabled       = c.fbLiteEnabled,
+            fbLiteStartTime     = c.fbLiteStartTime,
+            fbLiteEndTime       = c.fbLiteEndTime,
+            ytEnabled           = c.ytEnabled,
+            ytStartTime         = c.ytStartTime,
+            ytEndTime           = c.ytEndTime,
+            chromeEnabled       = c.chromeEnabled,
+            chromeStartTime     = c.chromeStartTime,
+            chromeEndTime       = c.chromeEndTime,
+            deepStudyEnabled          = c.deepStudyEnabled,
+            buttonPhoneEnabled        = c.buttonPhoneEnabled,
+            singleAppsBlockEnabled    = c.singleAppsBlockEnabled,
+            extremeBlockEnabled       = c.extremeBlockEnabled,
+            singleWebsiteBlockEnabled = c.singleWebsiteBlockEnabled,
+            familyBrowserEnabled      = c.familyBrowserEnabled
+        )) } else onControlChange
 
     val onSendPowerActive: (Int) -> Unit = if (isFirebaseMode)
         { a -> viewModel!!.sendPcPowerCommand(deviceId!!, a) } else onSendPower
