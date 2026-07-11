@@ -1,4 +1,4 @@
-package com.rasel.pdfviewer.combo.selfcontrol.familybrowser.service
+package com.rasel.RasFocus.combo.selfcontrol.familybrowser.service
 
 import android.app.*
 import android.content.Context
@@ -15,7 +15,7 @@ import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.core.app.NotificationCompat
 import androidx.media.app.NotificationCompat.MediaStyle
-import com.rasel.pdfviewer.combo.selfcontrol.familybrowser.FamilyBrowserActivity
+import com.rasel.RasFocus.combo.selfcontrol.familybrowser.FamilyBrowserActivity
 import java.net.URL
 import java.util.concurrent.Executors
 
