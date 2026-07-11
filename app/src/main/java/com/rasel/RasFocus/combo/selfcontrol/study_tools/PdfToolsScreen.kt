@@ -1,4 +1,4 @@
-package com.rasel.RasFocus.combo.selfcontrol.study_tools
+package com.rasel.pdfviewer.combo.selfcontrol.study_tools
 
 import android.content.ContentUris
 import android.content.Intent
@@ -1307,7 +1307,7 @@ private fun ShortcutSheet(tool: QuickTool, onDismiss: () -> Unit, onAddShortcut:
 // SHORTCUT HELPER
 // ─────────────────────────────────────────────────────────────────────────────
 private fun addToolShortcut(context: android.content.Context, tool: QuickTool) {
-    val intent = Intent(context, try { Class.forName("com.rasel.RasFocus.MainActivity") } catch (_: Exception) { context.javaClass }).apply {
+    val intent = Intent(context, try { Class.forName("com.rasel.pdfviewer.MainActivity") } catch (_: Exception) { context.javaClass }).apply {
         action = "com.rasel.rasfocus.PDF_TOOL"
         putExtra("screen", tool.shortcutId)
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
