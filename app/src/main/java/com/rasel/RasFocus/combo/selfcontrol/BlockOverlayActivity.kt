@@ -1,4 +1,4 @@
-package com.rasel.pdfviewer.combo.selfcontrol
+package com.rasel.RasFocus.combo.selfcontrol
 
 import android.content.Context
 import android.content.Intent
@@ -148,7 +148,7 @@ fun BlockOverlayScreen(
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(com.rasel.pdfviewer.ui.theme.RasFocusTheme.colors.surface, com.rasel.pdfviewer.ui.theme.RasFocusTheme.colors.surface)
+                    colors = listOf(com.rasel.RasFocus.ui.theme.RasFocusTheme.colors.surface, com.rasel.RasFocus.ui.theme.RasFocusTheme.colors.surface)
                 )
             )
     ) {
@@ -318,7 +318,7 @@ fun LongTextUnlockSection(onUnlocked: () -> Unit) {
             progress = { progress },
             modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
             color = Color(0xFF3B82F6),
-            trackColor = com.rasel.pdfviewer.ui.theme.RasFocusTheme.colors.surface
+            trackColor = com.rasel.RasFocus.ui.theme.RasFocusTheme.colors.surface
         )
 
         Spacer(Modifier.height(4.dp))
@@ -334,7 +334,7 @@ fun LongTextUnlockSection(onUnlocked: () -> Unit) {
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor   = Color(0xFF3B82F6),
-                unfocusedBorderColor = com.rasel.pdfviewer.ui.theme.RasFocusTheme.colors.surfaceVariant,
+                unfocusedBorderColor = com.rasel.RasFocus.ui.theme.RasFocusTheme.colors.surfaceVariant,
                 focusedTextColor     = Color.White,
                 unfocusedTextColor   = Color.White,
                 cursorColor          = Color(0xFF3B82F6)
@@ -368,9 +368,9 @@ fun SelfControlInfoSection(profile: BlockingFocusProfile) {
             modifier = Modifier.padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(Icons.Default.Timer, contentDescription = null, tint = com.rasel.pdfviewer.ui.theme.RasFocusTheme.colors.primary, modifier = Modifier.size(36.dp))
+            Icon(Icons.Default.Timer, contentDescription = null, tint = com.rasel.RasFocus.ui.theme.RasFocusTheme.colors.primary, modifier = Modifier.size(36.dp))
             Spacer(Modifier.height(10.dp))
-            Text("Self Control Mode", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = com.rasel.pdfviewer.ui.theme.RasFocusTheme.colors.primary)
+            Text("Self Control Mode", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = com.rasel.RasFocus.ui.theme.RasFocusTheme.colors.primary)
             Spacer(Modifier.height(8.dp))
             val label = buildString {
                 if (profile.selfDays   > 0) append("${profile.selfDays}d ")
