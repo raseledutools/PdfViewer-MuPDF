@@ -1,4 +1,4 @@
-package com.rasel.RasFocus.combo.selfcontrol
+package com.rasel.pdfviewer.combo.selfcontrol
 
 // ════════════════════════════════════════════════════════════════════
 //  SocialMedia & Blocker Module — ULTIMATE EDITION (Zero Battery Drain)
@@ -175,11 +175,11 @@ class RasFocusAccessibilityService : AccessibilityService() {
     fun startDeepStudySession(focusMinutes: Int, playSound: Boolean) {
         // BlockerAccessibilityService এর পরিবর্তে এখানে Deep Study logic handle হয়
         // DataManager দিয়ে state set করা হয়
-        com.rasel.RasFocus.DataManager.isDeepStudyStrict = true
+        com.rasel.pdfviewer.DataManager.isDeepStudyStrict = true
     }
 
     fun stopDeepStudySession() {
-        com.rasel.RasFocus.DataManager.isDeepStudyStrict = false
+        com.rasel.pdfviewer.DataManager.isDeepStudyStrict = false
     }
 
     // ── Extreme Block এর checkCurrentWindow stub ──
