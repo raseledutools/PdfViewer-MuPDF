@@ -1,4 +1,4 @@
-package com.rasel.pdfviewer.combo.parental
+package com.rasel.RasFocus.combo.parental
 
 // ══════════════════════════════════════════════════════════════
 //  RASFOCUS+ — CHILD PHONE CONTROL SCREEN
@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.rasel.pdfviewer.Device
-import com.rasel.pdfviewer.MainViewModel
+import com.rasel.RasFocus.MainViewModel
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
