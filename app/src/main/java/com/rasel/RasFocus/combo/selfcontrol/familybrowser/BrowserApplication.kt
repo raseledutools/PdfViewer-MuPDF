@@ -1,8 +1,8 @@
-package com.rasel.pdfviewer.combo.selfcontrol.familybrowser
+package com.rasel.RasFocus.combo.selfcontrol.familybrowser
 
 import android.app.Application
 import android.webkit.WebView
-import com.rasel.pdfviewer.BuildConfig
+import com.rasel.RasFocus.BuildConfig
 
 /**
  * BrowserApplication.kt
