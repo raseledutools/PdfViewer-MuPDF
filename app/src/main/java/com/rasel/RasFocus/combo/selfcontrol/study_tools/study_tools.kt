@@ -1,4 +1,4 @@
-package com.rasel.pdfviewer.combo.selfcontrol.study_tools
+package com.rasel.RasFocus.combo.selfcontrol.study_tools
 
 import android.annotation.SuppressLint
 import android.content.ContentValues
