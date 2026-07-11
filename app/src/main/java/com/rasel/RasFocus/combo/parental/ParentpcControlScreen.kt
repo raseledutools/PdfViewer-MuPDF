@@ -1,4 +1,4 @@
-package com.rasel.pdfviewer.combo.parental
+package com.rasel.RasFocus.combo.parental
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -1068,7 +1068,7 @@ private fun ScreenTimeLimitSection(
                         shape  = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = TealMain)
                     ) {
-                        Text("Set Limit", fontWeight = FontWeight.Bold, color = com.rasel.pdfviewer.ui.theme.RasFocusTheme.colors.background)
+                        Text("Set Limit", fontWeight = FontWeight.Bold, color = com.rasel.RasFocus.ui.theme.RasFocusTheme.colors.background)
                     }
                 }
             }
