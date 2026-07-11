@@ -31,7 +31,7 @@ private val BtnOrange   = Color(0xFFFF6600)
 private val ShiftColor  = Color(0xFFFFCC00)
 private val AlphaColor  = Color(0xFFFF3399)
 private val TextLight   = Color(0xFFE0E0E0)
-private val TextDim     = Color(0xFF888899)
+private val CalcCalcTextDim     = Color(0xFF888899)
 
 // ─── Calculator State ─────────────────────────────────────────────────────────
 
@@ -39,7 +39,7 @@ private enum class AngleMode { DEG, RAD, GRAD }
 private enum class CalcMode  { NORMAL, SHIFT, ALPHA }
 
 @Composable
-fun ScientificCalculatorScreen(onBack: () -> Unit) {
+fun Calc991ESPlusScreen(onBack: () -> Unit) {
     var expr        by remember { mutableStateOf("") }
     var display     by remember { mutableStateOf("0") }
     var result      by remember { mutableStateOf("") }
@@ -251,7 +251,7 @@ fun ScientificCalculatorScreen(onBack: () -> Unit) {
             CalcRow {
                 CalcBtn("SHIFT", ShiftColor,  if(calcMode==CalcMode.SHIFT) Color.Yellow else BtnDark, Modifier.weight(1f)) { onKey("SHIFT") }
                 CalcBtn("ALPHA", AlphaColor,  if(calcMode==CalcMode.ALPHA) Color.Magenta else BtnDark, Modifier.weight(1f)) { onKey("ALPHA") }
-                CalcBtn(angleMode.name, TextDim, BtnDark, Modifier.weight(1f)) { onKey("DEG/RAD") }
+                CalcBtn(angleMode.name, CalcTextDim, BtnDark, Modifier.weight(1f)) { onKey("DEG/RAD") }
                 CalcBtn("DEL",   TextLight,   BtnOrange, Modifier.weight(1f)) { onKey("DEL") }
                 CalcBtn("AC",    TextLight,   BtnRed,    Modifier.weight(1f)) { onKey("AC") }
             }

@@ -334,7 +334,7 @@ fun PdfToolsScreen(onBack: () -> Unit = {}) {
                 PdfScreen.SCAN_TO_PDF -> ScanToPdfScreen(
                     onBack = { screen = PdfScreen.HOME }
                 )
-                PdfScreen.CALCULATOR -> ScientificCalculatorScreen(
+                PdfScreen.CALCULATOR -> Calc991ESPlusScreen(
                     onBack = { screen = PdfScreen.HOME }
                 )
             }
