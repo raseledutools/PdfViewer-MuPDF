@@ -1,4 +1,4 @@
-package com.rasel.RasFocus.combo.selfcontrol.familybrowser
+package com.rasel.pdfviewer.combo.selfcontrol.familybrowser
 
 /**
  * GoogleAccountManager.kt
@@ -14,7 +14,7 @@ package com.rasel.RasFocus.combo.selfcontrol.familybrowser
  * HOW TO SET UP (one-time):
  * ─────────────────────────────────────────────────────────────────────────────
  * 1. Go to https://console.cloud.google.com
- * 2. Create an OAuth 2.0 Client ID → Android (package: com.rasel.RasFocus…)
+ * 2. Create an OAuth 2.0 Client ID → Android (package: com.rasel.pdfviewer…)
  * 3. Add SHA-1 fingerprint of your keystore (debug + release)
  * 4. In build.gradle (app):
  *      implementation("com.google.android.gms:play-services-auth:21.2.0")
