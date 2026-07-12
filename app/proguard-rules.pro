@@ -98,3 +98,13 @@
     java.lang.Object writeReplace();
     java.lang.Object readResolve();
 }
+
+# ── MuPDF — JNI native code binds to these Java classes by EXACT name.
+# R8 renaming/stripping any of them causes UnsatisfiedLinkError/NoSuchMethodError
+# at the native layer, which can crash the whole app on launch (not just when
+# opening a PDF), since class verification can touch these eagerly.
+-keep class com.artifex.mupdf.** { *; }
+-keepclasseswithmembernames class com.artifex.mupdf.** {
+    native <methods>;
+}
+-dontwarn com.artifex.mupdf.**
