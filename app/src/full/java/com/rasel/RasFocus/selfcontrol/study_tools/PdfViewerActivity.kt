@@ -220,11 +220,17 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
     var isLoading     by remember { mutableStateOf(true) }
     var errorMsg      by remember { mutableStateOf("") }
 
-    // Controls visibility — starts HIDDEN so the reading screen is completely
-    // clean the moment a PDF opens (WPS/Adobe-style). A single tap reveals the
-    // top bar for a few seconds; it auto-hides again if untouched.
-    var controlsVisible by remember { mutableStateOf(false) }
-    var autoHideJob     by remember { mutableStateOf<Job?>(null) }
+    // Controls visibility — starts VISIBLE (normal reading mode with header +
+    // footer shown), matching WPS/Adobe's default. A single tap toggles into
+    // fullscreen (hides both bars + system bars); tapping again brings them
+    // back. This is a deliberate sticky toggle, not a timed auto-hide — the
+    // user asked for "normal header/footer, but single tap → fullscreen",
+    // which means the visible state should persist until the user taps again.
+    var controlsVisible by remember { mutableStateOf(true) }
+
+    fun toggleControls() {
+        controlsVisible = !controlsVisible
+    }
 
     // FIX: shared, document-level zoom state — previously scale/offsetX/offsetY
     // lived INSIDE PdfPageItem (one remember{} per page item), so every page had
@@ -248,26 +254,6 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
 
     val listState = rememberLazyListState()
     val screenW   = context.resources.displayMetrics.widthPixels
-
-    // ── Auto-hide helper ────────────────────────────────────────────────────
-    fun scheduleAutoHide() {
-        autoHideJob?.cancel()
-        controlsVisible = true
-        autoHideJob = scope.launch {
-            delay(3_500)
-            controlsVisible = false
-        }
-    }
-
-    // Tap toggles: hidden → show briefly, visible → hide immediately.
-    fun toggleControls() {
-        if (controlsVisible) {
-            autoHideJob?.cancel()
-            controlsVisible = false
-        } else {
-            scheduleAutoHide()
-        }
-    }
 
     // ── Load PDF ────────────────────────────────────────────────────────────
     LaunchedEffect(uri) {
@@ -473,45 +459,26 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
             isLoading -> LoadingView(fileName)
             errorMsg.isNotEmpty() -> ErrorView(errorMsg, onClose)
             else -> {
-                // ── Page list, zoomed as ONE unit ───────────────────────────────
-                // FIX: previously every PdfPageItem carried its own graphicsLayer
-                // scale — pinching on one page only ever magnified that single
-                // item, so the "page" and its neighbors visually disconnected the
-                // moment you zoomed instead of the whole screen zooming together
-                // like WPS/Adobe. Now the pinch/pan/double-tap gesture and the
-                // graphicsLayer transform live on ONE Box wrapping the entire
-                // LazyColumn, so every currently-visible page scales and pans as
-                // a single continuous surface. While zoomed in, the list's own
-                // scroll is frozen (userScrollEnabled = false) so the two
-                // gesture systems don't fight — pinch back out (or double-tap)
-                // to resume normal page-by-page scrolling.
-                val transformState = rememberTransformableState { zoomChange, panChange, _ ->
-                    // transformable() reports single-finger drags too, with
-                    // zoomChange == 1f in that case. Only react when an actual
-                    // pinch is happening (zoomChange != 1f) — this keeps single-
-                    // finger touches from being captured here at all, letting
-                    // them fall through to LazyColumn for normal scrolling.
-                    if (zoomChange == 1f) return@rememberTransformableState
-                    val newScale = (scale * zoomChange).coerceIn(1f, 10f)
-                    val maxOffsetX = (size.width * (newScale - 1f) / 2f).coerceAtLeast(0f)
-                    offsetX = if (newScale > 1f)
-                        (offsetX + panChange.x).coerceIn(-maxOffsetX, maxOffsetX)
-                    else 0f
-                    scale = newScale
-                }
+                // ── WPS-style gesture engine ────────────────────────────────
+                // Architecture:
+                //   - ONE Box wraps the whole LazyColumn with graphicsLayer
+                //     (scaleX/Y + translationX) so ALL pages scale together.
+                //   - A single pointerInput block handles every touch gesture:
+                //       • 1-finger drag  → always vertical-scroll the LazyColumn
+                //                          AND horizontal-pan when zoomed in
+                //       • 2-finger pinch → zoom (scale) + horizontal pan
+                //       • tap            → toggle header/footer
+                //       • double-tap     → zoom-in at tapped point / zoom-out
+                //   - LazyColumn's own userScrollEnabled = false so our custom
+                //     1-finger handler exclusively owns vertical scrolling —
+                //     no gesture ownership fights between Compose's internal
+                //     scroll system and our pointerInput.
 
                 Box(
                     Modifier
                         .fillMaxSize()
-                        // transformable() is Compose's own built-in pinch/pan
-                        // detector — it only activates on multi-touch gestures
-                        // and is specifically designed to coexist with a separate
-                        // tap-detecting pointerInput below it, unlike two raw
-                        // awaitEachGesture blocks which can race over who sees
-                        // a touch first. Single-finger drags pass through this
-                        // untouched, reaching LazyColumn for normal scrolling.
-                        .transformable(state = transformState, lockRotationOnZoomPan = true)
                         .pointerInput(Unit) {
+                            // ── tap + double-tap ────────────────────────────
                             detectTapGestures(
                                 onTap = {
                                     toggleControls()
@@ -522,37 +489,100 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                                         scale   = 1f
                                         offsetX = 0f
                                     } else {
-                                        val newScale = 2.5f
+                                        val newScale   = 2.5f
                                         val maxOffsetX = (size.width * (newScale - 1f) / 2f).coerceAtLeast(0f)
                                         offsetX = ((size.width / 2f - tapOffset.x) * (newScale - 1f))
                                             .coerceIn(-maxOffsetX, maxOffsetX)
                                         scale = newScale
+                                        val distFromCenterY = tapOffset.y - size.height / 2f
+                                        val scrollDelta = distFromCenterY * (newScale - 1f) / newScale
+                                        scope.launch { listState.scrollBy(scrollDelta) }
                                     }
                                 }
                             )
+                        }
+                        .pointerInput(Unit) {
+                            // ── pinch-zoom + single-finger pan ──────────────
+                            // awaitEachGesture restarts for every new touch sequence.
+                            awaitEachGesture {
+                                // Wait for any first touch
+                                val firstDown = awaitFirstDown(requireUnconsumed = false)
+
+                                var lastPos    = firstDown.position
+                                var lastDist   = 0f   // distance between two fingers
+                                var lastMidX   = 0f
+                                var twoFinger  = false
+
+                                do {
+                                    val event = awaitPointerEvent(PointerEventPass.Main)
+                                    val pressed = event.changes.filter { it.pressed }
+
+                                    if (pressed.size >= 2) {
+                                        // ── TWO-FINGER: pinch zoom ──────────
+                                        twoFinger = true
+                                        val p0 = pressed[0].position
+                                        val p1 = pressed[1].position
+                                        val dist = kotlin.math.sqrt(
+                                            ((p0.x - p1.x) * (p0.x - p1.x) +
+                                             (p0.y - p1.y) * (p0.y - p1.y)).toDouble()
+                                        ).toFloat()
+                                        val midX = (p0.x + p1.x) / 2f
+
+                                        if (lastDist > 0f) {
+                                            val zoomChange = dist / lastDist
+                                            val newScale   = (scale * zoomChange).coerceIn(1f, 10f)
+                                            val maxOffsetX = (size.width * (newScale - 1f) / 2f).coerceAtLeast(0f)
+                                            // Pan: midpoint movement + zoom pivot at midpoint
+                                            val panX = (midX - lastMidX) + (size.width / 2f - midX) * (newScale - scale)
+                                            offsetX = if (newScale > 1f)
+                                                (offsetX + panX).coerceIn(-maxOffsetX, maxOffsetX)
+                                            else 0f
+                                            scale = newScale
+                                        }
+                                        lastDist = dist
+                                        lastMidX = midX
+                                        event.changes.forEach { if (it.positionChanged()) it.consume() }
+
+                                    } else if (pressed.size == 1 && !twoFinger) {
+                                        // ── ONE-FINGER: vertical scroll + horizontal pan ──
+                                        val pos   = pressed[0].position
+                                        val delta = pos - lastPos
+
+                                        // Vertical: always scroll the LazyColumn
+                                        if (delta.y != 0f) {
+                                            scope.launch { listState.scrollBy(-delta.y) }
+                                        }
+
+                                        // Horizontal: only when zoomed in
+                                        if (scale > 1.05f && delta.x != 0f) {
+                                            val maxOffsetX = (size.width * (scale - 1f) / 2f).coerceAtLeast(0f)
+                                            offsetX = (offsetX + delta.x).coerceIn(-maxOffsetX, maxOffsetX)
+                                        }
+
+                                        lastPos = pos
+                                        pressed[0].consume()
+                                    }
+
+                                } while (event.changes.any { it.pressed })
+
+                                // Reset inter-finger distance for next gesture
+                                lastDist  = 0f
+                                twoFinger = false
+                            }
                         }
                         .graphicsLayer(
                             scaleX       = scale,
                             scaleY       = scale,
                             translationX = offsetX,
-                            // translationY intentionally omitted — vertical
-                            // position is owned by LazyColumn's own scroll
-                            // (userScrollEnabled = true above), so scrolling
-                            // behaves identically zoomed or not, as requested.
                             clip         = false
                         )
                 ) {
                     LazyColumn(
                         state               = listState,
+                        // Disabled — our custom pointerInput above handles ALL
+                        // scrolling so there are no gesture ownership conflicts.
+                        userScrollEnabled   = false,
                         modifier            = Modifier.fillMaxSize(),
-                        // FIX: previously frozen while zoomed (scale > 1.05f), which
-                        // broke the requested WPS-style behaviour of "scroll works
-                        // the same whether zoomed or not". Single-finger vertical
-                        // drag always scrolls the list now, at any zoom level —
-                        // only the two-finger pinch gesture (consumed above in
-                        // awaitEachGesture) drives zoom/horizontal-pan, so the two
-                        // gesture systems don't fight over one-finger drags.
-                        userScrollEnabled   = true,
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                         contentPadding      = PaddingValues(top = 0.dp, bottom = 72.dp)
                     ) {
@@ -618,6 +648,21 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                     TopBar(
                         fileName = fileName,
                         onBack   = onClose
+                    )
+                }
+
+                // ── Floating bottom bar (footer) ─────────────────────────────
+                // Mirrors TopBar's visibility exactly, so header + footer always
+                // show/hide together on tap — one "fullscreen" toggle, not two.
+                AnimatedVisibility(
+                    visible  = controlsVisible && !showToolbar,
+                    enter    = slideInVertically { it } + fadeIn(),
+                    exit     = slideOutVertically { it } + fadeOut(),
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                ) {
+                    BottomBar(
+                        currentPage = currentPage,
+                        totalPages  = totalPages
                     )
                 }
             }
@@ -937,6 +982,28 @@ private fun TopBar(fileName: String, onBack: () -> Unit) {
                 overflow   = TextOverflow.Ellipsis
             )
         }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BOTTOM BAR (footer) — page indicator, mirrors TopBar's look & visibility
+// ─────────────────────────────────────────────────────────────────────────────
+@Composable
+private fun BottomBar(currentPage: Int, totalPages: Int) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .background(VA_BG.copy(0.93f))
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment     = Alignment.CenterVertically
+    ) {
+        Text(
+            text       = "$currentPage / $totalPages",
+            fontSize   = 12.sp,
+            fontWeight = FontWeight.Medium,
+            color      = VA_WHITE.copy(alpha = 0.85f)
+        )
     }
 }
 
