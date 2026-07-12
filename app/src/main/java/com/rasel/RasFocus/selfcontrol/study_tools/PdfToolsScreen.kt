@@ -628,13 +628,15 @@ private fun WpsRecentRow(
             .fillMaxWidth()
             .clickable {
                 // URI থেকে directly PdfViewerActivity open করো — super fast, no base64
+                // App-এর ভেতর থেকে খোলার সময় NEW_TASK flag দেওয়া হয় না, কারণ taskAffinity=""
+                // + NEW_TASK মিলে Activity আলাদা task-এ চলে যেত (recent-apps-এ আলাদা card,
+                // এবং app-এর ভেতর থেকে খুললে "আসে না" মনে হতো)।
                 val uri = item.uri
                 if (uri != null) {
                     val intent = android.content.Intent(context, PdfViewerActivity::class.java).apply {
                         action = android.content.Intent.ACTION_VIEW
                         setDataAndType(uri, "application/pdf")
                         addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
                     }
                     context.startActivity(intent)
                 } else {

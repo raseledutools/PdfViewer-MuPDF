@@ -1022,7 +1022,6 @@ private fun BottomBar(currentPage: Int, totalPages: Int) {
 // ─────────────────────────────────────────────────────────────────────────────
 // LOADING / ERROR / PLACEHOLDER
 // ─────────────────────────────────────────────────────────────────────────────
-@Composable
 // LoadingView removed — instant open, no loading screen
 
 @Composable

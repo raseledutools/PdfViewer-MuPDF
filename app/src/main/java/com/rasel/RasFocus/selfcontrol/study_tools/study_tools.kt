@@ -127,7 +127,7 @@ fun StudyToolsScreen(onBack: () -> Unit = {}, onOpenDiary: () -> Unit) {
             is StudyNav.Web        -> StudyWebView(url = current.url, title = current.title, onBack = { nav = StudyNav.Home })
             is StudyNav.PdfMerge   -> NativePdfMergeScreen(onBack = { nav = StudyNav.Home })
             is StudyNav.PdfTools   -> PdfToolsScreen(onBack = { nav = StudyNav.Home })
-            is StudyNav.Calculator -> ScientificCalculatorScreen(onBack = { nav = StudyNav.Home })
+            is StudyNav.Calculator -> Calc991ESPlusScreen(onBack = { nav = StudyNav.Home })
             is StudyNav.UnitConv   -> UnitConverterScreen(onBack = { nav = StudyNav.Home })
             is StudyNav.Pomodoro   -> PomodoroScreen(onBack = { nav = StudyNav.Home })
             is StudyNav.QuickNotes -> QuickNotesScreen(onBack = { nav = StudyNav.Home })
