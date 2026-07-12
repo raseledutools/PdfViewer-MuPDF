@@ -9,6 +9,7 @@ import android.graphics.RectF
 import android.net.Uri
 import android.os.Bundle
 import android.view.WindowManager
+import java.io.File
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.*
@@ -241,6 +242,7 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
 
     // MuPDF Document
     var pdfDoc   by remember { mutableStateOf<Document?>(null) }
+    var tempFilePath by remember { mutableStateOf<String?>(null) }
 
     val listState = rememberLazyListState()
     val screenW   = context.resources.displayMetrics.widthPixels
@@ -271,9 +273,20 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
         isLoading = true
         withContext(Dispatchers.IO) {
             try {
-                val pfd = context.contentResolver.openFileDescriptor(uri, "r")
-                    ?: throw IllegalStateException("File খুলতে পারিনি")
-                val doc = Document.openDocument("/proc/self/fd/" + pfd.fd)
+                // FIX: MuPDF's Document.openDocument(path) needs a real filesystem
+                // path it can reopen/seek freely. "/proc/self/fd/N" looked like it
+                // worked but is unreliable across devices/SELinux policies and content
+                // providers — MuPDF's native layer can silently SIGSEGV on it instead
+                // of throwing a catchable Java exception, which is exactly the
+                // "app just closes, no error" symptom. Copying to a real cache file
+                // first is slightly slower to open but crash-safe on every device.
+                val tempFile = File(context.cacheDir, "viewer_temp_${System.currentTimeMillis()}.pdf")
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    tempFile.outputStream().use { output -> input.copyTo(output) }
+                } ?: throw IllegalStateException("File খুলতে পারিনি")
+
+                val doc = Document.openDocument(tempFile.absolutePath)
+                tempFilePath = tempFile.absolutePath
                 pdfDoc  = doc
                 val count = doc.countPages()
 
@@ -418,6 +431,7 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
             bitmapCache.evictAll()
             // textPage cleanup not needed with MuPDF fitz
             try { pdfDoc?.destroy() } catch (_: Exception) {}
+            try { tempFilePath?.let { File(it).delete() } } catch (_: Exception) {}
         }
     }
 
