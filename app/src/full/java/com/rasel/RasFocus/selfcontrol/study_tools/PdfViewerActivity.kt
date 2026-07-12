@@ -455,8 +455,20 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
     // ── UI ──────────────────────────────────────────────────────────────────
     Box(Modifier.fillMaxSize().background(Color(0xFF111111))) {
 
+        // FIX: "PDF লোড হচ্ছে..." full-screen message সরানো হয়েছে।
+        // Top-এ subtle progress bar — content area সাথে সাথে দেখা যাবে।
+        if (isLoading) {
+            LinearProgressIndicator(
+                modifier   = Modifier.fillMaxWidth().align(Alignment.TopCenter),
+                color      = VA_INDIGO2,
+                trackColor = Color.Transparent
+            )
+        }
         when {
-            isLoading -> LoadingView(fileName)
+            isLoading && pages.all { it == null } && errorMsg.isEmpty() -> {
+                // First page আসা পর্যন্ত dark background — no spinner
+                Box(Modifier.fillMaxSize().background(Color(0xFF111111)))
+            }
             errorMsg.isNotEmpty() -> ErrorView(errorMsg, onClose)
             else -> {
                 // ── WPS-style gesture engine ────────────────────────────────
@@ -1011,17 +1023,7 @@ private fun BottomBar(currentPage: Int, totalPages: Int) {
 // LOADING / ERROR / PLACEHOLDER
 // ─────────────────────────────────────────────────────────────────────────────
 @Composable
-private fun LoadingView(fileName: String) {
-    Box(Modifier.fillMaxSize().background(VA_BG), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            CircularProgressIndicator(color = VA_INDIGO2, strokeWidth = 2.5.dp, modifier = Modifier.size(48.dp))
-            Spacer(Modifier.height(16.dp))
-            Text("PDF লোড হচ্ছে...", fontSize = 13.sp, color = VA_MUTED)
-            Text(fileName, fontSize = 11.sp, color = VA_MUTED.copy(0.6f), maxLines = 1,
-                overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp, start = 32.dp, end = 32.dp))
-        }
-    }
-}
+// LoadingView removed — instant open, no loading screen
 
 @Composable
 private fun ErrorView(msg: String, onClose: () -> Unit) {
