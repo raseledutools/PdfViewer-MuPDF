@@ -77,16 +77,25 @@ class TextViewerActivity : ComponentActivity() {
             // Try read+write first (needed for save), fall back to read-only
             // — some file managers only grant read, and that's fine for viewing.
             // Both calls are wrapped separately so a write failure doesn't block read.
+            //
+            // FIX: takePersistableUriPermission can throw IllegalArgumentException
+            // (not just SecurityException) when the source content provider doesn't
+            // support persistable grants at all — this is common with many
+            // third-party file managers. Catching only SecurityException let that
+            // exception propagate uncaught, crashing the activity before it ever
+            // rendered anything. Catching Exception broadly here is intentional:
+            // this permission is a nice-to-have (enables Save), never something
+            // that should be allowed to crash the viewer.
             try {
                 contentResolver.takePersistableUriPermission(
                     uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
                 )
-            } catch (_: SecurityException) { }
+            } catch (_: Exception) { }
             try {
                 contentResolver.takePersistableUriPermission(
                     uri, android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                 )
-            } catch (_: SecurityException) { /* write not granted — view only, save disabled */ }
+            } catch (_: Exception) { /* write not granted — view only, save disabled */ }
         }
         uriState.value      = uri
         fileNameState.value = uri?.let { getFileNameFromUri(it) } ?: "File"
@@ -95,12 +104,14 @@ class TextViewerActivity : ComponentActivity() {
     private fun getFileNameFromUri(uri: Uri): String {
         var name: String? = null
         if (uri.scheme == "content") {
-            contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-                if (cursor.moveToFirst()) {
-                    val idx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
-                    if (idx >= 0) name = cursor.getString(idx)
+            try {
+                contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val idx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                        if (idx >= 0) name = cursor.getString(idx)
+                    }
                 }
-            }
+            } catch (_: Exception) { /* some providers reject query — fall back to path segment below */ }
         }
         return name ?: uri.lastPathSegment?.substringAfterLast('/') ?: "File"
     }
