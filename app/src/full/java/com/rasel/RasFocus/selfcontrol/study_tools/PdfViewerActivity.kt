@@ -483,48 +483,35 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                 // scroll is frozen (userScrollEnabled = false) so the two
                 // gesture systems don't fight — pinch back out (or double-tap)
                 // to resume normal page-by-page scrolling.
+                val transformState = rememberTransformableState { zoomChange, panChange, _ ->
+                    // transformable() reports single-finger drags too, with
+                    // zoomChange == 1f in that case. Only react when an actual
+                    // pinch is happening (zoomChange != 1f) — this keeps single-
+                    // finger touches from being captured here at all, letting
+                    // them fall through to LazyColumn for normal scrolling.
+                    if (zoomChange == 1f) return@rememberTransformableState
+                    val newScale = (scale * zoomChange).coerceIn(1f, 10f)
+                    val maxOffsetX = (size.width * (newScale - 1f) / 2f).coerceAtLeast(0f)
+                    offsetX = if (newScale > 1f)
+                        (offsetX + panChange.x).coerceIn(-maxOffsetX, maxOffsetX)
+                    else 0f
+                    scale = newScale
+                }
+
                 Box(
                     Modifier
                         .fillMaxSize()
-                        .pointerInput(Unit) {
-                            awaitEachGesture {
-                                awaitFirstDown(requireUnconsumed = false)
-                                do {
-                                    val event = awaitPointerEvent()
-                                    if (event.changes.size >= 2) {
-                                        val zoomChange = event.calculateZoom()
-                                        val panChange  = event.calculatePan()
-                                        // FIX: was capped at 5x — now that pages
-                                        // re-render at higher resolution when
-                                        // zoomed (see reRenderPageSharper above),
-                                        // a genuinely useful "zoom in a lot" ceiling
-                                        // of 10x stays sharp instead of blurry.
-                                        val newScale = (scale * zoomChange).coerceIn(1f, 10f)
-                                        // FIX: only horizontal pan is captured here —
-                                        // vertical movement is left for LazyColumn's
-                                        // own scroll to handle (requested behaviour:
-                                        // "scroll same whether zoomed or not", with
-                                        // horizontal pan scaling with zoom amount).
-                                        // Capping offsetX to what the current zoom
-                                        // level can actually show keeps the page from
-                                        // being pannable into empty space.
-                                        val maxOffsetX = (size.width * (newScale - 1f) / 2f).coerceAtLeast(0f)
-                                        offsetX = if (newScale > 1f)
-                                            (offsetX + panChange.x).coerceIn(-maxOffsetX, maxOffsetX)
-                                        else 0f
-                                        scale   = newScale
-                                        event.changes.forEach { if (it.positionChanged()) it.consume() }
-                                    }
-                                    // single finger → never consume, LazyColumn
-                                    // scrolls freely at any zoom level (WPS style)
-                                } while (event.changes.any { it.pressed })
-                            }
-                        }
+                        // transformable() is Compose's own built-in pinch/pan
+                        // detector — it only activates on multi-touch gestures
+                        // and is specifically designed to coexist with a separate
+                        // tap-detecting pointerInput below it, unlike two raw
+                        // awaitEachGesture blocks which can race over who sees
+                        // a touch first. Single-finger drags pass through this
+                        // untouched, reaching LazyColumn for normal scrolling.
+                        .transformable(state = transformState, lockRotationOnZoomPan = true)
                         .pointerInput(Unit) {
                             detectTapGestures(
                                 onTap = {
-                                    // Plain tap — toggle the top bar, and dismiss
-                                    // any active selection toolbar too.
                                     toggleControls()
                                     if (showToolbar) { selection = null; showToolbar = false }
                                 },
@@ -534,17 +521,10 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                                         offsetX = 0f
                                     } else {
                                         val newScale = 2.5f
-                                        // FIX: offsetY removed — vertical position is
-                                        // owned by LazyColumn's scroll now, not this
-                                        // transform, so it no longer fights the list's
-                                        // own scroll state (which caused the "all
-                                        // pages zoom together but only one direction
-                                        // scrolls" symptom). Horizontal offset still
-                                        // anchors zoom to the exact tap point.
                                         val maxOffsetX = (size.width * (newScale - 1f) / 2f).coerceAtLeast(0f)
                                         offsetX = ((size.width / 2f - tapOffset.x) * (newScale - 1f))
                                             .coerceIn(-maxOffsetX, maxOffsetX)
-                                        scale   = newScale
+                                        scale = newScale
                                     }
                                 }
                             )
