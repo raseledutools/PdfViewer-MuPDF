@@ -311,15 +311,20 @@ fun TextViewerScreen(uri: Uri?, fileName: String, onClose: () -> Unit) {
             }
 
             // ── Content ────────────────────────────────────────────────────
+            // FIX: Loading screen সরানো হয়েছে — "পড়া হচ্ছে..." message আর আসবে না।
+            // Top-এ subtle linear progress bar দেখাবে load হওয়ার সময়,
+            // content area সাথে সাথে দেখা যাবে।
+            if (isLoading) {
+                LinearProgressIndicator(
+                    modifier = Modifier.fillMaxWidth(),
+                    color    = ACCENT,
+                    trackColor = BG
+                )
+            }
             when {
-                isLoading -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CircularProgressIndicator(color = ACCENT, strokeWidth = 2.5.dp)
-                            Spacer(Modifier.height(12.dp))
-                            Text("পড়া হচ্ছে…", color = TEXT_MUTED, fontSize = 12.sp)
-                        }
-                    }
+                isLoading && rawText.isEmpty() && errorMsg.isBlank() -> {
+                    // Content area খালি রাখি load হওয়া পর্যন্ত — no full-screen spinner
+                    Box(Modifier.fillMaxSize().background(BG))
                 }
                 errorMsg.isNotBlank() -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
