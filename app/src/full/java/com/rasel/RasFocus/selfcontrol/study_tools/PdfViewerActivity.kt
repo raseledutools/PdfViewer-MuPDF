@@ -282,21 +282,48 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                     repeat(count) { pages.add(null) }
                     totalPages  = count
                     currentPage = 1
-                    isLoading   = false
+                    // isLoading stays true here — flipped to false after
+                    // the first page bitmap is rendered (see loop below).
                 }
 
-                // Render pages one by one
+                // ── FAST OPEN: render first page bitmap immediately so the
+                // reading view appears at once (no "loading" screen for the
+                // user). All remaining pages render in the background — visible
+                // pages get their bitmaps as PdfPageItem's LaunchedEffect fires,
+                // invisible pages are skipped until scrolled into view.
                 for (i in 0 until count) {
                     val page   = doc.loadPage(i)
                     val bounds = page.bounds
                     val origW  = (bounds.x1 - bounds.x0).coerceAtLeast(1f)
                     val origH  = (bounds.y1 - bounds.y0).coerceAtLeast(1f)
-                    val scale  = screenW.toFloat() / origW.toFloat()
+                    val baseS  = screenW.toFloat() / origW.toFloat()
                     val bmpW   = screenW
-                    val bmpH   = (origH * scale).roundToInt().coerceAtLeast(1)
-                    withContext(Dispatchers.Main) {
-                        if (i < pages.size)
-                            pages[i] = PageData(null, i, bmpW, bmpH)
+                    val bmpH   = (origH * baseS).roundToInt().coerceAtLeast(1)
+
+                    if (i == 0) {
+                        // Render page 0 NOW — synchronous on IO thread — so we
+                        // can flip isLoading = false with a real bitmap already
+                        // in place.  The user sees page 1 the instant it opens.
+                        val bmp = Bitmap.createBitmap(bmpW, bmpH, Bitmap.Config.ARGB_8888)
+                        bmp.eraseColor(AColor.WHITE)
+                        val ctm = Matrix(bmpW.toFloat() / origW, bmpH.toFloat() / origH)
+                        val dev = AndroidDrawDevice(bmp, 0, 0, 0, 0, bmp.width, bmp.height)
+                        page.run(dev, ctm, null)
+                        dev.close()
+                        bitmapCache.put(0, bmp)
+                        withContext(Dispatchers.Main) {
+                            pages[0] = PageData(null, 0, bmpW, bmpH,
+                                renderedAtScale = 1f, bitmap = bmp)
+                            isLoading = false   // ← show viewer immediately
+                        }
+                    } else {
+                        // Remaining pages: just register dimensions so the
+                        // LazyColumn can lay them out.  Bitmaps arrive later
+                        // via PdfPageItem's LaunchedEffect → onLoadBitmap().
+                        withContext(Dispatchers.Main) {
+                            if (i < pages.size)
+                                pages[i] = PageData(null, i, bmpW, bmpH)
+                        }
                     }
                     page.destroy()
                 }
@@ -367,16 +394,21 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
         if (totalPages > 0) currentPage = visibleIdx + 1
     }
 
-    // Debounced: waits for pinch/zoom to actually settle before re-rendering,
-    // so a live two-finger gesture doesn't trigger a re-render on every tiny
-    // scale change (would be expensive and janky mid-gesture).
+    // Debounced: waits for pinch/zoom to settle before re-rendering at vector
+    // resolution. Re-renders the visible page AND the next two pages so scrolling
+    // forward while zoomed in never shows a blurry page first.
     LaunchedEffect(scale, visibleIdx) {
-        delay(350)
-        val current = pages.getOrNull(visibleIdx) ?: return@LaunchedEffect
-        // Only upgrade once real headroom is used up, and only bother past
-        // roughly 1x — avoids needless re-render churn for small pinches.
-        if (scale > 1.05f && scale > current.renderedAtScale * 1.4f) {
-            reRenderPageSharper(visibleIdx, scale)
+        delay(300)   // slightly faster settle than before
+        if (scale <= 1.05f) return@LaunchedEffect   // no work needed at 1x
+        val pagesToUpgrade = listOf(visibleIdx, visibleIdx + 1, visibleIdx - 1)
+            .filter { it in 0 until totalPages }
+        for (idx in pagesToUpgrade) {
+            val current = pages.getOrNull(idx) ?: continue
+            // Re-render if we haven't rendered this page at this zoom yet,
+            // or if the zoom has grown significantly since we last rendered it.
+            if (scale > current.renderedAtScale * 1.3f) {
+                reRenderPageSharper(idx, scale)
+            }
         }
     }
 
@@ -497,7 +529,7 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                     LazyColumn(
                         state               = listState,
                         modifier            = Modifier.fillMaxSize(),
-                        userScrollEnabled   = true,
+                        userScrollEnabled   = (scale <= 1.05f),  // freeze while zoomed — pan only
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                         contentPadding      = PaddingValues(top = 0.dp, bottom = 72.dp)
                     ) {
@@ -512,7 +544,9 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                                         selection    = sel
                                         showToolbar  = sel != null
                                     },
-                                    onLoadBitmap   = { scale ->
+                                    onLoadBitmap   = { _ ->
+                                        // Always render at current document zoom so pages
+                                        // scrolled into view while zoomed appear sharp at once.
                                         scope.launch { reRenderPageSharper(idx, scale) }
                                     }
                                 )
