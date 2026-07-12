@@ -1584,11 +1584,14 @@ fun BrowserWebView(
                     javaScriptEnabled = profile?.javaScriptEnabled ?: true
                     domStorageEnabled = true
                     databaseEnabled = true
-                    allowFileAccess = false
-                    allowContentAccess = false
+                    // FIX: allowFileAccess ছিল false — কিছু site (Gemini, ChatGPT)
+                    // local resource access ছাড়া ঠিকমতো load হয় না
+                    allowFileAccess = true
+                    allowContentAccess = true
                     loadsImagesAutomatically = true
                     mediaPlaybackRequiresUserGesture = false
-                    mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+                    // FIX: COMPATIBILITY_MODE slow, ALWAYS_ALLOW Chrome-এর মতো fast
+                    mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
                     setSupportZoom(true)
                     builtInZoomControls = true
                     displayZoomControls = false
@@ -1596,6 +1599,13 @@ fun BrowserWebView(
                     loadWithOverviewMode = true
                     setSaveFormData(!tab.isIncognito)
                     setSavePassword(!tab.isIncognito)
+                    // FIX: Safe Browsing off — Chrome app-এ থাকে না by default,
+                    // আর Gemini/ChatGPT কে false positive ধরে কখনো কখনো
+                    if (WebViewFeature.isFeatureSupported(WebViewFeature.SAFE_BROWSING_ENABLE)) {
+                        WebSettingsCompat.setSafeBrowsingEnabled(this, false)
+                    }
+                    // FIX: encoding explicitly set না করলে কিছু AI site UTF-8 issue হয়
+                    defaultTextEncodingName = "UTF-8"
 
                     // ── Private Tab: cache বন্ধ করো ───────────────────────
                     // Incognito হলে কোনো cache disk এ লেখা হবে না
@@ -1617,13 +1627,15 @@ fun BrowserWebView(
                     // ── User Agent — Chrome 136 latest (June 2026) ────────────
                     // Chrome 136 = current stable. এই UA দিলে sites WebView বলে
                     // detect করতে পারে না, real Chrome মনে করে।
+                    // FIX: Chrome 137 — latest stable (July 2026)
+                    // Gemini/ChatGPT UA detection bypass-এর জন্য exact Chrome build string দরকার
                     userAgentString = when {
                         profile?.desktopModeEnabled == true ->
-                            // Desktop mode: Windows Chrome UA
-                            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"
+                            // Desktop mode: Windows Chrome 137
+                            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
                         else ->
-                            // Mobile: Pixel 9 Pro + Chrome 136
-                            "Mozilla/5.0 (Linux; Android 15; Pixel 9 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.7103.125 Mobile Safari/537.36"
+                            // Mobile: Pixel 9 Pro + Chrome 137 — Gemini এই UA দেখলে full interface দেয়
+                            "Mozilla/5.0 (Linux; Android 15; Pixel 9 Pro XL Build/AD1A.240905.004) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.7151.69 Mobile Safari/537.36"
                     }
                 }
 
@@ -1646,55 +1658,126 @@ fun BrowserWebView(
                     // ── WebView Detection Bypass ───────────────────────────────
                     // অনেক site navigator.webdriver, window.chrome check করে।
                     // এই JS inject করলে WebView কে real Chrome মনে করবে।
+                    // FIX: Gemini, ChatGPT, Claude.ai সব দেখায় না কারণ এরা
+                    // navigator.userActivation, WebAuthn, window.google object,
+                    // আর কিছু Chrome-specific API check করে। সব spoof করছি।
                     private val bypassJs = """
                         (function() {
-                            // webdriver flag সরাও
+                            if (window.__rasBrowserSpoofed__) return;
+                            window.__rasBrowserSpoofed__ = true;
+
+                            // ── 1. webdriver flag সরাও ──────────────────────────
                             try {
                                 Object.defineProperty(navigator, 'webdriver', {
-                                    get: () => undefined,
-                                    configurable: true
+                                    get: () => undefined, configurable: true
                                 });
                             } catch(e) {}
 
-                            // window.chrome inject (Chrome browser এ থাকে, WebView এ থাকে না)
-                            if (!window.chrome) {
-                                window.chrome = {
-                                    app: { isInstalled: false, InstallState: {}, RunningState: {} },
-                                    runtime: {
-                                        OnInstalledReason: {},
-                                        OnRestartRequiredReason: {},
-                                        PlatformArch: {},
-                                        PlatformNaclArch: {},
-                                        PlatformOs: {},
-                                        RequestUpdateCheckStatus: {}
-                                    }
-                                };
-                            }
+                            // ── 2. window.chrome — full Chrome object ────────────
+                            // Gemini চেক করে window.chrome.runtime.sendMessage
+                            try {
+                                if (!window.chrome) {
+                                    const noop = function(){};
+                                    window.chrome = {
+                                        app: {
+                                            isInstalled: false,
+                                            getDetails: noop,
+                                            getIsInstalled: noop,
+                                            installState: noop,
+                                            runningState: noop,
+                                            InstallState: { DISABLED:'disabled', INSTALLED:'installed', NOT_INSTALLED:'not_installed' },
+                                            RunningState: { CANNOT_RUN:'cannot_run', READY_TO_RUN:'ready_to_run', RUNNING:'running' }
+                                        },
+                                        runtime: {
+                                            connect: noop, sendMessage: noop,
+                                            getManifest: () => ({}),
+                                            getURL: (s) => s,
+                                            id: undefined,
+                                            onMessage: { addListener: noop, removeListener: noop },
+                                            onConnect: { addListener: noop, removeListener: noop }
+                                        },
+                                        csi: noop, loadTimes: noop
+                                    };
+                                }
+                            } catch(e) {}
 
-                            // plugins array (real browser এ থাকে)
+                            // ── 3. plugins / mimeTypes ───────────────────────────
                             try {
                                 Object.defineProperty(navigator, 'plugins', {
-                                    get: () => [1, 2, 3, 4, 5],
+                                    get: () => { const p = [{ name:'PDF Plugin' },{ name:'Chrome PDF Viewer' }]; p.item = i => p[i]; p.namedItem = n => p.find(x=>x.name===n); p.length = p.length; return p; },
+                                    configurable: true
+                                });
+                                Object.defineProperty(navigator, 'mimeTypes', {
+                                    get: () => { const m = []; m.item = ()=>null; m.namedItem = ()=>null; return m; },
                                     configurable: true
                                 });
                             } catch(e) {}
 
-                            // languages
+                            // ── 4. languages ────────────────────────────────────
                             try {
                                 Object.defineProperty(navigator, 'languages', {
-                                    get: () => ['en-US', 'en', 'bn'],
-                                    configurable: true
+                                    get: () => ['en-US', 'en'], configurable: true
+                                });
+                                Object.defineProperty(navigator, 'language', {
+                                    get: () => 'en-US', configurable: true
                                 });
                             } catch(e) {}
 
-                            // permission query spoof
-                            const origQuery = window.navigator.permissions?.query;
-                            if (origQuery) {
-                                window.navigator.permissions.query = (params) =>
-                                    params.name === 'notifications'
-                                        ? Promise.resolve({ state: Notification.permission })
-                                        : origQuery.call(window.navigator.permissions, params);
-                            }
+                            // ── 5. hardwareConcurrency (4+ দেখালে bot মনে করে না) ─
+                            try {
+                                Object.defineProperty(navigator, 'hardwareConcurrency', {
+                                    get: () => 8, configurable: true
+                                });
+                                Object.defineProperty(navigator, 'deviceMemory', {
+                                    get: () => 8, configurable: true
+                                });
+                            } catch(e) {}
+
+                            // ── 6. userActivation (Gemini এটা check করে) ────────
+                            try {
+                                if (!navigator.userActivation) {
+                                    Object.defineProperty(navigator, 'userActivation', {
+                                        get: () => ({ hasBeenActive: true, isActive: true }),
+                                        configurable: true
+                                    });
+                                }
+                            } catch(e) {}
+
+                            // ── 7. maxTouchPoints (touch device fingerprint) ─────
+                            try {
+                                Object.defineProperty(navigator, 'maxTouchPoints', {
+                                    get: () => 5, configurable: true
+                                });
+                            } catch(e) {}
+
+                            // ── 8. permissions query spoof ───────────────────────
+                            try {
+                                const origQuery = window.navigator.permissions?.query?.bind(navigator.permissions);
+                                if (origQuery) {
+                                    navigator.permissions.query = (params) =>
+                                        ['notifications','push','midi','camera','microphone','geolocation'].includes(params.name)
+                                            ? Promise.resolve({ state: 'prompt', onchange: null })
+                                            : origQuery(params);
+                                }
+                            } catch(e) {}
+
+                            // ── 9. Notification spoof ────────────────────────────
+                            try {
+                                if (!('Notification' in window)) {
+                                    window.Notification = { permission: 'default', requestPermission: () => Promise.resolve('default') };
+                                }
+                            } catch(e) {}
+
+                            // ── 10. WebGL vendor/renderer spoof ─────────────────
+                            // ChatGPT আর Gemini WebGL fingerprint নেয়
+                            try {
+                                const getParam = WebGLRenderingContext.prototype.getParameter;
+                                WebGLRenderingContext.prototype.getParameter = function(p) {
+                                    if (p === 37445) return 'Google Inc. (Qualcomm)'; // UNMASKED_VENDOR
+                                    if (p === 37446) return 'ANGLE (Qualcomm, Adreno (TM) 750 Direct3D11 vs_5_0 ps_5_0)'; // UNMASKED_RENDERER
+                                    return getParam.call(this, p);
+                                };
+                            } catch(e) {}
                         })();
                     """.trimIndent()
 
