@@ -135,6 +135,21 @@
 
     </activity>
 
+    <!-- ✅ Combo module's PDF Viewer — launched only via explicit in-app
+         Intent from combo/selfcontrol/study_tools/PdfToolsScreen.kt, not
+         registered as a system-wide default PDF viewer (no intent-filter),
+         to avoid a duplicate "RasFocus PDF" entry alongside the one above
+         in the OS's file-open chooser. -->
+    <activity
+        android:name=".combo.selfcontrol.study_tools.PdfViewerActivity"
+        android:label="RasFocus PDF"
+        android:exported="false"
+        android:launchMode="singleTask"
+        android:taskAffinity=""
+        android:hardwareAccelerated="true"
+        android:theme="@style/Theme.RasFocus"
+        android:configChanges="orientation|screenSize|keyboardHidden" />
+
     <!-- ✅ Text/Code/Markdown Viewer — .txt .kt .md files opened from any file manager -->
     <activity
         android:name=".selfcontrol.study_tools.TextViewerActivity"

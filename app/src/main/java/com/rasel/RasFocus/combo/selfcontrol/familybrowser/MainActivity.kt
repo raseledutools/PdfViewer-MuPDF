@@ -3823,14 +3823,20 @@ fun DownloadPanel(vm: BrowserViewModel, onDismiss: () -> Unit) {
 }
 
 @Composable
+// FIX: item was typed as the NON-combo
+// com.rasel.RasFocus.selfcontrol.familybrowser.DownloadItem, but the
+// downloads list this is called with (via vm.downloadManager.downloads,
+// vm being this file's own combo.selfcontrol.familybrowser.BrowserViewModel)
+// is a List of THIS package's combo DownloadItem — a different, unrelated
+// class despite the identical name. Same mismatch for DownloadStatus below.
 private fun DownloadItemRow(
-    item:     com.rasel.RasFocus.selfcontrol.familybrowser.DownloadItem,
+    item:     DownloadItem,
     context:  android.content.Context,
     onOpen:   () -> Unit,
     onDelete: () -> Unit
 ) {
-    val isDone   = item.status == com.rasel.RasFocus.selfcontrol.familybrowser.DownloadStatus.COMPLETED
-    val isFailed = item.status == com.rasel.RasFocus.selfcontrol.familybrowser.DownloadStatus.FAILED
+    val isDone   = item.status == DownloadStatus.COMPLETED
+    val isFailed = item.status == DownloadStatus.FAILED
     val progress = if (item.totalBytes > 0) (item.downloadedBytes.toFloat() / item.totalBytes) else 0f
 
     Surface(
