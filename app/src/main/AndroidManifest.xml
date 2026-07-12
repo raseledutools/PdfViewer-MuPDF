@@ -206,6 +206,111 @@
                 android:pathPattern=".*\\.md" />
         </intent-filter>
 
+        <!-- HTML -->
+        <intent-filter android:priority="100">
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="content" android:mimeType="text/html" />
+        </intent-filter>
+        <intent-filter android:priority="90">
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <data android:scheme="content" android:mimeType="*/*"
+                android:pathPattern=".*\\.html" />
+        </intent-filter>
+        <intent-filter android:priority="90">
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <data android:scheme="content" android:mimeType="*/*"
+                android:pathPattern=".*\\.htm" />
+        </intent-filter>
+
+        <!-- JSON -->
+        <intent-filter android:priority="100">
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <data android:scheme="content" android:mimeType="application/json" />
+        </intent-filter>
+        <intent-filter android:priority="90">
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <data android:scheme="content" android:mimeType="*/*"
+                android:pathPattern=".*\\.json" />
+        </intent-filter>
+
+        <!-- XML -->
+        <intent-filter android:priority="90">
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <data android:scheme="content" android:mimeType="*/*"
+                android:pathPattern=".*\\.xml" />
+        </intent-filter>
+
+        <!-- CSS -->
+        <intent-filter android:priority="90">
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <data android:scheme="content" android:mimeType="*/*"
+                android:pathPattern=".*\\.css" />
+        </intent-filter>
+
+        <!-- YAML -->
+        <intent-filter android:priority="90">
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <data android:scheme="content" android:mimeType="*/*"
+                android:pathPattern=".*\\.yaml" />
+        </intent-filter>
+        <intent-filter android:priority="90">
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <data android:scheme="content" android:mimeType="*/*"
+                android:pathPattern=".*\\.yml" />
+        </intent-filter>
+
+    </activity>
+
+    <!-- ✅ Image Viewer — .jpg .jpeg .png .gif .webp opened from any file manager -->
+    <activity
+        android:name=".selfcontrol.study_tools.ImageViewerActivity"
+        android:label="RasFocus Image"
+        android:exported="true"
+        android:launchMode="singleTask"
+        android:taskAffinity=""
+        android:hardwareAccelerated="true"
+        android:theme="@style/Theme.RasFocus"
+        android:configChanges="orientation|screenSize|keyboardHidden">
+
+        <intent-filter android:priority="100">
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="content" android:mimeType="image/jpeg" />
+        </intent-filter>
+        <intent-filter android:priority="100">
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="content" android:mimeType="image/png" />
+        </intent-filter>
+        <intent-filter android:priority="100">
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="content" android:mimeType="image/gif" />
+        </intent-filter>
+        <intent-filter android:priority="100">
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="content" android:mimeType="image/webp" />
+        </intent-filter>
+        <intent-filter android:priority="90">
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <data android:scheme="file" android:mimeType="image/*" />
+        </intent-filter>
     </activity>
 
     <!-- ✅ Credential Manager — Google Sign-In এর জন্য required -->
