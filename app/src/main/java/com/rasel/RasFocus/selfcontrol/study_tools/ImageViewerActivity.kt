@@ -17,6 +17,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -197,7 +198,7 @@ private fun ImageViewerScreen(uri: Uri?, fileName: String, onClose: () -> Unit) 
                             }
                         }
                         .pointerInput(Unit) {
-                            androidx.compose.foundation.gestures.detectTapGestures(
+                            detectTapGestures(
                                 onTap = { controlsVisible = !controlsVisible },
                                 onDoubleTap = {
                                     scale = if (scale > 1f) 1f else 2.5f
