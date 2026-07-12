@@ -307,7 +307,7 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                         val bmp = Bitmap.createBitmap(bmpW, bmpH, Bitmap.Config.ARGB_8888)
                         bmp.eraseColor(AColor.WHITE)
                         val ctm = Matrix(bmpW.toFloat() / origW, bmpH.toFloat() / origH)
-                        val dev = AndroidDrawDevice(bmp, 0, 0, 0, 0, bmp.width, bmp.height)
+                        val dev = AndroidDrawDevice(bmp, 0, 0)
                         page.run(dev, ctm, null)
                         dev.close()
                         bitmapCache.put(0, bmp)
@@ -360,7 +360,7 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                 sharperBmp.eraseColor(AColor.WHITE)
                 // MuPDF fitz — vector-accurate rendering
                 val ctm = Matrix(bmpW.toFloat() / origW.toFloat(), bmpH.toFloat() / origH.toFloat())
-                val dev = AndroidDrawDevice(sharperBmp, 0, 0, 0, 0, sharperBmp.width, sharperBmp.height)
+                val dev = AndroidDrawDevice(sharperBmp, 0, 0)
                 page.run(dev, ctm, null)
                 dev.close()
                 page.destroy()
