@@ -53,6 +53,8 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.artifex.mupdf.fitz.Document
 import com.artifex.mupdf.fitz.Matrix
+import com.artifex.mupdf.fitz.StructuredText
+import com.artifex.mupdf.fitz.Quad
 import com.artifex.mupdf.fitz.android.AndroidDrawDevice
 import kotlinx.coroutines.*
 import kotlin.math.roundToInt
@@ -560,6 +562,7 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                             } else {
                                 PdfPageItem(
                                     pageData       = pageData,
+                                    pdfDoc         = pdfDoc,
                                     highlights     = highlights.filter { it.pageIndex == idx },
                                     onTextSelected = { sel ->
                                         selection    = sel
@@ -631,6 +634,7 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
 @Composable
 private fun PdfPageItem(
     pageData:       PageData,
+    pdfDoc:         Document?,
     highlights:     List<Highlight>,
     onTextSelected: (TextSelection?) -> Unit,
     onLoadBitmap:   (Float) -> Unit,
@@ -657,10 +661,71 @@ private fun PdfPageItem(
         return PointF(pdfX, pdfY)
     }
 
-    // Extract text between two screen positions
+    // Extract text between two screen positions using MuPDF's StructuredText.
+    // FIX: this was a stub that always returned null — the long-press+drag UI
+    // ran, but no text was ever actually extracted or highlighted/copied.
     fun extractSelectedText(start: Offset, end: Offset): TextSelection? {
-        // Text selection via MuPDF fitz — TODO: implement with StructuredText
-        return null
+        val doc = pdfDoc ?: return null
+        return try {
+            val p1 = screenToPdfCoords(start.x, start.y)
+            val p2 = screenToPdfCoords(end.x, end.y)
+            val left   = minOf(p1.x, p2.x)
+            val top    = minOf(p1.y, p2.y)
+            val right  = maxOf(p1.x, p2.x)
+            val bottom = maxOf(p1.y, p2.y)
+            if (right - left < 2f && bottom - top < 2f) return null // no real drag yet
+
+            val page = doc.loadPage(pageData.pageIndex)
+            val text = try {
+                page.toStructuredText()
+            } finally {
+                // Page itself can be released once StructuredText is built —
+                // the StructuredText object holds its own data independently.
+            }
+
+            val sb = StringBuilder()
+            val rects = mutableListOf<RectF>()
+            var charIndex = 0
+            var startIdx = -1
+            var endIdx   = -1
+
+            // StructuredText exposes blocks → lines → chars, each with a
+            // quad (4-point box) in PDF page coordinates.
+            for (block in text.blocks) {
+                for (line in block.lines) {
+                    for (ch in line.chars) {
+                        val q = ch.quad
+                        // Char center point, used to test against the
+                        // selection rectangle the user dragged out.
+                        val cx = (q.ul_x + q.ur_x + q.ll_x + q.lr_x) / 4f
+                        val cy = (q.ul_y + q.ur_y + q.ll_y + q.lr_y) / 4f
+                        val inSelection = cx in left..right && cy in top..bottom
+                        if (inSelection) {
+                            if (startIdx == -1) startIdx = charIndex
+                            endIdx = charIndex
+                            sb.appendCodePoint(ch.c)
+                            // Convert this char's PDF-space quad to bitmap
+                            // coords for the highlight/selection overlay.
+                            val bx1 = (minOf(q.ul_x, q.ll_x) / pageData.widthPx)  * imgWidthPx
+                            val by1 = (minOf(q.ul_y, q.ur_y) / pageData.heightPx) * imgHeightPx
+                            val bx2 = (maxOf(q.ur_x, q.lr_x) / pageData.widthPx)  * imgWidthPx
+                            val by2 = (maxOf(q.ll_y, q.lr_y) / pageData.heightPx) * imgHeightPx
+                            rects.add(RectF(bx1, by1, bx2, by2))
+                        }
+                        charIndex++
+                    }
+                    // Newline between lines within a block so copied text
+                    // reads naturally instead of running every line together.
+                    if (startIdx != -1 && endIdx != -1) sb.append(' ')
+                }
+            }
+            page.destroy()
+
+            if (startIdx == -1 || sb.isBlank()) return null
+            TextSelection(pageData.pageIndex, startIdx, endIdx, sb.toString().trim(), rects)
+        } catch (_: Exception) {
+            null
+        }
     }
 
     Box(
