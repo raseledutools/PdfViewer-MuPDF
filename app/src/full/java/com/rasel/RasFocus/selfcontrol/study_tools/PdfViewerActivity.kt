@@ -500,8 +500,18 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                                         // a genuinely useful "zoom in a lot" ceiling
                                         // of 10x stays sharp instead of blurry.
                                         val newScale = (scale * zoomChange).coerceIn(1f, 10f)
-                                        offsetX = if (newScale > 1f) offsetX + panChange.x else 0f
-                                        offsetY = if (newScale > 1f) offsetY + panChange.y else 0f
+                                        // FIX: only horizontal pan is captured here —
+                                        // vertical movement is left for LazyColumn's
+                                        // own scroll to handle (requested behaviour:
+                                        // "scroll same whether zoomed or not", with
+                                        // horizontal pan scaling with zoom amount).
+                                        // Capping offsetX to what the current zoom
+                                        // level can actually show keeps the page from
+                                        // being pannable into empty space.
+                                        val maxOffsetX = (size.width * (newScale - 1f) / 2f).coerceAtLeast(0f)
+                                        offsetX = if (newScale > 1f)
+                                            (offsetX + panChange.x).coerceIn(-maxOffsetX, maxOffsetX)
+                                        else 0f
                                         scale   = newScale
                                         event.changes.forEach { if (it.positionChanged()) it.consume() }
                                     }
@@ -522,11 +532,18 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                                     if (scale > 1.2f) {
                                         scale   = 1f
                                         offsetX = 0f
-                                        offsetY = 0f
                                     } else {
                                         val newScale = 2.5f
-                                        offsetX = (size.width  / 2f - tapOffset.x) * (newScale - 1f)
-                                        offsetY = (size.height / 2f - tapOffset.y) * (newScale - 1f)
+                                        // FIX: offsetY removed — vertical position is
+                                        // owned by LazyColumn's scroll now, not this
+                                        // transform, so it no longer fights the list's
+                                        // own scroll state (which caused the "all
+                                        // pages zoom together but only one direction
+                                        // scrolls" symptom). Horizontal offset still
+                                        // anchors zoom to the exact tap point.
+                                        val maxOffsetX = (size.width * (newScale - 1f) / 2f).coerceAtLeast(0f)
+                                        offsetX = ((size.width / 2f - tapOffset.x) * (newScale - 1f))
+                                            .coerceIn(-maxOffsetX, maxOffsetX)
                                         scale   = newScale
                                     }
                                 }
@@ -536,14 +553,24 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                             scaleX       = scale,
                             scaleY       = scale,
                             translationX = offsetX,
-                            translationY = offsetY,
+                            // translationY intentionally omitted — vertical
+                            // position is owned by LazyColumn's own scroll
+                            // (userScrollEnabled = true above), so scrolling
+                            // behaves identically zoomed or not, as requested.
                             clip         = false
                         )
                 ) {
                     LazyColumn(
                         state               = listState,
                         modifier            = Modifier.fillMaxSize(),
-                        userScrollEnabled   = (scale <= 1.05f),  // freeze while zoomed — pan only
+                        // FIX: previously frozen while zoomed (scale > 1.05f), which
+                        // broke the requested WPS-style behaviour of "scroll works
+                        // the same whether zoomed or not". Single-finger vertical
+                        // drag always scrolls the list now, at any zoom level —
+                        // only the two-finger pinch gesture (consumed above in
+                        // awaitEachGesture) drives zoom/horizontal-pan, so the two
+                        // gesture systems don't fight over one-finger drags.
+                        userScrollEnabled   = true,
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                         contentPadding      = PaddingValues(top = 0.dp, bottom = 72.dp)
                     ) {
