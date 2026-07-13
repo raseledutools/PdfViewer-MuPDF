@@ -524,8 +524,11 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                                 var lastDist   = 0f   // distance between two fingers
                                 var lastMidX   = 0f
                                 var twoFinger  = false
-                                val velocityTracker = VelocityTracker()
-                                velocityTracker.addPosition(firstDown.uptimeMillis, firstDown.position)
+                                // Simple velocity tracking (px/ms) — last-sample based,
+                                // avoids Compose's VelocityTracker to sidestep import/
+                                // overload ambiguity issues across Compose versions.
+                                var lastMoveTimeMs = firstDown.uptimeMillis
+                                var lastVelocityY   = 0f
 
                                 do {
                                     val event = awaitPointerEvent(PointerEventPass.Main)
@@ -561,7 +564,13 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                                         // ── ONE-FINGER: vertical scroll + horizontal pan ──
                                         val pos   = pressed[0].position
                                         val delta = pos - lastPos
-                                        velocityTracker.addPosition(pressed[0].uptimeMillis, pos)
+                                        val nowMs = pressed[0].uptimeMillis
+                                        val dtMs  = (nowMs - lastMoveTimeMs).coerceAtLeast(1L)
+                                        // px/ms, only update when there's real movement so a
+                                        // paused finger doesn't zero out the velocity right
+                                        // before release.
+                                        if (delta.y != 0f) lastVelocityY = delta.y / dtMs.toFloat()
+                                        lastMoveTimeMs = nowMs
 
                                         // Vertical: always scroll the LazyColumn.
                                         // FIX: was `scope.launch { listState.scrollBy(...) }` —
@@ -593,19 +602,22 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                                 // momentum based on tracked velocity, like a native
                                 // scroll view. Skipped after a pinch gesture (twoFinger)
                                 // since that ends in a zoom, not a scroll release.
+                                // Manual exponential decay (not Compose's AnimationState/
+                                // splineBasedDecay) — avoids overload-resolution issues
+                                // those APIs had with this project's Compose version,
+                                // and is simple enough to reason about directly.
                                 if (!twoFinger) {
-                                    val flingVelocity = -velocityTracker.calculateVelocity().y
-                                    if (kotlin.math.abs(flingVelocity) > 50f) {
-                                        val decay = androidx.compose.animation.splineBasedDecay<Float>(this)
+                                    // px/ms → px/s
+                                    var velocityPxPerSec = -lastVelocityY * 1000f
+                                    if (kotlin.math.abs(velocityPxPerSec) > 200f) {
                                         launch {
-                                            var previousValue = 0f
-                                            androidx.compose.animation.core.AnimationState(
-                                                initialValue     = 0f,
-                                                initialVelocity  = flingVelocity
-                                            ).animateDecay(decay) {
-                                                val frameDelta = value - previousValue
+                                            val frictionPerFrame = 0.95f  // ~5% speed loss per frame
+                                            val frameMs = 16L             // ~60fps
+                                            while (kotlin.math.abs(velocityPxPerSec) > 30f) {
+                                                val frameDelta = velocityPxPerSec * (frameMs / 1000f)
                                                 listState.dispatchRawDelta(frameDelta)
-                                                previousValue = value
+                                                velocityPxPerSec *= frictionPerFrame
+                                                delay(frameMs)
                                             }
                                         }
                                     }
