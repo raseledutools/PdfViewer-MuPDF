@@ -524,6 +524,8 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                                 var lastDist   = 0f   // distance between two fingers
                                 var lastMidX   = 0f
                                 var twoFinger  = false
+                                val velocityTracker = VelocityTracker()
+                                velocityTracker.addPosition(firstDown.uptimeMillis, firstDown.position)
 
                                 do {
                                     val event = awaitPointerEvent(PointerEventPass.Main)
@@ -559,10 +561,17 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                                         // ── ONE-FINGER: vertical scroll + horizontal pan ──
                                         val pos   = pressed[0].position
                                         val delta = pos - lastPos
+                                        velocityTracker.addPosition(pressed[0].uptimeMillis, pos)
 
-                                        // Vertical: always scroll the LazyColumn
+                                        // Vertical: always scroll the LazyColumn.
+                                        // FIX: was `scope.launch { listState.scrollBy(...) }` —
+                                        // launching a new coroutine on every raw pointer-move
+                                        // event queued up and desynced from the touch stream,
+                                        // making scroll feel jerky/stuttery. dispatchRawDelta()
+                                        // applies the delta synchronously in this same gesture
+                                        // callback, matching finger movement 1:1 per frame.
                                         if (delta.y != 0f) {
-                                            scope.launch { listState.scrollBy(-delta.y) }
+                                            listState.dispatchRawDelta(-delta.y)
                                         }
 
                                         // Horizontal: only when zoomed in
@@ -579,6 +588,28 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
 
                                 // Reset inter-finger distance for next gesture
                                 lastDist  = 0f
+
+                                // ── FLING: on finger release, continue scrolling with
+                                // momentum based on tracked velocity, like a native
+                                // scroll view. Skipped after a pinch gesture (twoFinger)
+                                // since that ends in a zoom, not a scroll release.
+                                if (!twoFinger) {
+                                    val flingVelocity = -velocityTracker.calculateVelocity().y
+                                    if (kotlin.math.abs(flingVelocity) > 50f) {
+                                        val decay = androidx.compose.animation.splineBasedDecay<Float>(this)
+                                        launch {
+                                            var previousValue = 0f
+                                            androidx.compose.animation.core.AnimationState(
+                                                initialValue     = 0f,
+                                                initialVelocity  = flingVelocity
+                                            ).animateDecay(decay) {
+                                                val frameDelta = value - previousValue
+                                                listState.dispatchRawDelta(frameDelta)
+                                                previousValue = value
+                                            }
+                                        }
+                                    }
+                                }
                                 twoFinger = false
                             }
                         }
