@@ -27,6 +27,20 @@
      SecurityException and crashed the app on every Android 12-16 device. -->
 <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
+<!-- Android 11+ (API 30) package visibility: without this, contentResolver.query()/
+     openInputStream() on another app's content:// URI (e.g. a file manager's
+     FileProvider) throws "association not allowed with package X" even though
+     QUERY_ALL_PACKAGES lets us see the package exists. This is required for
+     TextViewerActivity/PdfViewerActivity to open files shared from any file manager. -->
+<queries>
+    <intent>
+        <action android:name="android.intent.action.VIEW" />
+        <data android:mimeType="*/*" />
+    </intent>
+    <!-- Alpha File Manager's FileProvider — the one seen failing in the crash report -->
+    <provider android:authorities="com.alphainventor.filemanager.provider.MyFileProvider" />
+</queries>
+
 <!-- FIX: Removed CAMERA, READ_MEDIA_IMAGES, READ_MEDIA_VIDEO, READ/WRITE_EXTERNAL_STORAGE
      — none of these are used in the current codebase. Re-add only if a feature actually
      needs them, with runtime permission requests at the point of use. -->
