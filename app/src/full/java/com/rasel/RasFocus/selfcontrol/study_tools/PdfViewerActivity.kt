@@ -610,7 +610,7 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                                     // px/ms → px/s
                                     var velocityPxPerSec = -lastVelocityY * 1000f
                                     if (kotlin.math.abs(velocityPxPerSec) > 200f) {
-                                        launch {
+                                        scope.launch {
                                             val frictionPerFrame = 0.95f  // ~5% speed loss per frame
                                             val frameMs = 16L             // ~60fps
                                             while (kotlin.math.abs(velocityPxPerSec) > 30f) {
