@@ -1320,25 +1320,47 @@ fun TopBrowserBar(vm: BrowserViewModel) {
                         )
                     }
 
-                    // Tab count box — Firefox style
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .border(
-                                2.dp,
-                                Color.White.copy(0.6f),
-                                RoundedCornerShape(6.dp)
+                    // ── Per-tab floating bubble indicator ─────────────────
+                    // প্রতিটা tab-এর জন্য আলাদা bubble — FB/YT native-এর মতো।
+                    // Tab count box-এর উপরে floating indicator dot দেখাবে
+                    // যদি ওই tab-টা currently floating window-এ চলছে।
+                    Box(contentAlignment = Alignment.TopEnd) {
+                        // Tab count box — Firefox style
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .border(
+                                    2.dp,
+                                    Color.White.copy(0.6f),
+                                    RoundedCornerShape(6.dp)
+                                )
+                                .clickable { vm.showTabSwitcher = !vm.showTabSwitcher },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text       = vm.tabManager.tabCount.toString(),
+                                fontSize   = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color      = Color.White
                             )
-                            .clickable { vm.showTabSwitcher = !vm.showTabSwitcher },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text       = vm.tabManager.tabCount.toString(),
-                            fontSize   = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color      = Color.White
-                        )
+                        }
+                        // Floating indicator dot — active tab floating হলে দেখাবে
+                        val isFloating = remember(vm.currentUrl) {
+                            com.rasel.RasFocus.selfcontrol.familybrowser.service
+                                .FloatingWindowService.isRunning ||
+                            com.rasel.RasFocus.selfcontrol.familybrowser.service
+                                .YoutubeFloatingWindowService.isRunning
+                        }
+                        if (isFloating) {
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .offset(x = 3.dp, y = (-3).dp)
+                                    .background(Color(0xFF34C759), CircleShape)
+                                    .border(1.5.dp, Color.Black.copy(0.4f), CircleShape)
+                            )
+                        }
                     }
                     // Menu (3-dot)
                     IconButton(onClick = { vm.showMenu = !vm.showMenu }, modifier = Modifier.size(36.dp)) {
