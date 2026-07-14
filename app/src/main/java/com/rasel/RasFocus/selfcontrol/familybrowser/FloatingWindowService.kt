@@ -30,6 +30,8 @@ class FloatingWindowService : Service() {
 
     companion object {
         const val ACTION_LAUNCH  = "com.rasel.familybrowser.FLOAT_LAUNCH"
+        // Browser header-এ floating indicator dot-এর জন্য
+        var isRunning: Boolean = false
         const val ACTION_DISMISS = "com.rasel.familybrowser.FLOAT_DISMISS"
         const val EXTRA_URL      = "float_url"
         const val EXTRA_TITLE    = "float_title"
@@ -102,6 +104,7 @@ class FloatingWindowService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        isRunning = false
         removeWindow()
         super.onDestroy()
     }
@@ -151,6 +154,7 @@ class FloatingWindowService : Service() {
             clipToOutline = true
         }
 
+        isRunning = true
         // ── Title bar ──────────────────────────────────────────────────────────
         val titleBar = android.widget.LinearLayout(this).apply {
             orientation  = android.widget.LinearLayout.HORIZONTAL
@@ -168,16 +172,43 @@ class FloatingWindowService : Service() {
             ellipsize = android.text.TextUtils.TruncateAt.END
         }
 
-        // Size toggle button (small ↔ large)
+        // ── Minimize button — window ছোট করে রাখে, close করে না ─────────────
+        var isMinimized = false
+        val btnMinimize = buildIconButton("−") {
+            if (isMinimized) {
+                // Restore
+                floatRoot.visibility = android.view.View.VISIBLE
+                params.width  = winW
+                params.height = winH
+                isMinimized   = false
+            } else {
+                // Minimize → শুধু title bar দেখাবে
+                floatRoot.visibility = android.view.View.VISIBLE
+                params.width  = (screenW * 0.55f).toInt()
+                params.height = dp(44)
+                isMinimized   = true
+            }
+            windowManager.updateViewLayout(floatRoot, params)
+        }
+
+        // ── Size toggle button (small ↔ large) ──────────────────────────────
         val btnSize = buildIconButton("⊡") {
+            if (isMinimized) {
+                // Minimized থেকে restore করো
+                params.width  = winW
+                params.height = winH
+                isMinimized   = false
+                windowManager.updateViewLayout(floatRoot, params)
+                return@buildIconButton
+            }
             val newW: Int
             val newH: Int
             if (winW < screenW * 0.85f) {
-                newW = (screenW * 0.90f).toInt()
-                newH = (screenH * 0.80f).toInt()
+                newW = (screenW * 0.92f).toInt()
+                newH = (screenH * 0.82f).toInt()
             } else {
                 newW = (screenW * 0.60f).toInt()
-                newH = (screenH * 0.50f).toInt()
+                newH = (screenH * 0.52f).toInt()
             }
             winW = newW; winH = newH
             params.width = winW; params.height = winH
@@ -185,23 +216,31 @@ class FloatingWindowService : Service() {
             windowManager.updateViewLayout(floatRoot, params)
         }
 
-        // Open in main browser
-        val btnOpen = buildIconButton("⤤") {
+        // ── "Open in App" button — floating বন্ধ করে main browser-এ ─────────
+        // Facebook/YouTube native app-এর floating window-এর মতো behavior:
+        // floating close হয়, main app-এ ওই exact page-টা খোলে।
+        val btnOpen = buildIconButton("⤢") {
+            val currentUrl = webView.url ?: url
             val i = Intent(this@FloatingWindowService, FamilyBrowserActivity::class.java).apply {
-                data  = android.net.Uri.parse(url)
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                data  = android.net.Uri.parse(currentUrl)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
             startActivity(i)
+            removeWindow()
             stopSelf()
         }
 
-        // Close button
+        // ── Close button ──────────────────────────────────────────────────────
         val btnClose = buildIconButton("✕") {
             removeWindow()
             stopSelf()
         }
 
+        // Layout: [Title] [−] [⊡] [⤢] [✕]
         titleBar.addView(titleTv)
+        titleBar.addView(btnMinimize)
         titleBar.addView(btnSize)
         titleBar.addView(btnOpen)
         titleBar.addView(btnClose)
