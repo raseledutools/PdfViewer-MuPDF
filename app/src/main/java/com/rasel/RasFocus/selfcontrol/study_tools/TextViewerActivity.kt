@@ -3,6 +3,9 @@ package com.rasel.RasFocus.selfcontrol.study_tools
 import android.net.Uri
 import android.os.Bundle
 import android.view.WindowManager
+import android.webkit.WebResourceRequest
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -36,6 +39,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -164,6 +168,7 @@ fun TextViewerScreen(uri: Uri?, fileName: String, onClose: () -> Unit) {
     val ext        = fileName.substringAfterLast('.', "").lowercase()
     val isKotlin   = ext == "kt"
     val isMarkdown = ext in listOf("md", "markdown")
+    val isHtml     = ext in listOf("html", "htm")
     val isEditable = ext in listOf("kt", "txt", "md", "markdown", "py", "js", "ts",
                                    "html", "htm", "css", "xml", "json", "yaml", "yml",
                                    "toml", "ini", "sh", "bat", "log", "csv", "java",
@@ -363,39 +368,97 @@ fun TextViewerScreen(uri: Uri?, fileName: String, onClose: () -> Unit) {
                 }
                 else -> {
                     // ── VIEW MODE ──────────────────────────────────────────
-                    SelectionContainer {
-                        val vScroll = rememberScrollState()
-                        val hScroll = rememberScrollState()
-                        val baseMod = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(vScroll)
-                            .padding(horizontal = 14.dp, vertical = 12.dp)
-                            .navigationBarsPadding()
+                    when {
+                        // ── HTML: render in WebView ────────────────────────
+                        isHtml && !isEditMode -> {
+                            AndroidView(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .navigationBarsPadding(),
+                                factory = { ctx ->
+                                    WebView(ctx).apply {
+                                        settings.apply {
+                                            javaScriptEnabled    = true
+                                            domStorageEnabled    = true
+                                            allowFileAccess      = true
+                                            builtInZoomControls  = true
+                                            displayZoomControls  = false
+                                            setSupportZoom(true)
+                                            loadWithOverviewMode = true
+                                            useWideViewPort      = true
+                                        }
+                                        webViewClient = object : WebViewClient() {
+                                            // Open links inside the same WebView
+                                            override fun shouldOverrideUrlLoading(
+                                                view: WebView?,
+                                                request: WebResourceRequest?
+                                            ): Boolean = false
+                                        }
+                                        // loadDataWithBaseURL so that relative
+                                        // CSS/JS/image paths next to the HTML file
+                                        // resolve correctly via the file:// base.
+                                        val baseUrl = uri?.toString()
+                                            ?.substringBeforeLast('/') + "/"
+                                        loadDataWithBaseURL(
+                                            baseUrl,
+                                            rawText,
+                                            "text/html",
+                                            "UTF-8",
+                                            null
+                                        )
+                                    }
+                                },
+                                update = { webView ->
+                                    // Re-load if rawText changed (e.g. after save)
+                                    val baseUrl = uri?.toString()
+                                        ?.substringBeforeLast('/') + "/"
+                                    webView.loadDataWithBaseURL(
+                                        baseUrl,
+                                        rawText,
+                                        "text/html",
+                                        "UTF-8",
+                                        null
+                                    )
+                                }
+                            )
+                        }
 
-                        when {
-                            isMarkdown ->
-                                MarkdownContent(rawText, baseMod)
-                            isKotlin ->
-                                Text(
-                                    text      = buildKotlinAnnotated(rawText),
-                                    modifier  = baseMod.horizontalScroll(hScroll),
-                                    softWrap  = false,
-                                    style     = TextStyle(
-                                        fontSize   = 13.sp,
-                                        lineHeight = 20.sp,
-                                        fontFamily = FontFamily.Monospace
-                                    )
-                                )
-                            else ->
-                                Text(
-                                    text     = rawText,
-                                    modifier = baseMod,
-                                    style    = TextStyle(
-                                        fontSize   = 14.sp,
-                                        lineHeight = 22.sp,
-                                        color      = TEXT_MAIN
-                                    )
-                                )
+                        else -> {
+                            SelectionContainer {
+                                val vScroll = rememberScrollState()
+                                val hScroll = rememberScrollState()
+                                val baseMod = Modifier
+                                    .fillMaxSize()
+                                    .verticalScroll(vScroll)
+                                    .padding(horizontal = 14.dp, vertical = 12.dp)
+                                    .navigationBarsPadding()
+
+                                when {
+                                    isMarkdown ->
+                                        MarkdownContent(rawText, baseMod)
+                                    isKotlin ->
+                                        Text(
+                                            text      = buildKotlinAnnotated(rawText),
+                                            modifier  = baseMod.horizontalScroll(hScroll),
+                                            softWrap  = false,
+                                            style     = TextStyle(
+                                                fontSize   = 13.sp,
+                                                lineHeight = 20.sp,
+                                                fontFamily = FontFamily.Monospace
+                                            )
+                                        )
+                                    else ->
+                                        Text(
+                                            text     = rawText,
+                                            modifier = baseMod,
+                                            style    = TextStyle(
+                                                fontSize   = 14.sp,
+                                                lineHeight = 22.sp,
+                                                color      = TEXT_MAIN
+                                            )
+                                        )
+                                }
+                            }
                         }
                     }
                 }

@@ -3,6 +3,9 @@ package com.rasel.RasFocus.combo.selfcontrol.study_tools
 import android.net.Uri
 import android.os.Bundle
 import android.view.WindowManager
+import android.webkit.WebResourceRequest
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -36,6 +39,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -77,16 +81,25 @@ class TextViewerActivity : ComponentActivity() {
             // Try read+write first (needed for save), fall back to read-only
             // — some file managers only grant read, and that's fine for viewing.
             // Both calls are wrapped separately so a write failure doesn't block read.
+            //
+            // FIX: takePersistableUriPermission can throw IllegalArgumentException
+            // (not just SecurityException) when the source content provider doesn't
+            // support persistable grants at all — this is common with many
+            // third-party file managers. Catching only SecurityException let that
+            // exception propagate uncaught, crashing the activity before it ever
+            // rendered anything. Catching Exception broadly here is intentional:
+            // this permission is a nice-to-have (enables Save), never something
+            // that should be allowed to crash the viewer.
             try {
                 contentResolver.takePersistableUriPermission(
                     uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
                 )
-            } catch (_: SecurityException) { }
+            } catch (_: Exception) { }
             try {
                 contentResolver.takePersistableUriPermission(
                     uri, android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                 )
-            } catch (_: SecurityException) { /* write not granted — view only, save disabled */ }
+            } catch (_: Exception) { /* write not granted — view only, save disabled */ }
         }
         uriState.value      = uri
         fileNameState.value = uri?.let { getFileNameFromUri(it) } ?: "File"
@@ -95,12 +108,14 @@ class TextViewerActivity : ComponentActivity() {
     private fun getFileNameFromUri(uri: Uri): String {
         var name: String? = null
         if (uri.scheme == "content") {
-            contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-                if (cursor.moveToFirst()) {
-                    val idx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
-                    if (idx >= 0) name = cursor.getString(idx)
+            try {
+                contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val idx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                        if (idx >= 0) name = cursor.getString(idx)
+                    }
                 }
-            }
+            } catch (_: Exception) { /* some providers reject query — fall back to path segment below */ }
         }
         return name ?: uri.lastPathSegment?.substringAfterLast('/') ?: "File"
     }
@@ -153,6 +168,7 @@ fun TextViewerScreen(uri: Uri?, fileName: String, onClose: () -> Unit) {
     val ext        = fileName.substringAfterLast('.', "").lowercase()
     val isKotlin   = ext == "kt"
     val isMarkdown = ext in listOf("md", "markdown")
+    val isHtml     = ext in listOf("html", "htm")
     val isEditable = ext in listOf("kt", "txt", "md", "markdown", "py", "js", "ts",
                                    "html", "htm", "css", "xml", "json", "yaml", "yml",
                                    "toml", "ini", "sh", "bat", "log", "csv", "java",
@@ -300,15 +316,20 @@ fun TextViewerScreen(uri: Uri?, fileName: String, onClose: () -> Unit) {
             }
 
             // ── Content ────────────────────────────────────────────────────
+            // FIX: Loading screen সরানো হয়েছে — "পড়া হচ্ছে..." message আর আসবে না।
+            // Top-এ subtle linear progress bar দেখাবে load হওয়ার সময়,
+            // content area সাথে সাথে দেখা যাবে।
+            if (isLoading) {
+                LinearProgressIndicator(
+                    modifier = Modifier.fillMaxWidth(),
+                    color    = ACCENT,
+                    trackColor = BG
+                )
+            }
             when {
-                isLoading -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CircularProgressIndicator(color = ACCENT, strokeWidth = 2.5.dp)
-                            Spacer(Modifier.height(12.dp))
-                            Text("পড়া হচ্ছে…", color = TEXT_MUTED, fontSize = 12.sp)
-                        }
-                    }
+                isLoading && rawText.isEmpty() && errorMsg.isBlank() -> {
+                    // Content area খালি রাখি load হওয়া পর্যন্ত — no full-screen spinner
+                    Box(Modifier.fillMaxSize().background(BG))
                 }
                 errorMsg.isNotBlank() -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -347,39 +368,97 @@ fun TextViewerScreen(uri: Uri?, fileName: String, onClose: () -> Unit) {
                 }
                 else -> {
                     // ── VIEW MODE ──────────────────────────────────────────
-                    SelectionContainer {
-                        val vScroll = rememberScrollState()
-                        val hScroll = rememberScrollState()
-                        val baseMod = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(vScroll)
-                            .padding(horizontal = 14.dp, vertical = 12.dp)
-                            .navigationBarsPadding()
+                    when {
+                        // ── HTML: render in WebView ────────────────────────
+                        isHtml && !isEditMode -> {
+                            AndroidView(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .navigationBarsPadding(),
+                                factory = { ctx ->
+                                    WebView(ctx).apply {
+                                        settings.apply {
+                                            javaScriptEnabled    = true
+                                            domStorageEnabled    = true
+                                            allowFileAccess      = true
+                                            builtInZoomControls  = true
+                                            displayZoomControls  = false
+                                            setSupportZoom(true)
+                                            loadWithOverviewMode = true
+                                            useWideViewPort      = true
+                                        }
+                                        webViewClient = object : WebViewClient() {
+                                            // Open links inside the same WebView
+                                            override fun shouldOverrideUrlLoading(
+                                                view: WebView?,
+                                                request: WebResourceRequest?
+                                            ): Boolean = false
+                                        }
+                                        // loadDataWithBaseURL so that relative
+                                        // CSS/JS/image paths next to the HTML file
+                                        // resolve correctly via the file:// base.
+                                        val baseUrl = uri?.toString()
+                                            ?.substringBeforeLast('/') + "/"
+                                        loadDataWithBaseURL(
+                                            baseUrl,
+                                            rawText,
+                                            "text/html",
+                                            "UTF-8",
+                                            null
+                                        )
+                                    }
+                                },
+                                update = { webView ->
+                                    // Re-load if rawText changed (e.g. after save)
+                                    val baseUrl = uri?.toString()
+                                        ?.substringBeforeLast('/') + "/"
+                                    webView.loadDataWithBaseURL(
+                                        baseUrl,
+                                        rawText,
+                                        "text/html",
+                                        "UTF-8",
+                                        null
+                                    )
+                                }
+                            )
+                        }
 
-                        when {
-                            isMarkdown ->
-                                MarkdownContent(rawText, baseMod)
-                            isKotlin ->
-                                Text(
-                                    text      = buildKotlinAnnotated(rawText),
-                                    modifier  = baseMod.horizontalScroll(hScroll),
-                                    softWrap  = false,
-                                    style     = TextStyle(
-                                        fontSize   = 13.sp,
-                                        lineHeight = 20.sp,
-                                        fontFamily = FontFamily.Monospace
-                                    )
-                                )
-                            else ->
-                                Text(
-                                    text     = rawText,
-                                    modifier = baseMod,
-                                    style    = TextStyle(
-                                        fontSize   = 14.sp,
-                                        lineHeight = 22.sp,
-                                        color      = TEXT_MAIN
-                                    )
-                                )
+                        else -> {
+                            SelectionContainer {
+                                val vScroll = rememberScrollState()
+                                val hScroll = rememberScrollState()
+                                val baseMod = Modifier
+                                    .fillMaxSize()
+                                    .verticalScroll(vScroll)
+                                    .padding(horizontal = 14.dp, vertical = 12.dp)
+                                    .navigationBarsPadding()
+
+                                when {
+                                    isMarkdown ->
+                                        MarkdownContent(rawText, baseMod)
+                                    isKotlin ->
+                                        Text(
+                                            text      = buildKotlinAnnotated(rawText),
+                                            modifier  = baseMod.horizontalScroll(hScroll),
+                                            softWrap  = false,
+                                            style     = TextStyle(
+                                                fontSize   = 13.sp,
+                                                lineHeight = 20.sp,
+                                                fontFamily = FontFamily.Monospace
+                                            )
+                                        )
+                                    else ->
+                                        Text(
+                                            text     = rawText,
+                                            modifier = baseMod,
+                                            style    = TextStyle(
+                                                fontSize   = 14.sp,
+                                                lineHeight = 22.sp,
+                                                color      = TEXT_MAIN
+                                            )
+                                        )
+                                }
+                            }
                         }
                     }
                 }
