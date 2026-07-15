@@ -78,6 +78,9 @@ class YoutubeFloatingWindowService : Service() {
         const val ACTION_ACTIVITY_RESUMED   = "com.rasel.yt_float.ACTIVITY_RESUMED"
 
         const val EXTRA_URL       = "yt_url"
+
+        // Floating indicator dot এর জন্য
+        var isRunning: Boolean = false
         const val EXTRA_TITLE     = "yt_title"
         const val EXTRA_NO_RELOAD = "yt_no_reload"
 
@@ -235,6 +238,7 @@ class YoutubeFloatingWindowService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        isRunning = true
         activeInstance = this
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         createNotificationChannel()
@@ -492,6 +496,7 @@ class YoutubeFloatingWindowService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        isRunning = false
         // ══════════════════════════════════════════════════════════════════════
         // ★ FIX: WebView destroy করো না — সবসময় pendingWebView এ রাখো।
         // Mini Player (back press) বা Lock → Floating দুটোতেই
