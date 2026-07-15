@@ -253,6 +253,40 @@ class YoutubeFloatingWindowService : Service() {
 
         setupMediaSession()
         setupGhostContainer()
+        setupScreenLockReceiver()
+    }
+
+    // ── Screen-lock → instant floating ────────────────────────────────────────
+    // যখন ব্যবহারকারী ফোন lock করে (SCREEN_OFF), এই receiver millisecond এর
+    // মধ্যে mini floating window-এ switch করে। WebView একই থাকে তাই audio
+    // একদমই interrupt হয় না — ব্যবহারকারী বুঝতেও পারে না।
+    private var screenLockReceiver: android.content.BroadcastReceiver? = null
+
+    private fun setupScreenLockReceiver() {
+        screenLockReceiver = object : android.content.BroadcastReceiver() {
+            override fun onReceive(ctx: android.content.Context, intent: Intent) {
+                when (intent.action) {
+                    Intent.ACTION_SCREEN_OFF -> {
+                        // Lock হলে সঙ্গে সঙ্গে mini bubble/player-এ চলে যাও।
+                        // Full window বা Activity — যেখানেই থাকুক, floating show করো।
+                        // WebView-এ touch করা হচ্ছে না তাই audio/video চলতেই থাকে।
+                        if (!isMinimized) {
+                            showMinimized()
+                        }
+                    }
+                    Intent.ACTION_USER_PRESENT -> {
+                        // Unlock হলে — floating bubble যেমন আছে তেমনই থাকুক,
+                        // ব্যবহারকারী চাইলে নিজে tap করে বড় করবে।
+                        // (কিছু করার দরকার নেই)
+                    }
+                }
+            }
+        }
+        val filter = android.content.IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_OFF)
+            addAction(Intent.ACTION_USER_PRESENT)
+        }
+        registerReceiver(screenLockReceiver, filter)
     }
 
     private fun setupMediaSession() {
@@ -519,6 +553,9 @@ class YoutubeFloatingWindowService : Service() {
         mediaSession = null
 
         if (activeInstance === this) activeInstance = null
+
+        screenLockReceiver?.let { runCatching { unregisterReceiver(it) } }
+        screenLockReceiver = null
 
         // ══════════════════════════════════════════════════════════════════
         // ★ Low-RAM device fix: process পুরো kill হয়ে গেলে (Itel Android 10,
