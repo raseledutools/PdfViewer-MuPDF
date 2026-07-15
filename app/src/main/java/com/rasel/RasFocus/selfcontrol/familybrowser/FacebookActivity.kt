@@ -326,6 +326,22 @@ class FacebookActivity : ComponentActivity() {
             this, currentUrl, currentTitle
         )
 
+        // ★ FIX: Start BackgroundAudioService so Facebook video/audio keeps
+        // playing after home/lock. Capture title before webView=null because
+        // evaluateJavascript won't work on a detached WebView.
+        val capturedTitle = wv.title?.trim()?.takeIf { it.isNotBlank() } ?: "Facebook"
+        val svcFb = Intent(
+            this,
+            com.rasel.RasFocus.selfcontrol.familybrowser.service.BackgroundAudioService::class.java
+        ).apply {
+            putExtra(com.rasel.RasFocus.selfcontrol.familybrowser.service.BackgroundAudioService.EXTRA_TITLE, capturedTitle)
+        }
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O)
+                startForegroundService(svcFb)
+            else startService(svcFb)
+        } catch (_: Exception) {}
+
         webView = null
         isFloatingActive = true
 
@@ -367,6 +383,11 @@ class FacebookActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Stop background audio service — user is back in the app, WebView plays directly
+        try {
+            stopService(Intent(this,
+                com.rasel.RasFocus.selfcontrol.familybrowser.service.BackgroundAudioService::class.java))
+        } catch (_: Exception) {}
         if (isFloatingActive) {
             // Floating থেকে ফিরে এলে service বন্ধ করো — WebView pendingWebView এ চলে আসবে,
             // পরের onCreate/recreate এ সেটাই re-attach হবে। যদি activity ইতিমধ্যে

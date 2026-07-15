@@ -160,6 +160,22 @@ class YoutubeActivity : ComponentActivity() {
 
         injectVisibilitySpoofBeforeLeave(wv)
 
+        // ★ FIX: title/videoId BEFORE webView=null — evaluateJavascript
+        // needs a live webView reference. Grab everything synchronously
+        // from the WebView object we still hold, then null it out.
+        val capturedTitle   = wv.title?.removeSuffix(" - YouTube")
+                                       ?.removeSuffix(" – YouTube")?.trim()
+                               ?: "YouTube — Playing"
+        val capturedUrl     = wv.url ?: currentUrl
+        val capturedVideoId = try {
+            val uri = android.net.Uri.parse(capturedUrl)
+            uri.getQueryParameter("v")
+                ?: if (uri.host?.contains("youtu.be") == true) uri.pathSegments.firstOrNull()
+                else uri.pathSegments.firstOrNull { it.length == 11 }
+        } catch (_: Exception) { null }
+        val capturedThumb   = if (capturedVideoId != null)
+            "https://img.youtube.com/vi/$capturedVideoId/hqdefault.jpg" else null
+
         // WebView service এ দাও — reload হবে না
         com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView = wv
         com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.launchNoReload(
@@ -172,7 +188,22 @@ class YoutubeActivity : ComponentActivity() {
         // Activity কে background এ পাঠাও
         moveTaskToBack(true)
 
-        startBgAudioService()
+        // ★ FIX: start service with captured values (webView is null now,
+        // old evaluateJavascript-based path silently did nothing after null)
+        val svc = Intent(
+            this,
+            com.rasel.RasFocus.selfcontrol.familybrowser.service.BackgroundAudioService::class.java
+        ).apply {
+            putExtra(com.rasel.RasFocus.selfcontrol.familybrowser.service.BackgroundAudioService.EXTRA_TITLE, capturedTitle)
+            putExtra("extra_video_url", capturedUrl)
+            if (capturedThumb  != null) putExtra("extra_thumb_url", capturedThumb)
+            if (capturedVideoId != null) putExtra("extra_video_id", capturedVideoId)
+        }
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O)
+                startForegroundService(svc)
+            else startService(svc)
+        } catch (_: Exception) {}
     }
 
     companion object {
