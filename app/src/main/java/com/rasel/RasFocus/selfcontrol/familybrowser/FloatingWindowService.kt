@@ -105,6 +105,7 @@ class FloatingWindowService : Service() {
 
     override fun onDestroy() {
         isRunning = false
+        com.rasel.RasFocus.selfcontrol.familybrowser.isFloatingWindowRunning = false
         removeWindow()
         super.onDestroy()
     }
@@ -155,6 +156,7 @@ class FloatingWindowService : Service() {
         }
 
         isRunning = true
+        com.rasel.RasFocus.selfcontrol.familybrowser.isFloatingWindowRunning = true
         // ── Title bar ──────────────────────────────────────────────────────────
         val titleBar = android.widget.LinearLayout(this).apply {
             orientation  = android.widget.LinearLayout.HORIZONTAL

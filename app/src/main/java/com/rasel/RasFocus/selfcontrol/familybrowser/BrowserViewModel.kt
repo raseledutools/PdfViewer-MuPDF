@@ -1,5 +1,10 @@
 package com.rasel.RasFocus.selfcontrol.familybrowser
 
+// Top-level bridge var — FloatingWindowService (service package) এ isRunning আছে
+// কিন্তু MainActivity (familybrowser package) থেকে direct access compile error দেয়
+// কারণ file path আর package mismatch। এই var টা bridge হিসেবে কাজ করে।
+var isFloatingWindowRunning: Boolean = false
+
 import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
