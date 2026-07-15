@@ -697,6 +697,10 @@ class YoutubeActivity : ComponentActivity() {
                     Object.defineProperty(document, 'visibilityState', { get: function(){ return 'visible'; }, configurable: true });
                     Object.defineProperty(document, 'webkitHidden', { get: function(){ return false; }, configurable: true });
                     Object.defineProperty(document, 'webkitVisibilityState', { get: function(){ return 'visible'; }, configurable: true });
+                    // Reset user-pause flag when leaving to floating/background
+                    // so the keep-alive interval resumes force-play on lock screen.
+                    // (If the user had paused before locking, injectYoutubeHacksForced
+                    //  checks this flag separately and still won't force-play.)
                 } catch(e) {}
             })();
         """.trimIndent(), null)
@@ -791,10 +795,44 @@ class YoutubeActivity : ComponentActivity() {
 
                     if (!window.__rasVideoKeepAlive__) {
                         window.__rasVideoKeepAlive__ = true;
+
+                        // Track whether the user manually paused — if so,
+                        // the keep-alive interval must NOT force-play.
+                        // Reset to false when user explicitly hits play.
+                        if (typeof window.__rasUserPaused__ === 'undefined') {
+                            window.__rasUserPaused__ = false;
+                        }
+
+                        // Listen to the video element's own pause/play events
+                        // to distinguish user intent from system-initiated pauses.
+                        var _attachPauseListeners = function(video) {
+                            if (video.__rasListenersAttached__) return;
+                            video.__rasListenersAttached__ = true;
+                            video.addEventListener('pause', function() {
+                                // Only mark as user-paused if the video still
+                                // has content — a mid-ad pause or buffering stall
+                                // should not lock out the keep-alive.
+                                if (!video.ended && video.readyState > 1) {
+                                    window.__rasUserPaused__ = true;
+                                }
+                            });
+                            video.addEventListener('play', function() {
+                                window.__rasUserPaused__ = false;
+                            });
+                            video.addEventListener('playing', function() {
+                                window.__rasUserPaused__ = false;
+                            });
+                        };
+
                         setInterval(function() {
                             try {
                                 var v = document.querySelector('video');
-                                if (v && v.paused && !v.ended && v.readyState > 1) {
+                                if (!v) return;
+                                // Attach listeners to any newly created video element
+                                _attachPauseListeners(v);
+                                // Only force-play if user has NOT manually paused
+                                if (v.paused && !v.ended && v.readyState > 1
+                                        && !window.__rasUserPaused__) {
                                     v.play().catch(function(){});
                                 }
                             } catch(e) {}
@@ -922,13 +960,22 @@ class YoutubeActivity : ComponentActivity() {
     }
 
     private fun injectYoutubeHacksForced(view: WebView) {
+        // Called on lock / home-button press.
+        // Respects __rasUserPaused__: if the user deliberately paused
+        // before locking, we do NOT force-play — their intent wins.
+        // If the system paused (YouTube's visibility-change handler),
+        // we force-play so audio continues through lock screen.
         view.evaluateJavascript("""
             (function() {
                 try {
                     Object.defineProperty(document, 'hidden', { get: function(){ return false; }, configurable: true });
                     var videos = document.querySelectorAll('video');
                     for (var i = 0; i < videos.length; i++) {
-                        try { if (videos[i].paused) videos[i].play().catch(function(){}); } catch(e) {}
+                        try {
+                            if (videos[i].paused && !window.__rasUserPaused__) {
+                                videos[i].play().catch(function(){});
+                            }
+                        } catch(e) {}
                     }
                 } catch(e) {}
             })();
