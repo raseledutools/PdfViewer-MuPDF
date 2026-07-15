@@ -393,8 +393,23 @@ class FacebookFloatingWindowService : Service() {
         val btnMinimize = buildIconBtn("▬", 0xFFFFFFFF.toInt()) { showMinimized() }
         val btnClose = buildIconBtn("✕", 0xFFFFCDD2.toInt()) { tearDown(); stopSelf() }
 
+        // ── "Open in App" — floating বন্ধ করে main browser এ ওই URL খোলে ──
+        val btnOpenInApp = buildIconBtn("⤢", 0xFF88CCFF.toInt()) {
+            val url = webView?.url ?: currentUrl
+            val i = Intent(this@FacebookFloatingWindowService, com.rasel.RasFocus.selfcontrol.familybrowser.FamilyBrowserActivity::class.java).apply {
+                data  = android.net.Uri.parse(url)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+            startActivity(i)
+            tearDown()
+            stopSelf()
+        }
+
         titleBar.addView(fbLogo)
         titleBar.addView(titleTv)
+        titleBar.addView(btnOpenInApp)
         titleBar.addView(btnMinimize)
         titleBar.addView(btnClose)
 
