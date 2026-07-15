@@ -135,7 +135,18 @@
 
     </activity>
 
-    <!-- ✅ Text/Code/Markdown Viewer — .txt .kt .md files opened from any file manager -->
+    <!-- Combo module PDF Viewer — explicit in-app launch only, no system intent-filter -->
+    <activity
+        android:name=".combo.selfcontrol.study_tools.PdfViewerActivity"
+        android:label="RasFocus PDF"
+        android:exported="false"
+        android:launchMode="singleTask"
+        android:taskAffinity=""
+        android:hardwareAccelerated="true"
+        android:theme="@style/Theme.RasFocus"
+        android:configChanges="orientation|screenSize|keyboardHidden" />
+
+    <!-- Text/Code/Markdown Viewer -->
     <activity
         android:name=".selfcontrol.study_tools.TextViewerActivity"
         android:label="RasFocus Viewer"

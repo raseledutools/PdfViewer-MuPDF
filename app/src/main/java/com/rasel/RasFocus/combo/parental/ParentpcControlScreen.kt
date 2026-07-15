@@ -93,6 +93,44 @@ data class ParentControls(
     val familyBrowserEnabled: Boolean = false
 )
 
+// FIX: viewModel.pcControls is StateFlow<com.rasel.RasFocus.parental.ParentControls>
+// (non-combo), but this file has its own identical local ParentControls class.
+// Kotlin treats them as unrelated types — conversion functions bridge the gap.
+private fun com.rasel.RasFocus.parental.ParentControls.toComboControls(): ParentControls = ParentControls(
+    lockAllTabs=lockAllTabs, forceAdultBlock=forceAdultBlock, forceReelsBlock=forceReelsBlock,
+    forceShortsBlock=forceShortsBlock, appControlEnabled=appControlEnabled, appMode=appMode,
+    allowedAppsCsv=allowedAppsCsv, blockedAppsCsv=blockedAppsCsv, webBlockEnabled=webBlockEnabled,
+    blockedWebsCsv=blockedWebsCsv, blockTaskManager=blockTaskManager, blockSettings=blockSettings,
+    blockFileManager=blockFileManager, blockedFoldersCsv=blockedFoldersCsv, internetFasting=internetFasting,
+    timeLimitMinutes=timeLimitMinutes, powerAction=powerAction, lockUntilEpoch=lockUntilEpoch,
+    lockType=lockType, newInstalledAppsCsv=newInstalledAppsCsv,
+    fbEnabled=fbEnabled, fbStartTime=fbStartTime, fbEndTime=fbEndTime,
+    fbLiteEnabled=fbLiteEnabled, fbLiteStartTime=fbLiteStartTime, fbLiteEndTime=fbLiteEndTime,
+    ytEnabled=ytEnabled, ytStartTime=ytStartTime, ytEndTime=ytEndTime,
+    chromeEnabled=chromeEnabled, chromeStartTime=chromeStartTime, chromeEndTime=chromeEndTime,
+    deepStudyEnabled=deepStudyEnabled, buttonPhoneEnabled=buttonPhoneEnabled,
+    singleAppsBlockEnabled=singleAppsBlockEnabled, extremeBlockEnabled=extremeBlockEnabled,
+    singleWebsiteBlockEnabled=singleWebsiteBlockEnabled, familyBrowserEnabled=familyBrowserEnabled
+)
+
+private fun ParentControls.toNonComboControls(): com.rasel.RasFocus.parental.ParentControls =
+    com.rasel.RasFocus.parental.ParentControls(
+        lockAllTabs=lockAllTabs, forceAdultBlock=forceAdultBlock, forceReelsBlock=forceReelsBlock,
+        forceShortsBlock=forceShortsBlock, appControlEnabled=appControlEnabled, appMode=appMode,
+        allowedAppsCsv=allowedAppsCsv, blockedAppsCsv=blockedAppsCsv, webBlockEnabled=webBlockEnabled,
+        blockedWebsCsv=blockedWebsCsv, blockTaskManager=blockTaskManager, blockSettings=blockSettings,
+        blockFileManager=blockFileManager, blockedFoldersCsv=blockedFoldersCsv, internetFasting=internetFasting,
+        timeLimitMinutes=timeLimitMinutes, powerAction=powerAction, lockUntilEpoch=lockUntilEpoch,
+        lockType=lockType, newInstalledAppsCsv=newInstalledAppsCsv,
+        fbEnabled=fbEnabled, fbStartTime=fbStartTime, fbEndTime=fbEndTime,
+        fbLiteEnabled=fbLiteEnabled, fbLiteStartTime=fbLiteStartTime, fbLiteEndTime=fbLiteEndTime,
+        ytEnabled=ytEnabled, ytStartTime=ytStartTime, ytEndTime=ytEndTime,
+        chromeEnabled=chromeEnabled, chromeStartTime=chromeStartTime, chromeEndTime=chromeEndTime,
+        deepStudyEnabled=deepStudyEnabled, buttonPhoneEnabled=buttonPhoneEnabled,
+        singleAppsBlockEnabled=singleAppsBlockEnabled, extremeBlockEnabled=extremeBlockEnabled,
+        singleWebsiteBlockEnabled=singleWebsiteBlockEnabled, familyBrowserEnabled=familyBrowserEnabled
+    )
+
 // ══════════════════════════════════════════════════════════════
 //  MAIN SCREEN  —  Header scrolls away with content (not fixed).
 //  Footer is a single, clean action bar (no duplicated controls).
@@ -155,7 +193,8 @@ fun ParentControlScreen(
     }
 
     val firebaseControls = (viewModel?.pcControls
-        ?: kotlinx.coroutines.flow.MutableStateFlow(ParentControls())).collectAsState(ParentControls()).value
+        ?: kotlinx.coroutines.flow.MutableStateFlow(com.rasel.RasFocus.parental.ParentControls()))
+        .collectAsState(com.rasel.RasFocus.parental.ParentControls()).value.toComboControls()
     val activeControls = if (isFirebaseMode) firebaseControls else controls
 
     val activeRules = if (isFirebaseMode) listOf(
@@ -166,7 +205,7 @@ fun ParentControlScreen(
     ).count { it } else activeRulesCount
 
     val onControlChangeActive: (ParentControls) -> Unit = if (isFirebaseMode)
-        { c -> viewModel!!.updatePcControls(deviceId!!, c) } else onControlChange
+        { c -> viewModel!!.updatePcControls(deviceId!!, c.toNonComboControls()) } else onControlChange
 
     val onSendPowerActive: (Int) -> Unit = if (isFirebaseMode)
         { a -> viewModel!!.sendPcPowerCommand(deviceId!!, a) } else onSendPower
@@ -274,8 +313,8 @@ fun ParentControlScreen(
                     InterfaceLockSection(activeControls, onControlChangeActive) { showToast(it) }
                     ContentBlockSection(activeControls, onControlChangeActive) { showToast(it) }
                     AppControlSection(activeControls, onControlChangeActive) { showToast(it) }
-                    SpecificAppsSection(activeControls, onControlChangeActive) { showToast(it) }
-                    SelfControlFeaturesSection(activeControls, onControlChangeActive) { showToast(it) }
+                    PcSpecificAppsSection(activeControls, onControlChangeActive) { showToast(it) }
+                    PcSelfControlFeaturesSection(activeControls, onControlChangeActive) { showToast(it) }
                     NewlyInstalledAppsSection(activeControls)
                     WebsiteBlockSection(activeControls, onControlChangeActive) { showToast(it) }
                     SystemLockSection(activeControls, onControlChangeActive) { showToast(it) }
@@ -1419,7 +1458,7 @@ private fun DividerLabel(text: String) {
 // ============================================================================
 
 @Composable
-private fun SpecificAppsSection(
+private fun PcSpecificAppsSection(
     c: ParentControls, onChange: (ParentControls) -> Unit, onToast: (String) -> Unit
 ) {
     Surface(
@@ -1549,7 +1588,7 @@ private fun NewlyInstalledAppsSection(
 }
 
 @Composable
-private fun SelfControlFeaturesSection(
+private fun PcSelfControlFeaturesSection(
     c: ParentControls, onChange: (ParentControls) -> Unit, onToast: (String) -> Unit
 ) {
     Surface(
