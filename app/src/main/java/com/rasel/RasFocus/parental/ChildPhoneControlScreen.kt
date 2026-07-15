@@ -175,6 +175,7 @@ private fun ChildPairingSection(
 ) {
     val connectionPin by viewModel.connectionPin.collectAsState()
     val devices by viewModel.devices.collectAsState()
+    val pinSaveError by viewModel.pinSaveError.collectAsState()
     val context = LocalContext.current
 
     // Screen খোলার সাথে সাথে নতুন PIN generate করে Firebase এ save করো,
@@ -234,6 +235,23 @@ private fun ChildPairingSection(
                 fontSize = 14.sp, color = TextSub, textAlign = TextAlign.Center, lineHeight = 20.sp
             )
             Spacer(Modifier.height(28.dp))
+
+            // Error banner — shown if PIN failed to save to Firebase
+            if (pinSaveError != null) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFB71C1C).copy(alpha = 0.12f)),
+                    border = BorderStroke(1.dp, Color(0xFFEF9A9A)),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.ErrorOutline, null, tint = Color(0xFFEF5350), modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(pinSaveError ?: "", color = Color(0xFFEF5350), fontSize = 12.sp, lineHeight = 16.sp)
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
+            }
 
             val displayPin = connectionPin.padStart(6, '0').takeLast(6)
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {

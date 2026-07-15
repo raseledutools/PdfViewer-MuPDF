@@ -518,11 +518,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     // in tab_family_link.cpp. Previously this wrote to Realtime Database
     // instead, a completely different product/URL, so the Windows app could
     // never find the PIN and pairing always failed with "Invalid or expired PIN".
+    private val _pinSaveError = MutableStateFlow<String?>(null)
+    val pinSaveError: StateFlow<String?> = _pinSaveError.asStateFlow()
+
     private fun savePinToFirebase(pin: String) {
-        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        if (uid == null) {
+            _pinSaveError.value = "Not logged in — please sign in first so pairing codes can be saved."
+            return
+        }
+        _pinSaveError.value = null
         FirebaseFirestore.getInstance()
             .collection("pairing_codes").document(pin)
             .set(mapOf("parent_uid" to uid))
+            .addOnFailureListener { e ->
+                _pinSaveError.value = "Failed to save code: ${e.localizedMessage}"
+            }
     }
 
     fun toggleDeviceLock(deviceId: String) {
