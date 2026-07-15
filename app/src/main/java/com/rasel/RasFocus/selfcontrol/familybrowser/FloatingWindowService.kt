@@ -177,18 +177,18 @@ class FloatingWindowService : Service() {
         val btnMinimize = buildIconButton("−") {
             if (isMinimized) {
                 // Restore
-                floatRoot.visibility = android.view.View.VISIBLE
+                floatRoot?.visibility = android.view.View.VISIBLE
                 params.width  = winW
                 params.height = winH
                 isMinimized   = false
             } else {
                 // Minimize → শুধু title bar দেখাবে
-                floatRoot.visibility = android.view.View.VISIBLE
+                floatRoot?.visibility = android.view.View.VISIBLE
                 params.width  = (screenW * 0.55f).toInt()
                 params.height = dp(44)
                 isMinimized   = true
             }
-            windowManager.updateViewLayout(floatRoot, params)
+            floatRoot?.let { windowManager.updateViewLayout(it, params) }
         }
 
         // ── Size toggle button (small ↔ large) ──────────────────────────────
@@ -198,7 +198,7 @@ class FloatingWindowService : Service() {
                 params.width  = winW
                 params.height = winH
                 isMinimized   = false
-                windowManager.updateViewLayout(floatRoot, params)
+                floatRoot?.let { windowManager.updateViewLayout(it, params) }
                 return@buildIconButton
             }
             val newW: Int
@@ -213,14 +213,14 @@ class FloatingWindowService : Service() {
             winW = newW; winH = newH
             params.width = winW; params.height = winH
             clampPosition(screenW, screenH, params)
-            windowManager.updateViewLayout(floatRoot, params)
+            floatRoot?.let { windowManager.updateViewLayout(it, params) }
         }
 
         // ── "Open in App" button — floating বন্ধ করে main browser-এ ─────────
         // Facebook/YouTube native app-এর floating window-এর মতো behavior:
         // floating close হয়, main app-এ ওই exact page-টা খোলে।
         val btnOpen = buildIconButton("⤢") {
-            val currentUrl = webView.url ?: url
+            val currentUrl = webView?.url ?: url
             val i = Intent(this@FloatingWindowService, FamilyBrowserActivity::class.java).apply {
                 data  = android.net.Uri.parse(currentUrl)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or
@@ -263,20 +263,20 @@ class FloatingWindowService : Service() {
                     // Drag এর সময় keyboard সরিয়ে দাও
                     params.flags = params.flags or
                         WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                    windowManager.updateViewLayout(floatRoot, params)
+                    floatRoot?.let { windowManager.updateViewLayout(it, params) }
                 }
                 MotionEvent.ACTION_MOVE -> if (dragging) {
                     params.x = dragParamsX + (ev.rawX - dragStartX).toInt()
                     params.y = dragParamsY + (ev.rawY - dragStartY).toInt()
                     clampPosition(screenW, screenH, params)
-                    windowManager.updateViewLayout(floatRoot, params)
+                    floatRoot?.let { windowManager.updateViewLayout(it, params) }
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     dragging = false
                     // Drag শেষে keyboard আবার আসতে পারবে
                     params.flags = params.flags and
                         WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE.inv()
-                    windowManager.updateViewLayout(floatRoot, params)
+                    floatRoot?.let { windowManager.updateViewLayout(it, params) }
                 }
             }
             true
@@ -397,7 +397,7 @@ class FloatingWindowService : Service() {
                     params.width  = max(dp(200), min(screenW, resizeStartW + dX))
                     params.height = max(dp(150), min(screenH - params.y, resizeStartH + dY))
                     winW = params.width; winH = params.height
-                    windowManager.updateViewLayout(floatRoot, params)
+                    floatRoot?.let { windowManager.updateViewLayout(it, params) }
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {}
             }

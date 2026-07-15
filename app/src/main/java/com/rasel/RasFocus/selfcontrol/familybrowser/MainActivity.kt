@@ -1347,7 +1347,7 @@ fun TopBrowserBar(vm: BrowserViewModel) {
                         }
                         // Floating indicator dot — active tab floating হলে দেখাবে
                         val isFloating = remember(vm.currentUrl) {
-                            com.rasel.RasFocus.selfcontrol.familybrowser.service
+                            com.rasel.RasFocus.selfcontrol.familybrowser
                                 .FloatingWindowService.isRunning ||
                             com.rasel.RasFocus.selfcontrol.familybrowser.service
                                 .YoutubeFloatingWindowService.isRunning
