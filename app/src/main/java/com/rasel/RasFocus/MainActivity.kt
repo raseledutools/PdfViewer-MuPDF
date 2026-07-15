@@ -1816,13 +1816,64 @@ fun PermissionSetupScreen(persona: UserPersona?, onAllGranted: () -> Unit) {
         else                 -> "RasFocus+ App Blocker"
     }
 
-    // Single-screen layout — no scroll needed
+    // Sticky-bottom layout: button always visible, permission rows scroll above it
+    Scaffold(
+        containerColor = RasFocusColors.BackgroundWhite,
+        bottomBar = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(RasFocusColors.BackgroundWhite)
+                    .navigationBarsPadding()
+                    .padding(horizontal = 20.dp, vertical = 12.dp)
+            ) {
+                if (requiredPermissionsMet) {
+                    Button(
+                        onClick = {
+                            try { UsageNotificationService.start(context) } catch (_: Exception) {}
+                            onAllGranted()
+                        },
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = RasFocusColors.SuccessGreen)
+                    ) {
+                        Icon(Icons.Filled.CheckCircle, null, tint = Color.White)
+                        Spacer(Modifier.width(8.dp))
+                        Text("ALL SET! ENTER APP", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    }
+                } else {
+                    Text(
+                        "Grant required permissions above, then tap Continue.",
+                        fontSize = 13.sp,
+                        color = RasFocusColors.SubtleText,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = {
+                            try { UsageNotificationService.start(context) } catch (_: Exception) {}
+                            onAllGranted()
+                        },
+                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        border = BorderStroke(1.5.dp, RasFocusColors.PrimaryTeal),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = RasFocusColors.PrimaryTeal)
+                    ) {
+                        Text("Continue anyway \u2192", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    ) { innerPadding ->
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(RasFocusColors.BackgroundWhite)
             .systemBarsPadding()
-            .padding(horizontal = 20.dp),
+            .padding(innerPadding)
+            .padding(horizontal = 20.dp)
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(Modifier.height(16.dp))
@@ -1947,51 +1998,9 @@ fun PermissionSetupScreen(persona: UserPersona?, onAllGranted: () -> Unit) {
             onClick = { openOemAutoStartSettings(context) }
         )
 
-        Spacer(Modifier.weight(1f))
-
-        // Bottom CTA
-        if (requiredPermissionsMet) {
-            Button(
-                onClick = {
-                    try {
-                        UsageNotificationService.start(context)
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-                    onAllGranted()
-                },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = RasFocusColors.SuccessGreen)
-            ) {
-                Icon(Icons.Filled.CheckCircle, null, tint = Color.White)
-                Spacer(Modifier.width(8.dp))
-                Text("ALL SET! ENTER APP", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            }
-        } else {
-            Text(
-                "Grant required permissions above, then tap Continue.",
-                fontSize = 13.sp,
-                color = RasFocusColors.SubtleText,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(Modifier.height(10.dp))
-            OutlinedButton(
-                onClick = {
-                    try { UsageNotificationService.start(context) } catch (_: Exception) {}
-                    onAllGranted()
-                },
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape = RoundedCornerShape(16.dp),
-                border = BorderStroke(1.5.dp, RasFocusColors.PrimaryTeal),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = RasFocusColors.PrimaryTeal)
-            ) {
-                Text("Continue anyway \u2192", fontSize = 15.sp, fontWeight = FontWeight.Bold)
-            }
-        }
         Spacer(Modifier.height(20.dp))
-    }
+    } // Column
+    } // Scaffold
 }
 
 // Compact one-screen permission row (smaller than PremiumPermissionRow)
