@@ -185,13 +185,23 @@ class FloatingWindowService : Service() {
             windowManager.updateViewLayout(floatRoot, params)
         }
 
-        // Open in main browser
+        // Open in main browser (RasFocus browser tab)
         val btnOpen = buildIconButton("⤤") {
             val i = Intent(this@FloatingWindowService, FamilyBrowserActivity::class.java).apply {
                 data  = android.net.Uri.parse(url)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
             }
             startActivity(i)
+            stopSelf()
+        }
+
+        // ── Open in Native App ─────────────────────────────────────────────────
+        // Closes the floating window and opens the current URL in the device's
+        // native app (Facebook app, YouTube app) or the system browser as fallback.
+        // Mirrors the behaviour of Facebook/YouTube's own floating "open in app" button.
+        val btnNative = buildIconButton("↗") {
+            openInNativeApp(webView?.url ?: url)
+            removeWindow()
             stopSelf()
         }
 
@@ -204,6 +214,7 @@ class FloatingWindowService : Service() {
         titleBar.addView(titleTv)
         titleBar.addView(btnSize)
         titleBar.addView(btnOpen)
+        titleBar.addView(btnNative)
         titleBar.addView(btnClose)
 
         // ── Drag: titleBar দিয়ে drag ──────────────────────────────────────────
@@ -389,6 +400,43 @@ class FloatingWindowService : Service() {
             setPadding(dp(10), dp(4), dp(10), dp(4))
             setOnClickListener { onClick() }
         }
+
+    /**
+     * Closes the floating window and opens [url] in the correct native app:
+     *  - facebook.com / fb.com  → Facebook app (com.facebook.katana)
+     *  - youtube.com / youtu.be → YouTube app (com.google.android.youtube)
+     *  - instagram.com          → Instagram app (com.instagram.android)
+     *  - anything else          → system default browser / ACTION_VIEW chooser
+     * Falls back to the system chooser if the target app isn't installed.
+     */
+    private fun openInNativeApp(url: String) {
+        val uri = android.net.Uri.parse(url)
+        val host = uri.host?.removePrefix("www.")?.removePrefix("m.") ?: ""
+
+        val targetPackage: String? = when {
+            host.contains("facebook.com") || host == "fb.com" || host.startsWith("fb.") ->
+                "com.facebook.katana"
+            host.contains("youtube.com") || host == "youtu.be" ->
+                "com.google.android.youtube"
+            host.contains("instagram.com") ->
+                "com.instagram.android"
+            else -> null   // no specific native app — use system chooser
+        }
+
+        val baseIntent = Intent(Intent.ACTION_VIEW, uri).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+
+        if (targetPackage != null) {
+            // Try the specific native app first, fall back to chooser if not installed
+            try {
+                startActivity(baseIntent.apply { setPackage(targetPackage) })
+                return
+            } catch (_: Exception) {}
+        }
+        // Fallback: system browser / chooser
+        try { startActivity(baseIntent.apply { setPackage(null) }) } catch (_: Exception) {}
+    }
 
     private fun removeWindow() {
         webView?.destroy(); webView = null
