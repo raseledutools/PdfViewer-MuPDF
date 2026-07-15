@@ -110,7 +110,7 @@ class FacebookActivity : ComponentActivity() {
         )
         // Facebook এর নিজস্ব ব্র্যান্ড রঙ — native app এর মতো ফিল দেওয়ার জন্য
         window.statusBarColor = Color.parseColor("#1877F2")
-        window.navigationBarColor = Color.WHITE
+        window.navigationBarColor = Color.parseColor("#f0f2f5")  // match Facebook bg
 
         val insetsController = WindowInsetsControllerCompat(window, window.decorView)
         insetsController.isAppearanceLightStatusBars = false
@@ -130,7 +130,7 @@ class FacebookActivity : ComponentActivity() {
         )
 
         val rootFrame = FrameLayout(this).apply {
-            setBackgroundColor(Color.WHITE)
+            setBackgroundColor(Color.parseColor("#f0f2f5"))  // Facebook bg — no white flash
             ViewCompat.setOnApplyWindowInsetsListener(this) { view, insets ->
                 val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
                 view.setPadding(0, bars.top, 0, bars.bottom)
@@ -181,7 +181,7 @@ class FacebookActivity : ComponentActivity() {
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
             setLayerType(View.LAYER_TYPE_HARDWARE, null)
-            setBackgroundColor(Color.WHITE)
+            setBackgroundColor(Color.TRANSPARENT)  // no white flash during navigation
 
             settings.apply {
                 javaScriptEnabled                = true
@@ -218,8 +218,17 @@ class FacebookActivity : ComponentActivity() {
             )
 
             webViewClient = object : WebViewClient() {
+                override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
+                    super.onPageStarted(view, url, favicon)
+                    // Keep showing previous content while new page loads — no white blank screen.
+                    // WebView already does this with TRANSPARENT background set above,
+                    // but we explicitly keep alpha=1f so nothing blinks.
+                    view.alpha = 1f
+                }
+
                 override fun onPageFinished(view: WebView, url: String) {
                     super.onPageFinished(view, url)
+                    view.alpha = 1f
                     injectRemoveOpenInAppButton(view)
                     injectFooterRemover(view)
                     injectSettingsRemover(view)
