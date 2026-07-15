@@ -63,8 +63,8 @@ class FloatingWindowService : Service() {
     // Window size & position
     private var winW = 0
     private var winH = 0
-    private var posX = 100
-    private var posY = 200
+    private var posX = 0
+    private var posY = 0
 
     // Resize state
     private var resizeStartW = 0
@@ -81,7 +81,7 @@ class FloatingWindowService : Service() {
 
         // Default size = 60% of screen width, 50% height
         val dm = resources.displayMetrics
-        winW = (dm.widthPixels  * 0.60f).toInt()
+        winW = dm.widthPixels
         winH = (dm.heightPixels * 0.50f).toInt()
     }
 

@@ -65,8 +65,8 @@ class FloatingWindowService : Service() {
     // Window size & position
     private var winW = 0
     private var winH = 0
-    private var posX = 100
-    private var posY = 200
+    private var posX = 0    // left edge — full width window starts at x=0
+    private var posY = 0    // top edge — appears at very top of screen
 
     // Resize state
     private var resizeStartW = 0
@@ -81,10 +81,10 @@ class FloatingWindowService : Service() {
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         createNotificationChannel()
 
-        // Default size = 60% of screen width, 50% height
+        // Default: full width, top half of screen (horizontally full, vertically 50%)
         val dm = resources.displayMetrics
-        winW = (dm.widthPixels  * 0.60f).toInt()
-        winH = (dm.heightPixels * 0.50f).toInt()
+        winW = dm.widthPixels                        // full screen width
+        winH = (dm.heightPixels * 0.50f).toInt()    // top 50% of screen height
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -178,16 +178,18 @@ class FloatingWindowService : Service() {
         var isMinimized = false
         val btnMinimize = buildIconButton("−") {
             if (isMinimized) {
-                // Restore
+                // Restore — window ফিরে আসবে full size এ top এ
                 floatRoot?.visibility = android.view.View.VISIBLE
-                params.width  = winW
-                params.height = winH
+                params.width  = screenW          // full width
+                params.height = winH             // 50% height
+                params.x      = 0
+                params.y      = 0               // top of screen
                 isMinimized   = false
             } else {
-                // Minimize → শুধু title bar দেখাবে
-                floatRoot?.visibility = android.view.View.VISIBLE
-                params.width  = (screenW * 0.55f).toInt()
-                params.height = dp(44)
+                // Minimize — window সম্পূর্ণ GONE হবে, শুধু floating bubble দেখাবে
+                // Bubble টা RasBrowser এর FloatingTabButton — সেটা MainActivity
+                // manage করে, তাই এখানে window কে GONE করাই যথেষ্ট।
+                floatRoot?.visibility = android.view.View.GONE
                 isMinimized   = true
             }
             floatRoot?.let { windowManager.updateViewLayout(it, params) }
