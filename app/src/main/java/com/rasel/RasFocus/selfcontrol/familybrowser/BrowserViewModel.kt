@@ -2,8 +2,6 @@ package com.rasel.RasFocus.selfcontrol.familybrowser
 
 import android.app.Application
 
-// Bridge var — FloatingWindowService (service package) থেকে sync হয়
-var isFloatingWindowRunning: Boolean = false
 import android.content.Context
 import android.content.SharedPreferences
 import android.webkit.WebView
@@ -17,6 +15,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+
+// Bridge var — FloatingWindowService (service package) থেকে sync হয়
+var isFloatingWindowRunning: Boolean = false
 
 /**
  * Home button press হলে কী হবে সেটার setting।
