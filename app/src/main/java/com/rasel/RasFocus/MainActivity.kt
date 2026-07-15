@@ -1275,8 +1275,13 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onSkip: () -> Unit) {
             errorMsg = "Activity not found. Please restart the app."
             return
         }
-        isLoading = true; errorMsg = null; exactException = null
         val webClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID
+        if (webClientId.isBlank()) {
+            errorMsg = "Google Sign-In is not configured."
+            exactException = "GOOGLE_WEB_CLIENT_ID is missing from build config"
+            return
+        }
+        isLoading = true; errorMsg = null; exactException = null
         val gso = GoogleSignInOptions.Builder(
             GoogleSignInOptions.DEFAULT_SIGN_IN
         ).requestIdToken(webClientId).requestEmail().build()
