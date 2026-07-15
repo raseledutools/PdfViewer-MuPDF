@@ -1568,6 +1568,195 @@ fun UpdateCenterSection(context: Context) {
 }
 
 // ── Add Home Shortcut for single app ──
+
+@Composable
+fun BrowserSettingsDialog(context: Context, appType: String, onDismiss: () -> Unit) {
+    val prefs = context.getSharedPreferences("browser_settings", Context.MODE_PRIVATE)
+
+    // Facebook
+    var fbHideVideo by remember { mutableStateOf(prefs.getBoolean("fb_hide_videos", false)) }
+    var fbHideReels by remember { mutableStateOf(prefs.getBoolean("fb_hide_reels", false)) }
+    var fbHideNewsfeed by remember { mutableStateOf(prefs.getBoolean("fb_hide_newsfeed", false)) }
+    var fbGrayscale by remember { mutableStateOf(prefs.getBoolean("fb_grayscale", false)) }
+    var fbTextOnly by remember { mutableStateOf(prefs.getBoolean("fb_text_only", false)) }
+
+    // YouTube
+    var ytHideShorts by remember { mutableStateOf(prefs.getBoolean("yt_hide_shorts", false)) }
+    var ytHideComments by remember { mutableStateOf(prefs.getBoolean("yt_hide_comments", false)) }
+    var ytGrayscale by remember { mutableStateOf(prefs.getBoolean("yt_grayscale", false)) }
+
+    // RasBrowser
+    var rbBlockAds by remember { mutableStateOf(prefs.getBoolean("rb_block_ads", true)) }
+    var rbStrictBlacklist by remember { mutableStateOf(prefs.getBoolean("rb_strict_blacklist", false)) }
+    var rbWhitelistMode by remember { mutableStateOf(prefs.getBoolean("rb_whitelist_mode", false)) }
+    var rbForceDark by remember { mutableStateOf(prefs.getBoolean("rb_force_dark", false)) }
+
+    var pendingToggleAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var activeLockConfig by remember { mutableStateOf<ToggleLockConfig?>(null) }
+    var showLockConfigFor by remember { mutableStateOf<String?>(null) }
+    var showDomainListFor by remember { mutableStateOf<String?>(null) }
+
+    val handleToggle: (String, Boolean, (Boolean) -> Unit) -> Unit = { id, newValue, applyToggle ->
+        if (!newValue) {
+            val config = ToggleLockManager.getConfig(context, id)
+            if (config.lockMode != "none") {
+                activeLockConfig = config
+                pendingToggleAction = { applyToggle(newValue) }
+            } else {
+                applyToggle(newValue)
+            }
+        } else {
+            applyToggle(newValue)
+        }
+    }
+
+    if (activeLockConfig != null) {
+        LockVerificationDialog(
+            context = context,
+            lockConfig = activeLockConfig!!,
+            onSuccess = {
+                pendingToggleAction?.invoke()
+                pendingToggleAction = null
+                activeLockConfig = null
+            },
+            onCancel = {
+                pendingToggleAction = null
+                activeLockConfig = null
+            }
+        )
+    }
+
+    if (showLockConfigFor != null) {
+        ToggleLockModeSheet(
+            context = context,
+            toggleId = showLockConfigFor!!,
+            onDismiss = { showLockConfigFor = null }
+        )
+    }
+
+    if (showDomainListFor != null) {
+        DomainListSheet(
+            context = context,
+            mode = showDomainListFor!!,
+            onDismiss = { showDomainListFor = null }
+        )
+    }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.6f))
+                .clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { onDismiss() },
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .fillMaxHeight(0.8f)
+                    .clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) {}
+                    .background(color = Color(0xFF16162A), shape = RoundedCornerShape(24.dp))
+                    .padding(24.dp)
+            ) {
+                Text(
+                    "$appType Settings",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = SoftWhite
+                )
+                Spacer(Modifier.height(20.dp))
+
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    when (appType) {
+                        "Facebook" -> {
+                            item {
+                                SettingToggleRow("Hide Video Section", fbHideVideo, onSettingsClick = { showLockConfigFor = "fb_hide_videos" }) { newValue ->
+                                    handleToggle("fb_hide_videos", newValue) { fbHideVideo = it; prefs.edit().putBoolean("fb_hide_videos", it).apply() }
+                                }
+                            }
+                            item {
+                                SettingToggleRow("Hide Reels Section", fbHideReels, onSettingsClick = { showLockConfigFor = "fb_hide_reels" }) { newValue ->
+                                    handleToggle("fb_hide_reels", newValue) { fbHideReels = it; prefs.edit().putBoolean("fb_hide_reels", it).apply() }
+                                }
+                            }
+                            item {
+                                SettingToggleRow("Hide Newsfeed", fbHideNewsfeed, onSettingsClick = { showLockConfigFor = "fb_hide_newsfeed" }) { newValue ->
+                                    handleToggle("fb_hide_newsfeed", newValue) { fbHideNewsfeed = it; prefs.edit().putBoolean("fb_hide_newsfeed", it).apply() }
+                                }
+                            }
+                            item {
+                                SettingToggleRow("Grayscale Mode", fbGrayscale, onSettingsClick = { showLockConfigFor = "fb_grayscale" }) { newValue ->
+                                    handleToggle("fb_grayscale", newValue) { fbGrayscale = it; prefs.edit().putBoolean("fb_grayscale", it).apply() }
+                                }
+                            }
+                            item {
+                                SettingToggleRow("Text-only Mode", fbTextOnly, onSettingsClick = { showLockConfigFor = "fb_text_only" }) { newValue ->
+                                    handleToggle("fb_text_only", newValue) { fbTextOnly = it; prefs.edit().putBoolean("fb_text_only", it).apply() }
+                                }
+                            }
+                        }
+                        "YouTube" -> {
+                            item {
+                                SettingToggleRow("Hide Shorts Section", ytHideShorts, onSettingsClick = { showLockConfigFor = "yt_hide_shorts" }) { newValue ->
+                                    handleToggle("yt_hide_shorts", newValue) { ytHideShorts = it; prefs.edit().putBoolean("yt_hide_shorts", it).apply() }
+                                }
+                            }
+                            item {
+                                SettingToggleRow("Hide Comments", ytHideComments, onSettingsClick = { showLockConfigFor = "yt_hide_comments" }) { newValue ->
+                                    handleToggle("yt_hide_comments", newValue) { ytHideComments = it; prefs.edit().putBoolean("yt_hide_comments", it).apply() }
+                                }
+                            }
+                            item {
+                                SettingToggleRow("Grayscale Mode", ytGrayscale, onSettingsClick = { showLockConfigFor = "yt_grayscale" }) { newValue ->
+                                    handleToggle("yt_grayscale", newValue) { ytGrayscale = it; prefs.edit().putBoolean("yt_grayscale", it).apply() }
+                                }
+                            }
+                        }
+                        "RasBrowser" -> {
+                            item {
+                                SettingToggleRow("Block Ads", rbBlockAds, onSettingsClick = { showLockConfigFor = "rb_block_ads" }) { newValue ->
+                                    handleToggle("rb_block_ads", newValue) { rbBlockAds = it; prefs.edit().putBoolean("rb_block_ads", it).apply() }
+                                }
+                            }
+                            item {
+                                SettingToggleRow("Strict Blacklist", rbStrictBlacklist, onSettingsClick = { showLockConfigFor = "rb_strict_blacklist" }, onEditClick = { showDomainListFor = "blacklist" }) { newValue ->
+                                    handleToggle("rb_strict_blacklist", newValue) { rbStrictBlacklist = it; prefs.edit().putBoolean("rb_strict_blacklist", it).apply() }
+                                }
+                            }
+                            item {
+                                SettingToggleRow("Whitelist Mode", rbWhitelistMode, onSettingsClick = { showLockConfigFor = "rb_whitelist_mode" }, onEditClick = { showDomainListFor = "whitelist" }) { newValue ->
+                                    handleToggle("rb_whitelist_mode", newValue) { rbWhitelistMode = it; prefs.edit().putBoolean("rb_whitelist_mode", it).apply() }
+                                }
+                            }
+                            item {
+                                SettingToggleRow("Force Dark Mode", rbForceDark, onSettingsClick = { showLockConfigFor = "rb_force_dark" }) { newValue ->
+                                    handleToggle("rb_force_dark", newValue) { rbForceDark = it; prefs.edit().putBoolean("rb_force_dark", it).apply() }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE)),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Text("Done", color = SoftWhite, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
+            }
+        }
+    }
+}
+
 fun pinSingleHomeShortcut(context: Context, appType: String) {
     val shortcutManager = context.getSystemService(Context.SHORTCUT_SERVICE) as? android.content.pm.ShortcutManager
     if (shortcutManager == null || !androidx.core.content.pm.ShortcutManagerCompat.isRequestPinShortcutSupported(context)) {
