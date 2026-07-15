@@ -726,12 +726,15 @@ class YoutubeActivity : ComponentActivity() {
         webView?.resumeTimers()
         webView?.onResume()
         webView?.let {
+            // ★ FIX BUG 1: Only inject visibility spoof here — NOT
+            // injectYoutubeHacksForced() which force-plays ALL paused
+            // videos. If the user explicitly paused, we must NOT
+            // override that. Visibility spoof alone is enough to keep
+            // audio running when the app goes to background.
             injectVisibilitySpoof(it)
-            injectYoutubeHacksForced(it)
         }
         super.onPause()
-        
-        // অ্যাপ থেকে অন্য কোথাও গেলে অডিও প্লে হবে
+
         startBgAudioService()
         if (wakeLock?.isHeld == false) wakeLock?.acquire()
     }
@@ -1018,49 +1021,54 @@ class YoutubeActivity : ComponentActivity() {
 
     private fun injectSettingsRemover(view: WebView) {
         val prefs = getSharedPreferences("browser_settings", Context.MODE_PRIVATE)
-        val hideShorts = prefs.getBoolean("yt_hide_shorts", false)
+        val hideShorts   = prefs.getBoolean("yt_hide_shorts", false)
         val hideComments = prefs.getBoolean("yt_hide_comments", false)
-        val grayscale = prefs.getBoolean("yt_grayscale", false)
-        
-        if (!hideShorts && !hideComments && !grayscale) return
-        
+        val grayscale    = prefs.getBoolean("yt_grayscale", false)
+
+        // ★ FIX BUG 3a: Always run — no window guard. Previously the guard
+        // prevented re-application after the user toggled a setting mid-session.
+        // We clear any old interval ourselves before installing a new one.
         val js = """
             (function() {
-                if (window.__rasYtSettingsRemover__) return;
-                window.__rasYtSettingsRemover__ = true;
-                
-                if ($grayscale) {
-                    document.documentElement.style.filter = 'grayscale(100%)';
+                // Clear previous interval if settings were changed
+                if (window.__rasYtSettingsInterval__) {
+                    clearInterval(window.__rasYtSettingsInterval__);
+                    window.__rasYtSettingsInterval__ = null;
                 }
-                
+
+                // ★ FIX BUG 3b: Apply OR remove grayscale based on current pref
+                document.documentElement.style.filter = ${if (grayscale) "'grayscale(100%)'" else "''"}; 
+
                 function applySettings() {
                     try {
-                        if ($hideShorts) {
-                            // Remove Shorts bottom navigation tab
-                            var shortsTabs = document.querySelectorAll('ytm-pivot-bar-item-renderer');
-                            shortsTabs.forEach(function(tab) {
-                                var text = (tab.innerText || '').toLowerCase();
-                                if (text.indexOf('shorts') !== -1) tab.style.display = 'none';
-                            });
-                            
-                            // Remove Shorts shelf in home feed
-                            var shelves = document.querySelectorAll('ytm-rich-section-renderer, ytm-reel-shelf-renderer');
-                            shelves.forEach(function(shelf) {
-                                var text = (shelf.innerText || '').toLowerCase();
-                                if (text.indexOf('shorts') !== -1) shelf.style.display = 'none';
-                            });
-                        }
-                        
-                        if ($hideComments) {
-                            var comments = document.querySelectorAll('ytm-item-section-renderer[section-identifier="comment-item-section"], ytm-comments-entry-point-header-renderer');
-                            comments.forEach(function(comment) {
-                                comment.style.display = 'none';
-                            });
-                        }
+                        // ── Shorts ──────────────────────────────────────────
+                        var shortsTabs = document.querySelectorAll('ytm-pivot-bar-item-renderer');
+                        shortsTabs.forEach(function(tab) {
+                            var text = (tab.innerText || '').toLowerCase();
+                            if (text.indexOf('shorts') !== -1)
+                                tab.style.display = ${if (hideShorts) "'none'" else "''"}; 
+                        });
+                        var shelves = document.querySelectorAll(
+                            'ytm-rich-section-renderer, ytm-reel-shelf-renderer');
+                        shelves.forEach(function(shelf) {
+                            var text = (shelf.innerText || '').toLowerCase();
+                            if (text.indexOf('shorts') !== -1)
+                                shelf.style.display = ${if (hideShorts) "'none'" else "''"}; 
+                        });
+
+                        // ── Comments ─────────────────────────────────────────
+                        var comments = document.querySelectorAll(
+                            'ytm-item-section-renderer[section-identifier="comment-item-section"],' +
+                            'ytm-comments-entry-point-header-renderer');
+                        comments.forEach(function(c) {
+                            c.style.display = ${if (hideComments) "'none'" else "''"}; 
+                        });
                     } catch(e) {}
                 }
+
                 applySettings();
-                setInterval(applySettings, 1000);
+                // Store interval id so next call can cancel it
+                window.__rasYtSettingsInterval__ = setInterval(applySettings, 800);
             })();
         """.trimIndent()
         view.evaluateJavascript(js, null)

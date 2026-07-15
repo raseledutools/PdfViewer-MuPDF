@@ -1015,23 +1015,25 @@ class YoutubeFloatingWindowService : Service() {
                     request: android.webkit.WebResourceRequest
                 ): android.webkit.WebResourceResponse? {
                     val reqUrl = request.url.toString()
-                    // FIX: this only ever checked the DOMAIN (isAdultSite) —
-                    // so a keyword typed into YouTube's own search box (still
-                    // under the youtube.com domain, not an "adult site" by
-                    // domain) never triggered anything, unlike the full-page
-                    // browser which also checks the URL text for adult
-                    // keywords via FirebaseKeywordSync. Added that same check
-                    // here, and upgraded the response from blank HTML to a
-                    // real blocked page.
                     val isDomainBlocked  = com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.isAdultSite(reqUrl)
                     val isKeywordBlocked = com.rasel.RasFocus.selfcontrol.FirebaseKeywordSync.containsAdultKeyword(reqUrl)
                     if (isDomainBlocked || isKeywordBlocked) {
-                        val blockedHtml = com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker
-                            .buildBlockedPage(reqUrl, com.rasel.RasFocus.selfcontrol.familybrowser.BlockReason.ADULT)
-                        return android.webkit.WebResourceResponse(
-                            "text/html", "UTF-8",
-                            blockedHtml.byteInputStream()
-                        )
+                        // ★ FIX BUG 2: Only return blocked page for the MAIN
+                        // frame — returning HTML for sub-resources (images,
+                        // scripts, XHR) just produces broken page fragments
+                        // and still lets the main page load. Main frame gets
+                        // the full blocked page; sub-resources get empty body.
+                        return if (request.isForMainFrame) {
+                            val blockedHtml = com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker
+                                .buildBlockedPage(reqUrl, com.rasel.RasFocus.selfcontrol.familybrowser.BlockReason.ADULT)
+                            android.webkit.WebResourceResponse(
+                                "text/html", "UTF-8",
+                                blockedHtml.byteInputStream()
+                            )
+                        } else {
+                            // Block sub-resource silently (empty response)
+                            android.webkit.WebResourceResponse("text/plain", "UTF-8", null)
+                        }
                     }
                     return super.shouldInterceptRequest(view, request)
                 }
