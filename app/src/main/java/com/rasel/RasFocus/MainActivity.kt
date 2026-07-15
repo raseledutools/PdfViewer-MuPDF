@@ -1970,12 +1970,25 @@ fun PermissionSetupScreen(persona: UserPersona?, onAllGranted: () -> Unit) {
             }
         } else {
             Text(
-                "Grant all required permissions to continue",
+                "Grant required permissions above, then tap Continue.",
                 fontSize = 13.sp,
                 color = RasFocusColors.SubtleText,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
+            Spacer(Modifier.height(10.dp))
+            OutlinedButton(
+                onClick = {
+                    try { UsageNotificationService.start(context) } catch (_: Exception) {}
+                    onAllGranted()
+                },
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.5.dp, RasFocusColors.PrimaryTeal),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = RasFocusColors.PrimaryTeal)
+            ) {
+                Text("Continue anyway \u2192", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            }
         }
         Spacer(Modifier.height(20.dp))
     }
