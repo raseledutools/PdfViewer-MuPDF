@@ -391,20 +391,11 @@ class FacebookFloatingWindowService : Service() {
         titleTvRef = titleTv
 
         val btnMinimize = buildIconBtn("▬", 0xFFFFFFFF.toInt()) { showMinimized() }
-
-        // ── Open in Native Facebook App ────────────────────────────────────────
-        // Closes this floating window and opens the current page in the real
-        // Facebook app — exactly like Facebook's own floating "open in app" button.
-        val btnNative = buildIconBtn("↗", 0xFFE4E6EB.toInt()) {
-            openInFacebookApp(currentUrl)
-        }
-
         val btnClose = buildIconBtn("✕", 0xFFFFCDD2.toInt()) { tearDown(); stopSelf() }
 
         titleBar.addView(fbLogo)
         titleBar.addView(titleTv)
         titleBar.addView(btnMinimize)
-        titleBar.addView(btnNative)
         titleBar.addView(btnClose)
 
         attachDragListener(titleBar, params, screenW, screenH) {
@@ -626,31 +617,6 @@ class FacebookFloatingWindowService : Service() {
 
     private fun removeFull() { fullWindow?.let { runCatching { windowManager.removeView(it) } }; fullWindow = null }
     private fun removeBubble() { bubbleView?.let { runCatching { windowManager.removeView(it) } }; bubbleView = null }
-
-    /**
-     * Closes this floating window and opens [url] in the real Facebook app.
-     * Falls back to the system browser if Facebook isn't installed.
-     * Mirrors the behaviour of Facebook's own floating-video "open in app" button.
-     */
-    private fun openInFacebookApp(url: String) {
-        val uri = android.net.Uri.parse(url)
-        val nativeIntent = Intent(Intent.ACTION_VIEW, uri).apply {
-            setPackage("com.facebook.katana")
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        try {
-            startActivity(nativeIntent)
-        } catch (_: Exception) {
-            // Facebook not installed — open in system browser
-            try {
-                startActivity(Intent(Intent.ACTION_VIEW, uri).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                })
-            } catch (_: Exception) {}
-        }
-        tearDown()
-        stopSelf()
-    }
 
     private fun tearDown() {
         isIntentionalClose = true
