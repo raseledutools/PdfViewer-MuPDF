@@ -26,9 +26,34 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        val googleClientId = project.findProperty("GOOGLE_WEB_CLIENT_ID") as String?
-            ?: System.getenv("GOOGLE_WEB_CLIENT_ID")
-            ?: ""
+        // GOOGLE_WEB_CLIENT_ID — priority order:
+        // 1. gradle.properties / local.properties (developer machine / CI secret)
+        // 2. GOOGLE_WEB_CLIENT_ID environment variable (CI/CD)
+        // 3. Auto-read from google-services.json (OAuth client type=3 = web client)
+        //    This ensures Google Sign-In always works even without a manually set property.
+        val googleClientId: String = run {
+            val fromProp = project.findProperty("GOOGLE_WEB_CLIENT_ID") as String?
+            val fromEnv  = System.getenv("GOOGLE_WEB_CLIENT_ID")
+            if (!fromProp.isNullOrBlank()) return@run fromProp
+            if (!fromEnv.isNullOrBlank())  return@run fromEnv
+            // Fallback: parse google-services.json directly
+            try {
+                val gsFile = file("google-services.json")
+                if (gsFile.exists()) {
+                    val json = groovy.json.JsonSlurper().parse(gsFile) as Map<*, *>
+                    @Suppress("UNCHECKED_CAST")
+                    val clients = json["client"] as? List<Map<*, *>> ?: emptyList()
+                    for (client in clients) {
+                        @Suppress("UNCHECKED_CAST")
+                        val oauthClients = client["oauth_client"] as? List<Map<*, *>> ?: continue
+                        val webClient = oauthClients.firstOrNull { it["client_type"] == 3 }
+                        val id = webClient?.get("client_id") as? String
+                        if (!id.isNullOrBlank()) return@run id
+                    }
+                }
+            } catch (_: Exception) {}
+            "" // last resort — will show error in UI if blank
+        }
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleClientId\"")
 
         vectorDrawables {

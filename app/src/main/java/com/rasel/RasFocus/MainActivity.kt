@@ -1317,7 +1317,15 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onSkip: () -> Unit) {
         // signOut() করে fresh account picker দেখানো হচ্ছে — কিন্তু এখন launch
         // callback এর বাইরে, flag আগেই set, তাই restart হওয়ার ভয় নেই।
         googleSignInClient.signOut().addOnCompleteListener {
-            activity.googleSignInLauncher.launch(googleSignInClient.signInIntent)
+            try {
+                activity.googleSignInLauncher.launch(googleSignInClient.signInIntent)
+            } catch (e: Exception) {
+                // launcher failed to start — reset state so user isn't stuck
+                isLoading = false
+                activity.isLaunchingInternalActivity = false
+                errorMsg = "Google Sign-In could not be started"
+                exactException = e.localizedMessage ?: e.toString()
+            }
         }
     }
 
