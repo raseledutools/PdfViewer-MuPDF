@@ -780,7 +780,13 @@ class YoutubeActivity : ComponentActivity() {
     override fun onStop() {
         webView?.resumeTimers()
         super.onStop()
-        if (webView != null && !isFinishing) startBgAudioService()
+        // FIX: onUserLeaveHint → launchFloatingOnLock → onPause → onStop sequential.
+        // onPause already skips service start when isMiniPlayerActive, but onStop
+        // was still calling it — causing a second service start that restarted the
+        // foreground service mid-stream and cut audio for ~1s on home press.
+        if (webView != null && !isFinishing && !isMiniPlayerActive) {
+            startBgAudioService()
+        }
     }
 
     override fun onDestroy() {

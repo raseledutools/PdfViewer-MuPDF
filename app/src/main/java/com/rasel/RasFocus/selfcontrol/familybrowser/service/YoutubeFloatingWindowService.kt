@@ -844,14 +844,29 @@ class YoutubeFloatingWindowService : Service() {
             windowManager.updateViewLayout(fullWindow, params)
         }
 
-        // "Open in App" — floating বন্ধ করে main app এ ঐ page চালু করে
+        // "Open in App" — floating বন্ধ করে YoutubeActivity তে ঐ page চালু করে
         val btnOpenApp = buildIconBtn("⤤", 0xFF4CAF50.toInt()) {
-            val i = Intent(this@YoutubeFloatingWindowService, FamilyBrowserActivity::class.java).apply {
-                data  = android.net.Uri.parse(currentUrl)
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            // FIX: আগে FamilyBrowserActivity launch হচ্ছিল (ভুল) →
+            // এখন YoutubeActivity launch করা হচ্ছে, WebView return করে reattach হয়।
+            // pendingWebView এ রেখে দাও যাতে YoutubeActivity re-attach করতে পারে।
+            val wv = webView
+            if (wv != null) {
+                pendingWebView = wv
+                webView = null
+            }
+            val i = Intent(
+                this@YoutubeFloatingWindowService,
+                com.rasel.RasFocus.selfcontrol.familybrowser.YoutubeActivity::class.java
+            ).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
             }
             startActivity(i)
-            tearDown()
+            // Window সরাও কিন্তু WebView destroy করো না (pendingWebView এ আছে)
+            removeFull()
+            removeBubble()
+            removeMiniWindow()
+            isIntentionalClose = true
             stopSelf()
         }
 
