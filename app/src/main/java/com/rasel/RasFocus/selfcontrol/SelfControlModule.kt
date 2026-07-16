@@ -674,11 +674,15 @@ fun PermissionRow(icon: ImageVector, label: String, buttonLabel: String, buttonC
             Spacer(Modifier.width(12.dp))
             Text(label, fontSize = 14.sp, color = TextDark, fontWeight = FontWeight.Medium)
         }
-        Button(onClick = onClick,
+        Button(
+            onClick = onClick,
             colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
-            shape = RoundedCornerShape(50.dp),
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp)) {
-            Text(buttonLabel, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.height(48.dp),
+            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
+            elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+        ) {
+            Text(buttonLabel, fontSize = 14.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.3.sp)
         }
     }
 }
@@ -701,17 +705,29 @@ fun AnalyticsSection(navController: NavController? = null) {
         }
         Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Button(onClick = { navController?.navigate("statistics") }, modifier = Modifier.weight(1f).height(48.dp), 
-                colors = ButtonDefaults.buttonColors(containerColor = PremiumTealMid.copy(alpha = 0.15f)),
+            Button(
+                onClick = { navController?.navigate("statistics") },
+                modifier = Modifier.weight(1f).height(56.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF032220)),
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                shape = RoundedCornerShape(12.dp)) {
-                Text("Timeline", color = PremiumTealDark, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                shape = RoundedCornerShape(14.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+            ) {
+                Icon(Icons.Default.Timeline, contentDescription = null, tint = PremiumTealAccent, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Timeline", color = PremiumTealAccent, fontSize = 14.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.3.sp)
             }
-            Button(onClick = { navController?.navigate("statistics") }, modifier = Modifier.weight(1f).height(48.dp), 
-                colors = ButtonDefaults.buttonColors(containerColor = PremiumTealMid.copy(alpha = 0.15f)),
+            Button(
+                onClick = { navController?.navigate("statistics") },
+                modifier = Modifier.weight(1f).height(56.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF032220)),
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                shape = RoundedCornerShape(12.dp)) {
-                Text("Weekly Report", color = PremiumTealDark, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                shape = RoundedCornerShape(14.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+            ) {
+                Icon(Icons.Default.BarChart, contentDescription = null, tint = PremiumTealAccent, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Weekly Report", color = PremiumTealAccent, fontSize = 14.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.3.sp)
             }
         }
     }
@@ -804,22 +820,31 @@ fun QuickActionsSection(viewModel: SelfControlViewModel, navController: NavContr
                 QuickActionRow(icon = Icons.Default.Shield, label = "Adult Block",
                     value = "Safe", bgColor = DarkerCardBlue.copy(alpha = 0.9f), divider = true,
                     onClick = { navController.navigate("adult_block") })
-                Row(Modifier.fillMaxWidth().background(CardBlue.copy(alpha = 0.6f))
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(42.dp).background(White.copy(alpha = 0.15f), RoundedCornerShape(12.dp)),
-                        contentAlignment = Alignment.Center) {
-                        Text("A|", fontSize = 18.sp, color = White, fontWeight = FontWeight.Bold)
+                Row(
+                    Modifier.fillMaxWidth().background(CardBlue.copy(alpha = 0.6f))
+                        .padding(horizontal = 20.dp, vertical = 20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        Modifier.size(50.dp).background(White.copy(alpha = 0.18f), RoundedCornerShape(14.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("A|", fontSize = 20.sp, color = White, fontWeight = FontWeight.ExtraBold)
                     }
-                    Spacer(Modifier.width(14.dp))
+                    Spacer(Modifier.width(16.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(if (keywordsEnabled) "Active" else "Inactive", color = White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                        Text("Keywords Blocked (Shorts/Reels)", color = White.copy(alpha = 0.75f), fontSize = 13.sp)
+                        Text(if (keywordsEnabled) "Active" else "Inactive", color = White, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, letterSpacing = 0.2.sp)
+                        Spacer(Modifier.height(2.dp))
+                        Text("Keywords Blocked (Shorts/Reels)", color = White.copy(alpha = 0.78f), fontSize = 14.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.1.sp)
                     }
-                    Switch(checked = keywordsEnabled,
+                    Switch(
+                        checked = keywordsEnabled,
                         onCheckedChange = { viewModel.toggleKeywords(it, context) },
-                        colors = SwitchDefaults.colors(checkedThumbColor = White, checkedTrackColor = AccentGreen,
-                            uncheckedThumbColor = White, uncheckedTrackColor = White.copy(alpha = 0.3f)))
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = White, checkedTrackColor = AccentGreen,
+                            uncheckedThumbColor = White, uncheckedTrackColor = White.copy(alpha = 0.3f)
+                        )
+                    )
                 }
             }
         }
@@ -829,21 +854,31 @@ fun QuickActionsSection(viewModel: SelfControlViewModel, navController: NavContr
 @Composable
 fun QuickActionRow(icon: ImageVector, label: String, value: String, bgColor: Color, divider: Boolean, onClick: () -> Unit) {
     Column {
-        Row(Modifier.fillMaxWidth().background(bgColor).clickable { onClick() }
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(42.dp).background(White.copy(alpha = 0.15f), RoundedCornerShape(12.dp)),
-                contentAlignment = Alignment.Center) {
-                Icon(icon, contentDescription = null, tint = White, modifier = Modifier.size(22.dp))
+        Row(
+            Modifier.fillMaxWidth().background(bgColor).clickable { onClick() }
+                .padding(horizontal = 20.dp, vertical = 20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                Modifier.size(50.dp).background(White.copy(alpha = 0.18f), RoundedCornerShape(14.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = null, tint = White, modifier = Modifier.size(26.dp))
             }
-            Spacer(Modifier.width(14.dp))
+            Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
-                Text(value, color = White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                Text(label, color = White.copy(alpha = 0.75f), fontSize = 13.sp)
+                Text(value, color = White, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, letterSpacing = 0.2.sp)
+                Spacer(Modifier.height(2.dp))
+                Text(label, color = White.copy(alpha = 0.78f), fontSize = 14.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.1.sp)
             }
-            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = White.copy(alpha = 0.7f), modifier = Modifier.size(22.dp))
+            Box(
+                Modifier.size(32.dp).background(White.copy(alpha = 0.12f), RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.ChevronRight, contentDescription = null, tint = White, modifier = Modifier.size(20.dp))
+            }
         }
-        if (divider) HorizontalDivider(color = White.copy(alpha = 0.1f), thickness = 1.dp)
+        if (divider) HorizontalDivider(color = White.copy(alpha = 0.12f), thickness = 1.dp)
     }
 }
 
@@ -1651,39 +1686,52 @@ fun UpdateCenterSection(context: Context) {
                     if (downloadedFile != null) {
                         Button(
                             onClick = { com.rasel.RasFocus.AutoUpdater.installDownloadedUpdate(context, downloadedFile) },
-                            modifier = Modifier.fillMaxWidth().height(50.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
-                            shape = RoundedCornerShape(12.dp)
+                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B5E20)),
+                            shape = RoundedCornerShape(14.dp),
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
                         ) {
-                            Icon(Icons.Default.DownloadDone, contentDescription = null, tint = SoftWhite)
+                            Icon(Icons.Default.DownloadDone, contentDescription = null, tint = Color(0xFF69F0AE), modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text("Install Update Now", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = SoftWhite)
+                            Text("Install Update Now", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF69F0AE), letterSpacing = 0.3.sp)
                         }
                     } else {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                            Button(
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                            // Universal
+                            OutlinedButton(
                                 onClick = { com.rasel.RasFocus.AutoUpdater.downloadAndInstallUpdate(context, com.rasel.RasFocus.AutoUpdater.APK_UNIVERSAL, releaseInfo!!.tagName) },
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE)),
-                                shape = RoundedCornerShape(12.dp)
+                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF4FACFE).copy(alpha = 0.6f)),
+                                colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFF4FACFE).copy(alpha = 0.08f))
                             ) {
-                                Text("Universal", fontSize = 12.sp, maxLines = 1)
+                                Icon(Icons.Default.Download, contentDescription = null, tint = Color(0xFF4FACFE), modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Universal APK", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4FACFE))
                             }
-                            Button(
+                            // Light
+                            OutlinedButton(
                                 onClick = { com.rasel.RasFocus.AutoUpdater.downloadAndInstallUpdate(context, com.rasel.RasFocus.AutoUpdater.APK_LIGHT, releaseInfo!!.tagName) },
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE)),
-                                shape = RoundedCornerShape(12.dp)
+                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF4FACFE).copy(alpha = 0.6f)),
+                                colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFF4FACFE).copy(alpha = 0.08f))
                             ) {
-                                Text("Light", fontSize = 12.sp, maxLines = 1)
+                                Icon(Icons.Default.Download, contentDescription = null, tint = Color(0xFF4FACFE), modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Light APK", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4FACFE))
                             }
-                            Button(
+                            // Split
+                            OutlinedButton(
                                 onClick = { com.rasel.RasFocus.AutoUpdater.downloadAndInstallUpdate(context, com.rasel.RasFocus.AutoUpdater.APK_FULL_SPLIT, releaseInfo!!.tagName) },
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE)),
-                                shape = RoundedCornerShape(12.dp)
+                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF4FACFE).copy(alpha = 0.6f)),
+                                colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFF4FACFE).copy(alpha = 0.08f))
                             ) {
-                                Text("Split", fontSize = 12.sp, maxLines = 1)
+                                Icon(Icons.Default.Download, contentDescription = null, tint = Color(0xFF4FACFE), modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Split APK", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4FACFE))
                             }
                         }
                     }
@@ -1784,9 +1832,15 @@ fun DomainListSheet(context: Context, mode: String, onDismiss: () -> Unit) {
                                 newDomain = ""
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE))
+                        modifier = Modifier.height(56.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE)),
+                        shape = RoundedCornerShape(12.dp),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
+                        contentPadding = PaddingValues(horizontal = 18.dp)
                     ) {
-                        Text("Add")
+                        Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Add", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 }
                 
@@ -2033,11 +2087,22 @@ fun LockVerificationDialog(
                         Spacer(Modifier.height(16.dp))
                         Text("Time remaining: ${hours}h ${mins}m", color = Color(0xFFFF3B30), fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(24.dp))
-                        Button(onClick = onCancel, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE))) { Text("OK") }
+                        Button(
+                            onClick = onCancel,
+                            modifier = Modifier.fillMaxWidth().height(46.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A1A35)),
+                            shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF4FACFE).copy(alpha = 0.5f))
+                        ) { Text("OK", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4FACFE)) }
                     } else {
                         Text("Time lock has expired.", color = Color.LightGray)
                         Spacer(Modifier.height(16.dp))
-                        Button(onClick = onSuccess, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE))) { Text("Proceed") }
+                        Button(
+                            onClick = onSuccess,
+                            modifier = Modifier.fillMaxWidth().height(46.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE)),
+                            shape = RoundedCornerShape(12.dp)
+                        ) { Text("Proceed", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White) }
                     }
                 } else if (isPasswordLock) {
                     Text("Enter Parental/Self Control Password:", color = Color.LightGray, fontSize = 14.sp)
@@ -2050,19 +2115,31 @@ fun LockVerificationDialog(
                             focusedTextColor = SoftWhite, unfocusedTextColor = SoftWhite,
                             focusedBorderColor = Color(0xFF4FACFE), unfocusedBorderColor = Color.Gray
                         ),
-                        singleLine = true
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
                     )
                     if (showError) {
                         Text("Incorrect password", color = Color.Red, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
                     }
-                    Spacer(Modifier.height(24.dp))
-                    Row {
-                        TextButton(onClick = onCancel) { Text("Cancel", color = Color.LightGray) }
-                        Spacer(Modifier.width(16.dp))
-                        Button(onClick = {
-                            if (passwordInput == lockConfig.parentPin) onSuccess()
-                            else showError = true
-                        }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE))) { Text("Unlock") }
+                    Spacer(Modifier.height(20.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        OutlinedButton(
+                            onClick = onCancel,
+                            modifier = Modifier.weight(1f).height(46.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color.Gray.copy(alpha = 0.4f)),
+                            colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.Transparent)
+                        ) { Text("Cancel", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color.LightGray) }
+                        Button(
+                            onClick = { if (passwordInput == lockConfig.parentPin) onSuccess() else showError = true },
+                            modifier = Modifier.weight(1f).height(46.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE)),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Default.Lock, contentDescription = null, tint = Color.White, modifier = Modifier.size(15.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Unlock", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        }
                     }
                 } else if (isTextLock) {
                     val targetText = lockConfig.customLongText
@@ -2077,22 +2154,38 @@ fun LockVerificationDialog(
                             focusedTextColor = SoftWhite, unfocusedTextColor = SoftWhite,
                             focusedBorderColor = Color(0xFF4FACFE), unfocusedBorderColor = Color.Gray
                         ),
-                        modifier = Modifier.height(120.dp)
+                        modifier = Modifier.fillMaxWidth().height(120.dp)
                     )
                     if (showError) {
                         Text("Text does not match", color = Color.Red, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
                     }
-                    Spacer(Modifier.height(24.dp))
-                    Row {
-                        TextButton(onClick = onCancel) { Text("Cancel", color = Color.LightGray) }
-                        Spacer(Modifier.width(16.dp))
-                        Button(onClick = {
-                            if (textInput.trim() == targetText.trim()) onSuccess()
-                            else showError = true
-                        }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE))) { Text("Unlock") }
+                    Spacer(Modifier.height(20.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        OutlinedButton(
+                            onClick = onCancel,
+                            modifier = Modifier.weight(1f).height(46.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color.Gray.copy(alpha = 0.4f)),
+                            colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.Transparent)
+                        ) { Text("Cancel", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color.LightGray) }
+                        Button(
+                            onClick = { if (textInput.trim() == targetText.trim()) onSuccess() else showError = true },
+                            modifier = Modifier.weight(1f).height(46.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE)),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Default.Lock, contentDescription = null, tint = Color.White, modifier = Modifier.size(15.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Unlock", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        }
                     }
                 } else {
-                    Button(onClick = onSuccess, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE))) { Text("Proceed") }
+                    Button(
+                        onClick = onSuccess,
+                        modifier = Modifier.fillMaxWidth().height(46.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE)),
+                        shape = RoundedCornerShape(12.dp)
+                    ) { Text("Proceed", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White) }
                 }
             }
         }
