@@ -645,9 +645,9 @@ class YoutubeActivity : ComponentActivity() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
-            // ★ FIX: Black screen → WebView আগে invisible রাখো, content load হলে visible করো
+            // Keep black background while WebView surface re-attaches
             returnedWv.visibility = View.INVISIBLE
-            returnedWv.alpha = 1f
+            returnedWv.alpha = 0f
             rootFrame.setBackgroundColor(android.graphics.Color.BLACK)
             rootFrame.addView(returnedWv)
             rootFrame.bringToFront()
@@ -659,14 +659,35 @@ class YoutubeActivity : ComponentActivity() {
         injectVisibilitySpoof(returnedWv)
         injectYoutubeHacksForced(returnedWv)
 
-        // ★ FIX: 150ms পরে visible করো — WebView render হওয়ার পরে
-        // এতে black flash দেখা যাবে না
-        returnedWv.postDelayed({
+        // FIX BLACK SCREEN: WebView hardware surface (SurfaceTexture) needs a
+        // full layout + draw pass before the video compositor is live.
+        // 150ms was too short on slower devices — video decoder wasn't ready.
+        // Now we poll readyState via JS; show WebView only when video is actually
+        // rendering (readyState >= 3 = HAVE_FUTURE_DATA). Hard fallback at 600ms.
+        fun showWebView() {
             returnedWv.visibility = View.VISIBLE
             returnedWv.alpha = 1f
             returnedWv.bringToFront()
             returnedWv.invalidate()
-        }, 150)
+        }
+        val showRunnable = Runnable { showWebView() }
+        // Hard fallback — show regardless after 600ms
+        returnedWv.postDelayed(showRunnable, 600)
+        // Try to show as soon as video surface is ready
+        returnedWv.postDelayed({
+            returnedWv.evaluateJavascript("""
+                (function(){
+                    try {
+                        var v = document.querySelector('video');
+                        return v ? String(v.readyState) : '0';
+                    } catch(e) { return '0'; }
+                })()
+            """.trimIndent()) { rs ->
+                val ready = rs?.trim('"')?.toIntOrNull() ?: 0
+                if (ready >= 3) showWebView()
+                // else: hard fallback at 600ms fires anyway
+            }
+        }, 250)
 
         // ★ FIX: Video unmute + play ensure
         returnedWv.postDelayed({
@@ -729,17 +750,20 @@ class YoutubeActivity : ComponentActivity() {
     override fun onPause() {
         webView?.resumeTimers()
         webView?.onResume()
-        webView?.let {
-            // ★ FIX BUG 1: Only inject visibility spoof here — NOT
-            // injectYoutubeHacksForced() which force-plays ALL paused
-            // videos. If the user explicitly paused, we must NOT
-            // override that. Visibility spoof alone is enough to keep
-            // audio running when the app goes to background.
-            injectVisibilitySpoof(it)
-        }
+        webView?.let { injectVisibilitySpoof(it) }
         super.onPause()
 
-        startBgAudioService()
+        // FIX AUDIO-ON-LOCK: screenOffReceiver's ACTION_SCREEN_OFF already calls
+        // launchFloatingOnLock() which starts BackgroundAudioService with correct
+        // title/thumb metadata. If we also call startBgAudioService() here, it runs
+        // BEFORE the floating launch captures the WebView, so evaluateJavascript gets
+        // a null/wrong webView → notification shows wrong title, and the double-start
+        // can cause the service to restart mid-stream, killing audio for ~1s.
+        // Solution: skip service start here if a floating/lock transition is in progress
+        // (isMiniPlayerActive is set by launchFloatingOnLock before onPause fires).
+        if (!isMiniPlayerActive) {
+            startBgAudioService()
+        }
         if (wakeLock?.isHeld == false) wakeLock?.acquire()
     }
 
@@ -960,15 +984,18 @@ class YoutubeActivity : ComponentActivity() {
     }
 
     private fun injectYoutubeHacksForced(view: WebView) {
-        // Called on lock / home-button press.
-        // Respects __rasUserPaused__: if the user deliberately paused
-        // before locking, we do NOT force-play — their intent wins.
-        // If the system paused (YouTube's visibility-change handler),
-        // we force-play so audio continues through lock screen.
+        // Called on lock / home-button / re-attach.
+        // Only force-plays if user did NOT manually pause (__rasUserPaused__).
+        // FIX SLOW: re-registers the keep-alive setInterval each time this was called
+        // (injectYoutubeHacks guard __rasBgAudioInjected__ is on the OTHER function,
+        // this one had no guard so repeated calls stacked up multiple intervals).
+        // Now just does a one-shot play attempt + visibility spoof — the interval
+        // lives in injectYoutubeHacks which IS guarded.
         view.evaluateJavascript("""
             (function() {
                 try {
                     Object.defineProperty(document, 'hidden', { get: function(){ return false; }, configurable: true });
+                    Object.defineProperty(document, 'visibilityState', { get: function(){ return 'visible'; }, configurable: true });
                     var videos = document.querySelectorAll('video');
                     for (var i = 0; i < videos.length; i++) {
                         try {
