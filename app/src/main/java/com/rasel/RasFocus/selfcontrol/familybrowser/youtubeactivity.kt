@@ -578,38 +578,32 @@ class YoutubeActivity : ComponentActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         if (isMiniPlayerActive) {
-            // ★ FIX: Lock → Floating → Unlock flow
-            // isMiniPlayerActive = true মানে WebView এখন floating service এ আছে
-            // Service বন্ধ করলে onDestroy() এ WebView pendingWebView এ রাখবে
             isMiniPlayerActive = false
             stopBgAudioService()
 
-            // Floating service বন্ধ করো — onDestroy() এ pendingWebView set হবে
-            try {
-                stopService(Intent(
-                    this,
-                    com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService::class.java
-                ))
-            } catch (_: Exception) {}
-
-            if (webView == null) {
-                // ★ FIX: Service synchronous হয় না, তাই postDelayed দিয়ে WebView নাও
-                // pendingWebView set হতে সামান্য সময় লাগে
-                val rootFrame = getRootFrame()
-
-                // প্রথমে immediately চেষ্টা করো
-                val immediateWv = com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView
-                if (immediateWv != null) {
-                    reattachWebView(immediateWv, rootFrame)
-                } else {
-                    // Fallback: একটু অপেক্ষা করো — service onDestroy() সময় নিচ্ছে
+            // OPTIMIZED: grab pendingWebView BEFORE stopping service —
+            // service onDestroy() sets it too but that's async.
+            // If caller (Open App button) already set pendingWebView, we get it
+            // immediately without any delay. stopService() then cleans up.
+            val rootFrame = getRootFrame()
+            val immediateWv = com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView
+            if (immediateWv != null) {
+                // Got it instantly — reattach now, stop service in parallel
+                com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView = null
+                reattachWebView(immediateWv, rootFrame)
+                try {
+                    stopService(Intent(this, com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService::class.java))
+                } catch (_: Exception) {}
+            } else {
+                // WebView still in service — stop it, wait for onDestroy to set pendingWebView
+                try {
+                    stopService(Intent(this, com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService::class.java))
+                } catch (_: Exception) {}
+                if (webView == null) {
                     rootFrame?.postDelayed({
                         val pendingWv = com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView
-                        if (pendingWv != null) {
-                            reattachWebView(pendingWv, rootFrame)
-                        }
-                        // পুরোপুরি fail হলে: নতুন করে YouTube load করো (worst case)
-                    }, 200)
+                        if (pendingWv != null) reattachWebView(pendingWv, rootFrame)
+                    }, 120) // reduced from 200ms → 120ms
                 }
             }
             return
@@ -664,55 +658,45 @@ class YoutubeActivity : ComponentActivity() {
         injectVisibilitySpoof(returnedWv)
         injectYoutubeHacksForced(returnedWv)
 
-        // FIX BLACK SCREEN: WebView hardware surface (SurfaceTexture) needs a
-        // full layout + draw pass before the video compositor is live.
-        // 150ms was too short on slower devices — video decoder wasn't ready.
-        // Now we poll readyState via JS; show WebView only when video is actually
-        // rendering (readyState >= 3 = HAVE_FUTURE_DATA). Hard fallback at 600ms.
+        // OPTIMIZED TRANSITION: single 80ms pass — layout must settle first.
+        // Then JS poll every 60ms (1 frame) until video surface is ready
+        // (readyState >= 2 = HAVE_CURRENT_DATA), show immediately.
+        // Hard fallback: 400ms so worst-case blank is halved vs old 600ms.
+        var shown = false
         fun showWebView() {
+            if (shown) return
+            shown = true
             returnedWv.visibility = View.VISIBLE
             returnedWv.alpha = 1f
             returnedWv.bringToFront()
-            returnedWv.invalidate()
-        }
-        val showRunnable = Runnable { showWebView() }
-        // Hard fallback — show regardless after 600ms
-        returnedWv.postDelayed(showRunnable, 600)
-        // Try to show as soon as video surface is ready
-        returnedWv.postDelayed({
+            // Unmute + resume play in same pass — no extra postDelayed needed
             returnedWv.evaluateJavascript("""
                 (function(){
                     try {
-                        var v = document.querySelector('video');
-                        return v ? String(v.readyState) : '0';
-                    } catch(e) { return '0'; }
-                })()
-            """.trimIndent()) { rs ->
-                val ready = rs?.trim('"')?.toIntOrNull() ?: 0
-                if (ready >= 3) showWebView()
-                // else: hard fallback at 600ms fires anyway
-            }
-        }, 250)
-
-        // ★ FIX: Video unmute + play ensure
-        returnedWv.postDelayed({
-            injectVisibilitySpoof(returnedWv)
-            returnedWv.evaluateJavascript("""
-                (function() {
-                    try {
-                        var videos = document.querySelectorAll('video');
-                        for (var i = 0; i < videos.length; i++) {
-                            try {
-                                videos[i].muted = false;
-                                if (videos[i].paused && !videos[i].ended) {
-                                    videos[i].play().catch(function(){});
-                                }
-                            } catch(e) {}
+                        var vs = document.querySelectorAll('video');
+                        for(var i=0;i<vs.length;i++){
+                            vs[i].muted = false;
+                            if(vs[i].paused && !vs[i].ended) vs[i].play().catch(function(){});
                         }
-                    } catch(e) {}
-                })();
+                    } catch(e){}
+                })()
             """.trimIndent(), null)
-        }, 300)
+        }
+        // Hard fallback at 400ms
+        returnedWv.postDelayed({ showWebView() }, 400)
+        // Poll every 60ms starting at 80ms — show as soon as surface ready
+        fun pollReady(attempt: Int) {
+            returnedWv.postDelayed({
+                returnedWv.evaluateJavascript("""
+                    (function(){try{var v=document.querySelector('video');return v?String(v.readyState):'0';}catch(e){return '0';}})()"
+                """.trimIndent()) { rs ->
+                    val ready = rs?.trim('"')?. toIntOrNull() ?: 0
+                    if (ready >= 2) showWebView()
+                    else if (attempt < 5) pollReady(attempt + 1) // max 5 polls = 380ms
+                }
+            }, (80 + attempt * 60).toLong())
+        }
+        pollReady(0)
     }
 
     private fun injectVisibilitySpoofBeforeLeave(wv: WebView) {
