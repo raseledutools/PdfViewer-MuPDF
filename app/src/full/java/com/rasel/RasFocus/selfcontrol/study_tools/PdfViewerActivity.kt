@@ -217,11 +217,9 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
     var isLoading     by remember { mutableStateOf(true) }
     var errorMsg      by remember { mutableStateOf("") }
 
-    // Controls visibility — starts HIDDEN so the reading screen is completely
-    // clean the moment a PDF opens (WPS/Adobe-style). A single tap reveals the
-    // top bar for a few seconds; it auto-hides again if untouched.
-    var controlsVisible by remember { mutableStateOf(false) }
-    var autoHideJob     by remember { mutableStateOf<Job?>(null) }
+    // Controls: default VISIBLE, single tap sticky toggle (no auto-hide)
+    var controlsVisible by remember { mutableStateOf(true) }
+    fun toggleControls() { controlsVisible = !controlsVisible }
 
     // FIX: shared, document-level zoom state — previously scale/offsetX/offsetY
     // lived INSIDE PdfPageItem (one remember{} per page item), so every page had
@@ -231,7 +229,6 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
     // should show page 4 at the same zoom level, not reset it.
     var scale   by remember { mutableFloatStateOf(1f) }
     var offsetX by remember { mutableFloatStateOf(0f) }
-    var offsetY by remember { mutableFloatStateOf(0f) }
 
     // Selection & highlight
     var selection       by remember { mutableStateOf<TextSelection?>(null) }
@@ -244,26 +241,6 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
 
     val listState = rememberLazyListState()
     val screenW   = context.resources.displayMetrics.widthPixels
-
-    // ── Auto-hide helper ────────────────────────────────────────────────────
-    fun scheduleAutoHide() {
-        autoHideJob?.cancel()
-        controlsVisible = true
-        autoHideJob = scope.launch {
-            delay(3_500)
-            controlsVisible = false
-        }
-    }
-
-    // Tap toggles: hidden → show briefly, visible → hide immediately.
-    fun toggleControls() {
-        if (controlsVisible) {
-            autoHideJob?.cancel()
-            controlsVisible = false
-        } else {
-            scheduleAutoHide()
-        }
-    }
 
     // ── Load PDF ────────────────────────────────────────────────────────────
     LaunchedEffect(uri) {
@@ -457,50 +434,65 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
             isLoading -> LoadingView(fileName)
             errorMsg.isNotEmpty() -> ErrorView(errorMsg, onClose)
             else -> {
-                // ── Page list, zoomed as ONE unit ───────────────────────────────
-                // FIX: previously every PdfPageItem carried its own graphicsLayer
-                // scale — pinching on one page only ever magnified that single
-                // item, so the "page" and its neighbors visually disconnected the
-                // moment you zoomed instead of the whole screen zooming together
-                // like WPS/Adobe. Now the pinch/pan/double-tap gesture and the
-                // graphicsLayer transform live on ONE Box wrapping the entire
-                // LazyColumn, so every currently-visible page scales and pans as
-                // a single continuous surface. While zoomed in, the list's own
-                // scroll is frozen (userScrollEnabled = false) so the two
-                // gesture systems don't fight — pinch back out (or double-tap)
-                // to resume normal page-by-page scrolling.
                 Box(
                     Modifier
                         .fillMaxSize()
                         .pointerInput(Unit) {
+                            // ── WPS-style gesture engine ─────────────────────
+                            // 1-finger → vertical scroll always + horizontal pan when zoomed
+                            // 2-finger → pinch zoom (manual distance, NOT calculateZoom which crashes)
                             awaitEachGesture {
-                                awaitFirstDown(requireUnconsumed = false)
+                                val firstDown = awaitFirstDown(requireUnconsumed = false)
+                                var lastPos   = firstDown.position
+                                var lastDist  = 0f
+                                var lastMidX  = 0f
+                                var twoFinger = false
+
                                 do {
-                                    val event = awaitPointerEvent()
-                                    if (event.changes.size >= 2) {
-                                        val zoomChange = event.calculateZoom()
-                                        val panChange  = event.calculatePan()
-                                        // FIX: was capped at 5x — now that pages
-                                        // re-render at higher resolution when
-                                        // zoomed (see reRenderPageSharper above),
-                                        // a genuinely useful "zoom in a lot" ceiling
-                                        // of 10x stays sharp instead of blurry.
-                                        val newScale = (scale * zoomChange).coerceIn(1f, 10f)
-                                        offsetX = if (newScale > 1f) offsetX + panChange.x else 0f
-                                        offsetY = if (newScale > 1f) offsetY + panChange.y else 0f
-                                        scale   = newScale
+                                    val event   = awaitPointerEvent(PointerEventPass.Main)
+                                    val pressed = event.changes.filter { it.pressed }
+
+                                    if (pressed.size >= 2) {
+                                        twoFinger = true
+                                        val p0   = pressed[0].position
+                                        val p1   = pressed[1].position
+                                        val dist = kotlin.math.sqrt(
+                                            ((p0.x-p1.x)*(p0.x-p1.x) +
+                                             (p0.y-p1.y)*(p0.y-p1.y)).toDouble()
+                                        ).toFloat()
+                                        val midX = (p0.x + p1.x) / 2f
+                                        if (lastDist > 0f) {
+                                            val newScale   = (scale * (dist / lastDist)).coerceIn(1f, 10f)
+                                            val maxOffsetX = (size.width * (newScale - 1f) / 2f).coerceAtLeast(0f)
+                                            val panX = (midX - lastMidX) +
+                                                (size.width / 2f - midX) * (newScale - scale)
+                                            offsetX = if (newScale > 1f)
+                                                (offsetX + panX).coerceIn(-maxOffsetX, maxOffsetX)
+                                            else 0f
+                                            scale = newScale
+                                        }
+                                        lastDist = dist
+                                        lastMidX = midX
                                         event.changes.forEach { if (it.positionChanged()) it.consume() }
+
+                                    } else if (pressed.size == 1 && !twoFinger) {
+                                        val pos   = pressed[0].position
+                                        val delta = pos - lastPos
+                                        if (delta.y != 0f)
+                                            scope.launch { listState.scrollBy(-delta.y) }
+                                        if (scale > 1.05f && delta.x != 0f) {
+                                            val maxOffsetX = (size.width * (scale - 1f) / 2f).coerceAtLeast(0f)
+                                            offsetX = (offsetX + delta.x).coerceIn(-maxOffsetX, maxOffsetX)
+                                        }
+                                        lastPos = pos
+                                        pressed[0].consume()
                                     }
-                                    // single finger → never consume, LazyColumn
-                                    // scrolls freely at any zoom level (WPS style)
                                 } while (event.changes.any { it.pressed })
                             }
                         }
                         .pointerInput(Unit) {
                             detectTapGestures(
                                 onTap = {
-                                    // Plain tap — toggle the top bar, and dismiss
-                                    // any active selection toolbar too.
                                     toggleControls()
                                     if (showToolbar) { selection = null; showToolbar = false }
                                 },
@@ -508,12 +500,14 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                                     if (scale > 1.2f) {
                                         scale   = 1f
                                         offsetX = 0f
-                                        offsetY = 0f
                                     } else {
-                                        val newScale = 2.5f
-                                        offsetX = (size.width  / 2f - tapOffset.x) * (newScale - 1f)
-                                        offsetY = (size.height / 2f - tapOffset.y) * (newScale - 1f)
-                                        scale   = newScale
+                                        val newScale   = 2.5f
+                                        val maxOffsetX = (size.width * (newScale - 1f) / 2f).coerceAtLeast(0f)
+                                        offsetX = ((size.width / 2f - tapOffset.x) * (newScale - 1f))
+                                            .coerceIn(-maxOffsetX, maxOffsetX)
+                                        scale = newScale
+                                        val distFromCenterY = tapOffset.y - size.height / 2f
+                                        scope.launch { listState.scrollBy(distFromCenterY * (newScale - 1f) / newScale) }
                                     }
                                 }
                             )
@@ -522,14 +516,16 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                             scaleX       = scale,
                             scaleY       = scale,
                             translationX = offsetX,
-                            translationY = offsetY,
+                            // NO translationY — Y is owned by LazyColumn scroll.
+                            // Setting translationY here conflicts with LazyColumn
+                            // and causes visual jumps / crash on scroll.
                             clip         = false
                         )
                 ) {
                     LazyColumn(
                         state               = listState,
+                        userScrollEnabled   = false, // our pointerInput calls scrollBy manually
                         modifier            = Modifier.fillMaxSize(),
-                        userScrollEnabled   = (scale <= 1.05f),  // freeze while zoomed — pan only
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                         contentPadding      = PaddingValues(top = 0.dp, bottom = 72.dp)
                     ) {
@@ -545,8 +541,6 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                                         showToolbar  = sel != null
                                     },
                                     onLoadBitmap   = { _ ->
-                                        // Always render at current document zoom so pages
-                                        // scrolled into view while zoomed appear sharp at once.
                                         scope.launch { reRenderPageSharper(idx, scale) }
                                     }
                                 )
@@ -596,8 +590,41 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                         onBack   = onClose
                     )
                 }
+
+                // ── Floating bottom bar ───────────────────────────────────────
+                AnimatedVisibility(
+                    visible  = controlsVisible && !showToolbar,
+                    enter    = slideInVertically { it } + fadeIn(),
+                    exit     = slideOutVertically { it } + fadeOut(),
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                ) {
+                    BottomBar(currentPage = currentPage, totalPages = totalPages)
+                }
             }
         }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BOTTOM BAR
+// ─────────────────────────────────────────────────────────────────────────────
+@Composable
+private fun BottomBar(currentPage: Int, totalPages: Int) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFF0A0A0F).copy(alpha = 0.93f))
+            .navigationBarsPadding()
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text       = "$currentPage / $totalPages",
+            fontSize   = 12.sp,
+            fontWeight = FontWeight.Medium,
+            color      = Color(0xFFF0EFFF).copy(alpha = 0.8f)
+        )
     }
 }
 
