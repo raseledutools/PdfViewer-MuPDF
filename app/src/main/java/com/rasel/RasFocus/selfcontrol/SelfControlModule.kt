@@ -104,6 +104,13 @@ private val TextGray       = Color(0xFF8A8A9A)
 private val White          = Color(0xFFFFFFFF)
 private val CardBlue       = Color(0xFF3A5FD4)
 private val DarkerCardBlue = Color(0xFF2E4FBE)
+// Local to this file on purpose — StatisticsUI.kt and reels_shorts.kt each
+// have their OWN "private val AccentBlue" with a different hex value; those
+// are file-private and shouldn't be visible here, but the Kotlin compiler's
+// error reporting lists them as ambiguous candidates when this file has no
+// declaration of its own. Declaring it here (matching this file's existing
+// AccentGreen/CardBlue pattern) resolves unambiguously to this line.
+private val AccentBlue     = Color(0xFF4A9EFF)
 
 // Premium Teal Colors
 private val PremiumTealDark = Color(0xFF032220)
