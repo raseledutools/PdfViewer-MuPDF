@@ -483,35 +483,27 @@ fun TopHeader(navController: NavController? = null, onMenuClick: () -> Unit = {}
                 // Adult Block Button
                 Card(
                     modifier = Modifier.weight(1f).clickable { navController.navigate("adult_block") },
-                    shape = RoundedCornerShape(18.dp),
+                    shape = RoundedCornerShape(14.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFF2D0059)),
                     elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
                 ) {
-                    Box(
-                        Modifier.fillMaxWidth()
-                            .background(Brush.verticalGradient(listOf(Color(0xFF6A0DAD), Color(0xFF2D0059))))
-                            .padding(horizontal = 14.dp, vertical = 16.dp)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Brush.horizontalGradient(listOf(Color(0xFF6A0DAD), Color(0xFF2D0059))))
+                            .padding(horizontal = 12.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Column(horizontalAlignment = Alignment.Start) {
-                            Box(
-                                Modifier.size(44.dp).background(White.copy(alpha = 0.15f), RoundedCornerShape(12.dp)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Default.Shield, contentDescription = null, tint = Color(0xFFFF6BFF), modifier = Modifier.size(24.dp))
-                            }
-                            Spacer(Modifier.height(10.dp))
-                            Text("Adult Block", color = White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Text("100% Safe Browsing", color = White.copy(alpha = 0.65f), fontSize = 11.sp)
-                            Spacer(Modifier.height(8.dp))
-                            Row(
-                                Modifier.background(Color(0xFFFF6BFF).copy(alpha = 0.2f), RoundedCornerShape(20.dp))
-                                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(Modifier.size(6.dp).background(Color(0xFF00FF88), CircleShape))
-                                Spacer(Modifier.width(4.dp))
-                                Text("Tap to Enable", color = Color(0xFFFF6BFF), fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
-                            }
+                        Box(
+                            Modifier.size(32.dp).background(White.copy(alpha = 0.15f), RoundedCornerShape(9.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Shield, contentDescription = null, tint = Color(0xFFFF6BFF), modifier = Modifier.size(17.dp))
+                        }
+                        Column {
+                            Text("Adult Block", color = White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                            Text("Safe Browsing", color = White.copy(alpha = 0.6f), fontSize = 10.sp)
                         }
                     }
                 }
@@ -519,35 +511,27 @@ fun TopHeader(navController: NavController? = null, onMenuClick: () -> Unit = {}
                 // Deep Study Button
                 Card(
                     modifier = Modifier.weight(1f).clickable { navController.navigate("deep_study") },
-                    shape = RoundedCornerShape(18.dp),
+                    shape = RoundedCornerShape(14.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFF001A0A)),
                     elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
                 ) {
-                    Box(
-                        Modifier.fillMaxWidth()
-                            .background(Brush.verticalGradient(listOf(Color(0xFF005C3B), Color(0xFF001A0A))))
-                            .padding(horizontal = 14.dp, vertical = 16.dp)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Brush.horizontalGradient(listOf(Color(0xFF005C3B), Color(0xFF001A0A))))
+                            .padding(horizontal = 12.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Column(horizontalAlignment = Alignment.Start) {
-                            Box(
-                                Modifier.size(44.dp).background(White.copy(alpha = 0.15f), RoundedCornerShape(12.dp)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Default.MenuBook, contentDescription = null, tint = Color(0xFF00FFB2), modifier = Modifier.size(24.dp))
-                            }
-                            Spacer(Modifier.height(10.dp))
-                            Text("Deep Study", color = White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Text("Full Focus Mode", color = White.copy(alpha = 0.65f), fontSize = 11.sp)
-                            Spacer(Modifier.height(8.dp))
-                            Row(
-                                Modifier.background(Color(0xFF00FFB2).copy(alpha = 0.2f), RoundedCornerShape(20.dp))
-                                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(Modifier.size(6.dp).background(Color(0xFF00FFB2), CircleShape))
-                                Spacer(Modifier.width(4.dp))
-                                Text("Start Session", color = Color(0xFF00FFB2), fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
-                            }
+                        Box(
+                            Modifier.size(32.dp).background(White.copy(alpha = 0.15f), RoundedCornerShape(9.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.MenuBook, contentDescription = null, tint = Color(0xFF00FFB2), modifier = Modifier.size(17.dp))
+                        }
+                        Column {
+                            Text("Deep Study", color = White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                            Text("Focus Mode", color = White.copy(alpha = 0.6f), fontSize = 10.sp)
                         }
                     }
                 }
@@ -568,119 +552,43 @@ fun TopHeader(navController: NavController? = null, onMenuClick: () -> Unit = {}
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// UI: StudyToolsCard — StudyToolsActivity লঞ্চ করে
+// UI: StudyToolsCard — StudyToolsActivity লঞ্চ করে (compact)
 // ─────────────────────────────────────────────────────────────────────────────
 @Composable
 fun StudyToolsCard(context: Context) {
-    com.rasel.RasFocus.ui.theme.PremiumCard(Modifier.fillMaxWidth().padding(horizontal = 20.dp), onClick = { val intent = Intent(context, com.rasel.RasFocus.selfcontrol.StudyToolsActivity::class.java); intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); context.startActivity(intent) }) {
-        Box(
+    com.rasel.RasFocus.ui.theme.PremiumCard(
+        Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+        onClick = {
+            val intent = Intent(context, com.rasel.RasFocus.selfcontrol.StudyToolsActivity::class.java)
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+        }
+    ) {
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
-                    brush = Brush.horizontalGradient(
-                        listOf(Color(0xFF0D0D1A), Color(0xFF1A1A35))
-                    ),
-                    shape = RoundedCornerShape(22.dp)
+                    brush = Brush.horizontalGradient(listOf(Color(0xFF0D0D1A), Color(0xFF1A1A35))),
+                    shape = RoundedCornerShape(20.dp)
                 )
+                .padding(horizontal = 16.dp, vertical = 13.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // Subtle glow accent top-right
             Box(
                 modifier = Modifier
-                    .size(120.dp)
-                    .align(Alignment.TopEnd)
+                    .size(38.dp)
                     .background(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                Color(0xFF4FACFE).copy(alpha = 0.25f),
-                                Color.Transparent
-                            )
-                        ),
-                        shape = RoundedCornerShape(22.dp)
-                    )
-            )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 20.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Icon box with gradient border effect
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .background(
-                            brush = Brush.linearGradient(
-                                listOf(Color(0xFF4FACFE), Color(0xFF00F2FE))
-                            ),
-                            shape = RoundedCornerShape(16.dp)
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("📚", fontSize = 26.sp)
-                }
-
-                Spacer(Modifier.width(16.dp))
-
-                Column(Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "Study Tools",
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 18.sp,
-                            color = SoftWhite
-                        )
-                        Spacer(Modifier.width(10.dp))
-                        // Badge
-                        Box(
-                            modifier = Modifier
-                                .background(
-                                    brush = Brush.horizontalGradient(
-                                        listOf(Color(0xFF4FACFE), Color(0xFF00F2FE))
-                                    ),
-                                    shape = RoundedCornerShape(50.dp)
-                                )
-                                .padding(horizontal = 10.dp, vertical = 3.dp)
-                        ) {
-                            Text(
-                                "NEW",
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = Color(0xFF0D0D1A),
-                                letterSpacing = 1.sp
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(5.dp))
-                    Text(
-                        "PDF Tools • AI Tools • Diary • Tasks",
-                        fontSize = 12.sp,
-                        color = Color(0xFF4FACFE).copy(alpha = 0.85f),
-                        lineHeight = 16.sp
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    // Mini tool pills
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        listOf("📄 PDF" to Color(0xFFFF6B6B), "🤖 AI" to Color(0xFF4FACFE), "📓 Diary" to Color(0xFFA18CD1), "✅ Tasks" to Color(0xFF43E97B)).forEach { (label, color) ->
-                            Box(
-                                modifier = Modifier
-                                    .background(color.copy(alpha = 0.15f), RoundedCornerShape(20.dp))
-                                    .padding(horizontal = 8.dp, vertical = 3.dp)
-                            ) {
-                                Text(label, fontSize = 10.sp, color = color, fontWeight = FontWeight.SemiBold)
-                            }
-                        }
-                    }
-                }
-
-                Spacer(Modifier.width(8.dp))
-                Icon(
-                    imageVector = Icons.Default.ChevronRight,
-                    contentDescription = null,
-                    tint = Color(0xFF4FACFE).copy(alpha = 0.7f),
-                    modifier = Modifier.size(26.dp)
-                )
+                        brush = Brush.linearGradient(listOf(Color(0xFF4FACFE), Color(0xFF00F2FE))),
+                        shape = RoundedCornerShape(11.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) { Text("📚", fontSize = 19.sp) }
+            Column(Modifier.weight(1f)) {
+                Text("Study Tools", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = SoftWhite)
+                Text("PDF · Calculator · Diary · Scanner", fontSize = 11.sp, color = SoftWhite.copy(alpha = 0.5f))
             }
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color(0xFF4FACFE), modifier = Modifier.size(20.dp))
         }
     }
 }
