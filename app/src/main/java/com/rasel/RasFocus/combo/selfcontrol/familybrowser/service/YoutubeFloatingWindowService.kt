@@ -807,11 +807,23 @@ class YoutubeFloatingWindowService : Service() {
             windowManager.updateViewLayout(fullWindow, params)
         }
 
+        // "Open in App" — floating বন্ধ করে main app এ ঐ page চালু করে
+        val btnOpenApp = buildIconBtn("⤤", 0xFF4CAF50.toInt()) {
+            val i = Intent(this@YoutubeFloatingWindowService, FamilyBrowserActivity::class.java).apply {
+                data  = android.net.Uri.parse(currentUrl)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            }
+            startActivity(i)
+            tearDown()
+            stopSelf()
+        }
+
         val btnClose = buildIconBtn("✕", 0xFFFF5555.toInt()) { tearDown(); stopSelf() }
 
         titleBar.addView(ytLogo)
         titleBar.addView(titleTv)
         titleBar.addView(btnMinimize)
+        titleBar.addView(btnOpenApp)
         titleBar.addView(btnSize)
         titleBar.addView(btnClose)
 

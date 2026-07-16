@@ -10,6 +10,7 @@ import android.os.IBinder
 import android.view.*
 import android.webkit.*
 import androidx.core.app.NotificationCompat
+import com.rasel.RasFocus.selfcontrol.familybrowser.FamilyBrowserActivity
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -391,11 +392,24 @@ class FacebookFloatingWindowService : Service() {
         titleTvRef = titleTv
 
         val btnMinimize = buildIconBtn("▬", 0xFFFFFFFF.toInt()) { showMinimized() }
+
+        // "Open in App" — floating বন্ধ করে main app এ ঐ page চালু করে
+        val btnOpenApp = buildIconBtn("⤤", 0xFFE8F5E9.toInt()) {
+            val i = Intent(this@FacebookFloatingWindowService, FamilyBrowserActivity::class.java).apply {
+                data  = android.net.Uri.parse(currentUrl)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            }
+            startActivity(i)
+            tearDown()
+            stopSelf()
+        }
+
         val btnClose = buildIconBtn("✕", 0xFFFFCDD2.toInt()) { tearDown(); stopSelf() }
 
         titleBar.addView(fbLogo)
         titleBar.addView(titleTv)
         titleBar.addView(btnMinimize)
+        titleBar.addView(btnOpenApp)
         titleBar.addView(btnClose)
 
         attachDragListener(titleBar, params, screenW, screenH) {
