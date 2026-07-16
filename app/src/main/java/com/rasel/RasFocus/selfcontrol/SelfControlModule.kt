@@ -445,7 +445,7 @@ fun TopHeader(navController: NavController? = null, onMenuClick: () -> Unit = {}
                     RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)
                 )
                 .statusBarsPadding()
-                .padding(start = 24.dp, end = 24.dp, top = 20.dp, bottom = 32.dp)
+                .padding(start = 24.dp, end = 24.dp, top = 10.dp, bottom = 32.dp)
         ) {
             Column {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
