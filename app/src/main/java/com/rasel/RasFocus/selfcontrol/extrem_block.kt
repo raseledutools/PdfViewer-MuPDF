@@ -1974,7 +1974,13 @@ fun ExtremeBlockScreen() {
             for (row in 0..(size.height / spacing).toInt() + 1) drawLine(Color(0xFF131720), Offset(0f, row * spacing), Offset(size.width, row * spacing), strokeWidth = 0.5f)
         }
 
-        Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp).padding(top = 8.dp)) {
+        Column(modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .statusBarsPadding()
+            .padding(horizontal = 16.dp)
+            .padding(top = 16.dp, bottom = 24.dp)
+        ) {
             Spacer(Modifier.height(8.dp))
             HeaderBar(isActive = isServiceActive)
             Spacer(Modifier.height(12.dp))
