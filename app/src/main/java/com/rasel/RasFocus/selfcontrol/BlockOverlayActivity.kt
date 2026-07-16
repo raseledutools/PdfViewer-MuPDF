@@ -360,6 +360,27 @@ fun LongTextUnlockSection(onUnlocked: () -> Unit) {
 // ── Self Control info (no unlock) ──────────────────────────────────────────────
 @Composable
 fun SelfControlInfoSection(profile: BlockingFocusProfile) {
+    val context = LocalContext.current
+
+    // FIX: আগে profile.selfDays/selfHours/selfMinutes দেখাত — এগুলো session
+    // setup-এর সময়ের value, actual remaining time না। তাই "wrong day" দেখাত।
+    // এখন SharedPreferences থেকে KEY_BREAK_END নিয়ে actual remaining calculate করছি।
+    val remainingLabel = remember {
+        val endTime = context.getSharedPreferences("take_rest_prefs", Context.MODE_PRIVATE)
+            .getLong("break_end_time", 0L)
+        val remaining = endTime - System.currentTimeMillis()
+        if (remaining <= 0L) return@remember "শেষ হয়ে গেছে"
+        val totalSec  = remaining / 1000L
+        val d = totalSec / 86400L
+        val h = (totalSec % 86400L) / 3600L
+        val m = (totalSec % 3600L) / 60L
+        buildString {
+            if (d > 0) append("${d}d ")
+            if (h > 0) append("${h}h ")
+            append("${m}m")
+        }.trim().ifBlank { "< 1m" }
+    }
+
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF14532D).copy(alpha = 0.5f))
@@ -372,13 +393,9 @@ fun SelfControlInfoSection(profile: BlockingFocusProfile) {
             Spacer(Modifier.height(10.dp))
             Text("Self Control Mode", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = com.rasel.RasFocus.ui.theme.RasFocusTheme.colors.primary)
             Spacer(Modifier.height(8.dp))
-            val label = buildString {
-                if (profile.selfDays   > 0) append("${profile.selfDays}d ")
-                if (profile.selfHours  > 0) append("${profile.selfHours}h ")
-                append("${profile.selfMinutes}m")
-            }
             Text(
-                text = "Timer শেষ হলে ($label) block উঠবে।\nএখন unlock করা যাবে না।",
+                text = "বাকি সময়: $remainingLabel
+Timer শেষ হলে block উঠবে। এখন unlock করা যাবে না।",
                 fontSize = 14.sp,
                 color = Color(0xFF94A3B8),
                 textAlign = TextAlign.Center,
