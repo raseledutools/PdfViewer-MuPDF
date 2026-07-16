@@ -1059,6 +1059,226 @@ private fun AccountRow(
     }
 }
 
+@Composable
+fun ExtremBlockCard(onClick: () -> Unit) {
+    // Dark red / crimson gradient — বোঝায় এটা সবচেয়ে কঠোর mode
+    val gradientStart = Color(0xFF7B0000)
+    val gradientEnd   = Color(0xFFB71C1C)
+
+    com.rasel.RasFocus.ui.theme.PremiumCard(Modifier.fillMaxWidth().padding(horizontal = 20.dp), onClick = onClick) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    brush = Brush.horizontalGradient(listOf(gradientStart, gradientEnd)),
+                    shape = RoundedCornerShape(20.dp)
+                )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 18.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Icon box
+                Box(
+                    modifier = Modifier
+                        .size(52.dp)
+                        .background(SoftWhite.copy(alpha = 0.15f), RoundedCornerShape(14.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Shield,
+                        contentDescription = null,
+                        tint = SoftWhite,
+                        modifier = Modifier.size(30.dp)
+                    )
+                }
+                Spacer(Modifier.width(16.dp))
+                Column(Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "Extreme Block",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = SoftWhite
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .background(SoftWhite.copy(alpha = 0.25f), RoundedCornerShape(50.dp))
+                                .padding(horizontal = 8.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                "MAX",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = SoftWhite,
+                                letterSpacing = 1.sp
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(3.dp))
+                    Text(
+                        "সর্বোচ্চ blocking — Adult, Reels, Apps & Protection",
+                        fontSize = 12.sp,
+                        color = SoftWhite.copy(alpha = 0.78f),
+                        lineHeight = 16.sp
+                    )
+                }
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = SoftWhite.copy(alpha = 0.6f),
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UI: BlockingPlanCard — BlockingPlan.kt navigate করে
+// ─────────────────────────────────────────────────────────────────────────────
+@Composable
+fun BlockingPlanCard(navController: NavController) {
+    val gradientStart = Color(0xFF1565C0)
+    val gradientEnd   = Color(0xFF0D47A1)
+
+    com.rasel.RasFocus.ui.theme.PremiumCard(Modifier.fillMaxWidth().padding(horizontal = 20.dp), onClick = { navController.navigate("blocking_plan") }) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    brush = Brush.horizontalGradient(listOf(gradientStart, gradientEnd)),
+                    shape = RoundedCornerShape(20.dp)
+                )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 18.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(52.dp)
+                        .background(SoftWhite.copy(alpha = 0.15f), RoundedCornerShape(14.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PlaylistAddCheck,
+                        contentDescription = null,
+                        tint = SoftWhite,
+                        modifier = Modifier.size(30.dp)
+                    )
+                }
+                Spacer(Modifier.width(16.dp))
+                Column(Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "Create Blocking Apps and Website Profile",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            color = SoftWhite,
+                            lineHeight = 20.sp
+                        )
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Apps ও Websites এর জন্য custom blocking profile তৈরি করো",
+                        fontSize = 12.sp,
+                        color = SoftWhite.copy(alpha = 0.78f),
+                        lineHeight = 16.sp
+                    )
+                }
+                Spacer(Modifier.width(8.dp))
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = SoftWhite.copy(alpha = 0.6f),
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UI: TakeRestCard — take_rest.kt এর MainActivity launch করে
+// ─────────────────────────────────────────────────────────────────────────────
+@Composable
+fun TakeRestCard() {
+    val context = LocalContext.current
+    val gradientStart = Color(0xFF1A237E)
+    val gradientEnd   = Color(0xFF3949AB)
+
+    com.rasel.RasFocus.ui.theme.PremiumCard(Modifier.fillMaxWidth().padding(horizontal = 20.dp), onClick = { val intent = Intent(context, com.rasel.RasFocus.selfcontrol.TakeRestActivity::class.java); intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); context.startActivity(intent) }) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    brush = Brush.horizontalGradient(listOf(gradientStart, gradientEnd)),
+                    shape = RoundedCornerShape(20.dp)
+                )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 18.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(52.dp)
+                        .background(SoftWhite.copy(alpha = 0.15f), RoundedCornerShape(14.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("😴", fontSize = 26.sp)
+                }
+                Spacer(Modifier.width(16.dp))
+                Column(Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "Take Rest",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = SoftWhite
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .background(SoftWhite.copy(alpha = 0.25f), RoundedCornerShape(50.dp))
+                                .padding(horizontal = 8.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                "BREAK",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = SoftWhite,
+                                letterSpacing = 1.sp
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(3.dp))
+                    Text(
+                        "নির্দিষ্ট সময়ের জন্য ফোন block করে বিশ্রাম নাও",
+                        fontSize = 12.sp,
+                        color = SoftWhite.copy(alpha = 0.78f),
+                        lineHeight = 16.sp
+                    )
+                }
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = SoftWhite.copy(alpha = 0.6f),
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
+    }
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // FAMILY BROWSER SECTION — Entry card + bottom-sheet chooser
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1596,6 +1816,44 @@ fun DomainListSheet(context: Context, mode: String, onDismiss: () -> Unit) {
                 }
             }
         }
+    }
+}
+
+// ── Custom Lock Configuration & Manager ──
+data class ToggleLockConfig(
+    val lockMode: String = "none",
+    val selfDays: Int = 0,
+    val selfHours: Int = 0,
+    val selfMinutes: Int = 0,
+    val selfEndTime: Long = 0L,
+    val parentPin: String = "",
+    val customLongText: String = ""
+)
+
+object ToggleLockManager {
+    fun getConfig(context: Context, toggleId: String): ToggleLockConfig {
+        val prefs = context.getSharedPreferences("toggle_locks", Context.MODE_PRIVATE)
+        return ToggleLockConfig(
+            lockMode = prefs.getString("${toggleId}_mode", "none") ?: "none",
+            selfDays = prefs.getInt("${toggleId}_days", 0),
+            selfHours = prefs.getInt("${toggleId}_hours", 0),
+            selfMinutes = prefs.getInt("${toggleId}_minutes", 0),
+            selfEndTime = prefs.getLong("${toggleId}_end", 0L),
+            parentPin = prefs.getString("${toggleId}_pin", "") ?: "",
+            customLongText = prefs.getString("${toggleId}_text", "") ?: ""
+        )
+    }
+
+    fun saveConfig(context: Context, toggleId: String, config: ToggleLockConfig) {
+        context.getSharedPreferences("toggle_locks", Context.MODE_PRIVATE).edit().apply {
+            putString("${toggleId}_mode", config.lockMode)
+            putInt("${toggleId}_days", config.selfDays)
+            putInt("${toggleId}_hours", config.selfHours)
+            putInt("${toggleId}_minutes", config.selfMinutes)
+            putLong("${toggleId}_end", config.selfEndTime)
+            putString("${toggleId}_pin", config.parentPin)
+            putString("${toggleId}_text", config.customLongText)
+        }.apply()
     }
 }
 
