@@ -1569,6 +1569,372 @@ fun UpdateCenterSection(context: Context) {
 
 // ── Add Home Shortcut for single app ──
 
+
+@Composable
+fun SettingToggleRow(
+    label: String,
+    checked: Boolean,
+    onSettingsClick: (() -> Unit)? = null,
+    onEditClick: (() -> Unit)? = null,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(SoftWhite.copy(alpha = 0.05f), RoundedCornerShape(14.dp))
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+            Text(label, color = SoftWhite, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+            if (onSettingsClick != null) {
+                Spacer(Modifier.width(8.dp))
+                androidx.compose.material3.IconButton(onClick = onSettingsClick, modifier = Modifier.size(24.dp)) {
+                    Icon(Icons.Default.Settings, contentDescription = "Lock Settings", tint = Color.Gray)
+                }
+            }
+            if (onEditClick != null) {
+                Spacer(Modifier.width(8.dp))
+                androidx.compose.material3.IconButton(onClick = onEditClick, modifier = Modifier.size(24.dp)) {
+                    Icon(Icons.Default.Edit, contentDescription = "Edit Domains", tint = Color.Gray)
+                }
+            }
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = SoftWhite,
+                checkedTrackColor = Color(0xFF4FACFE),
+                uncheckedThumbColor = SoftWhite.copy(alpha = 0.7f),
+                uncheckedTrackColor = SoftWhite.copy(alpha = 0.2f)
+            )
+        )
+    }
+}
+
+// ── Whitelist & Blacklist Domain List Sheet ──
+@Composable
+fun DomainListSheet(context: Context, mode: String, onDismiss: () -> Unit) {
+    val prefsKey = if (mode == "whitelist") "rb_whitelist_domains" else "rb_strict_blacklist_domains"
+    val prefs = context.getSharedPreferences("browser_settings", Context.MODE_PRIVATE)
+    
+    var domains by remember { 
+        mutableStateOf(prefs.getStringSet(prefsKey, emptySet())?.toList()?.sorted() ?: emptyList())
+    }
+    var newDomain by remember { mutableStateOf("") }
+
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Surface(modifier = Modifier.fillMaxSize(), color = com.rasel.RasFocus.ui.theme.RasFocusTheme.colors.surface) {
+            Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = SoftWhite)
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Text(if (mode == "whitelist") "Whitelist Domains" else "Strict Blacklist Domains", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = SoftWhite)
+                }
+                Spacer(Modifier.height(16.dp))
+
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = newDomain,
+                        onValueChange = { newDomain = it },
+                        label = { Text("Add Domain (e.g. example.com)", color = Color.Gray) },
+                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = SoftWhite, unfocusedTextColor = SoftWhite),
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Button(
+                        onClick = {
+                            val domain = newDomain.trim().lowercase()
+                            if (domain.isNotEmpty()) {
+                                val updated = domains.toMutableSet().apply { add(domain) }
+                                prefs.edit().putStringSet(prefsKey, updated).apply()
+                                domains = updated.toList().sorted()
+                                newDomain = ""
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE))
+                    ) {
+                        Text("Add")
+                    }
+                }
+                
+                Spacer(Modifier.height(16.dp))
+
+                LazyColumn(modifier = Modifier.weight(1f)) {
+                    items(domains) { domain ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                                .background(SoftWhite.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(domain, color = SoftWhite, fontSize = 16.sp)
+                            IconButton(onClick = {
+                                val updated = domains.toMutableSet().apply { remove(domain) }
+                                prefs.edit().putStringSet(prefsKey, updated).apply()
+                                domains = updated.toList().sorted()
+                            }, modifier = Modifier.size(24.dp)) {
+                                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color(0xFFFF3B30))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ── Toggle Lock Mode Sheet ──
+@Composable
+fun ToggleLockModeSheet(
+    context: Context,
+    toggleId: String,
+    onDismiss: () -> Unit
+) {
+    val initialConfig = ToggleLockManager.getConfig(context, toggleId)
+    var selectedMode by remember { mutableStateOf(initialConfig.lockMode) }
+    var selfDays by remember { mutableStateOf(initialConfig.selfDays) }
+    var selfHours by remember { mutableStateOf(initialConfig.selfHours) }
+    var selfMinutes by remember { mutableStateOf(initialConfig.selfMinutes) }
+    var parentPin by remember { mutableStateOf(initialConfig.parentPin) }
+    var customLongText by remember { mutableStateOf(initialConfig.customLongText) }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(modifier = Modifier.fillMaxSize(), color = com.rasel.RasFocus.ui.theme.RasFocusTheme.colors.surface) {
+            Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = SoftWhite)
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Text("Lock Mode", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = SoftWhite)
+                }
+                Spacer(Modifier.height(16.dp))
+
+                val modes = listOf(
+                    "none" to "No Lock (Free to toggle)",
+                    "time" to "Self Control (Timer)",
+                    "password" to "Parents Control (PIN)",
+                    "text" to "Long Text Typing"
+                )
+
+                modes.forEach { (mode, title) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                            .clickable { selectedMode = mode },
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = selectedMode == mode,
+                            onClick = { selectedMode = mode },
+                            colors = RadioButtonDefaults.colors(selectedColor = Color(0xFF4FACFE), unselectedColor = Color.Gray)
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text(title, color = SoftWhite, fontSize = 16.sp)
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                if (selectedMode == "time") {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = selfDays.toString(),
+                            onValueChange = { selfDays = it.toIntOrNull() ?: 0 },
+                            label = { Text("Days", color = Color.Gray) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            colors = OutlinedTextFieldDefaults.colors(focusedTextColor = SoftWhite, unfocusedTextColor = SoftWhite),
+                            modifier = Modifier.weight(1f)
+                        )
+                        OutlinedTextField(
+                            value = selfHours.toString(),
+                            onValueChange = { selfHours = it.toIntOrNull() ?: 0 },
+                            label = { Text("Hours", color = Color.Gray) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            colors = OutlinedTextFieldDefaults.colors(focusedTextColor = SoftWhite, unfocusedTextColor = SoftWhite),
+                            modifier = Modifier.weight(1f)
+                        )
+                        OutlinedTextField(
+                            value = selfMinutes.toString(),
+                            onValueChange = { selfMinutes = it.toIntOrNull() ?: 0 },
+                            label = { Text("Mins", color = Color.Gray) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            colors = OutlinedTextFieldDefaults.colors(focusedTextColor = SoftWhite, unfocusedTextColor = SoftWhite),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+
+                if (selectedMode == "password") {
+                    OutlinedTextField(
+                        value = parentPin,
+                        onValueChange = { parentPin = it },
+                        label = { Text("Set PIN", color = Color.Gray) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = SoftWhite, unfocusedTextColor = SoftWhite),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                if (selectedMode == "text") {
+                    OutlinedTextField(
+                        value = customLongText,
+                        onValueChange = { customLongText = it },
+                        label = { Text("Custom Long Text", color = Color.Gray) },
+                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = SoftWhite, unfocusedTextColor = SoftWhite),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                Spacer(Modifier.weight(1f))
+                Button(
+                    onClick = {
+                        val duration = (selfDays * 24 * 60 * 60 * 1000L) + (selfHours * 60 * 60 * 1000L) + (selfMinutes * 60 * 1000L)
+                        val endTime = if (selectedMode == "time" && duration > 0) System.currentTimeMillis() + duration else initialConfig.selfEndTime
+                        val newConfig = ToggleLockConfig(
+                            lockMode = selectedMode,
+                            selfDays = selfDays,
+                            selfHours = selfHours,
+                            selfMinutes = selfMinutes,
+                            selfEndTime = endTime,
+                            parentPin = parentPin,
+                            customLongText = customLongText
+                        )
+                        ToggleLockManager.saveConfig(context, toggleId, newConfig)
+                        Toast.makeText(context, "Lock setting saved!", Toast.LENGTH_SHORT).show()
+                        onDismiss()
+                    },
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE)),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Text("Save Lock Config", color = SoftWhite, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
+            }
+        }
+    }
+}
+
+// ── Lock Verification Dialog ──
+@Composable
+fun LockVerificationDialog(
+    context: Context,
+    lockConfig: ToggleLockConfig,
+    onSuccess: () -> Unit,
+    onCancel: () -> Unit
+) {
+    val mode = lockConfig.lockMode
+    var passwordInput by remember { mutableStateOf("") }
+    var textInput by remember { mutableStateOf("") }
+    var showError by remember { mutableStateOf(false) }
+
+    val isTimeLock = mode == "time"
+    val isPasswordLock = mode == "password"
+    val isTextLock = mode == "text"
+
+    val remainingTimeMillis = lockConfig.selfEndTime - System.currentTimeMillis()
+    val isTimeOver = remainingTimeMillis <= 0
+
+    Dialog(onDismissRequest = onCancel) {
+        Card(
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF16162A)),
+            modifier = Modifier.fillMaxWidth().padding(16.dp)
+        ) {
+            Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(Icons.Default.Lock, contentDescription = null, tint = Color(0xFFFF3B30), modifier = Modifier.size(48.dp))
+                Spacer(Modifier.height(16.dp))
+                Text("Verification Required", color = SoftWhite, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(16.dp))
+
+                if (isTimeLock) {
+                    if (!isTimeOver) {
+                        val hours = remainingTimeMillis / 3600000
+                        val mins = (remainingTimeMillis % 3600000) / 60000
+                        Text("Settings are locked for the duration of your focus session.", color = Color.LightGray, textAlign = TextAlign.Center, fontSize = 14.sp)
+                        Spacer(Modifier.height(16.dp))
+                        Text("Time remaining: ${hours}h ${mins}m", color = Color(0xFFFF3B30), fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(24.dp))
+                        Button(onClick = onCancel, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE))) { Text("OK") }
+                    } else {
+                        Text("Time lock has expired.", color = Color.LightGray)
+                        Spacer(Modifier.height(16.dp))
+                        Button(onClick = onSuccess, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE))) { Text("Proceed") }
+                    }
+                } else if (isPasswordLock) {
+                    Text("Enter Parental/Self Control Password:", color = Color.LightGray, fontSize = 14.sp)
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = passwordInput,
+                        onValueChange = { passwordInput = it; showError = false },
+                        visualTransformation = PasswordVisualTransformation(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = SoftWhite, unfocusedTextColor = SoftWhite,
+                            focusedBorderColor = Color(0xFF4FACFE), unfocusedBorderColor = Color.Gray
+                        ),
+                        singleLine = true
+                    )
+                    if (showError) {
+                        Text("Incorrect password", color = Color.Red, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+                    }
+                    Spacer(Modifier.height(24.dp))
+                    Row {
+                        TextButton(onClick = onCancel) { Text("Cancel", color = Color.LightGray) }
+                        Spacer(Modifier.width(16.dp))
+                        Button(onClick = {
+                            if (passwordInput == lockConfig.parentPin) onSuccess()
+                            else showError = true
+                        }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE))) { Text("Unlock") }
+                    }
+                } else if (isTextLock) {
+                    val targetText = lockConfig.customLongText
+                    Text("Type the following exact text:", color = Color.LightGray, fontSize = 14.sp)
+                    Spacer(Modifier.height(8.dp))
+                    Text("\"$targetText\"", color = Color(0xFFFFAB00), fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = textInput,
+                        onValueChange = { textInput = it; showError = false },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = SoftWhite, unfocusedTextColor = SoftWhite,
+                            focusedBorderColor = Color(0xFF4FACFE), unfocusedBorderColor = Color.Gray
+                        ),
+                        modifier = Modifier.height(120.dp)
+                    )
+                    if (showError) {
+                        Text("Text does not match", color = Color.Red, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+                    }
+                    Spacer(Modifier.height(24.dp))
+                    Row {
+                        TextButton(onClick = onCancel) { Text("Cancel", color = Color.LightGray) }
+                        Spacer(Modifier.width(16.dp))
+                        Button(onClick = {
+                            if (textInput.trim() == targetText.trim()) onSuccess()
+                            else showError = true
+                        }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE))) { Text("Unlock") }
+                    }
+                } else {
+                    Button(onClick = onSuccess, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE))) { Text("Proceed") }
+                }
+            }
+        }
+    }
+}
+
+// ── Settings Dialog Composable ──
+
 @Composable
 fun BrowserSettingsDialog(context: Context, appType: String, onDismiss: () -> Unit) {
     val prefs = context.getSharedPreferences("browser_settings", Context.MODE_PRIVATE)
