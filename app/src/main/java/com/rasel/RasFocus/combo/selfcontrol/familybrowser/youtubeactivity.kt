@@ -268,7 +268,11 @@ class YoutubeActivity : ComponentActivity() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
-            setLayerType(View.LAYER_TYPE_HARDWARE, null)
+            // FIX: LAYER_TYPE_HARDWARE video render-কে black করে দিচ্ছিল
+            // (audio চলে, screen black) — YouTube-এর HTML5 <video> element-এর
+            // GPU surface texture-এর সাথে conflict করে। LAYER_TYPE_NONE দিলে
+            // WebView নিজেই সঠিক hardware compositing বেছে নেয়।
+            setLayerType(View.LAYER_TYPE_NONE, null)
             setBackgroundColor(Color.BLACK)
 
             settings.apply {

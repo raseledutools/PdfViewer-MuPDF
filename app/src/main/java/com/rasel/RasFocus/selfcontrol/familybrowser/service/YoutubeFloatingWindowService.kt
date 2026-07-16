@@ -1055,7 +1055,11 @@ class YoutubeFloatingWindowService : Service() {
             cookieManager.setAcceptCookie(true)
             cookieManager.setAcceptThirdPartyCookies(this, true)
 
-            setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null)
+            // FIX: LAYER_TYPE_HARDWARE video render-কে black করে দিচ্ছিল
+            // (audio চলে, screen black) — HTML5 video surface texture-এর
+            // সাথে conflict করে floating window-এ। LAYER_TYPE_NONE ব্যবহার
+            // করলে WebView নিজে সঠিক compositing বেছে নেয়।
+            setLayerType(android.view.View.LAYER_TYPE_NONE, null)
 
             webViewClient = object : WebViewClient() {
 
