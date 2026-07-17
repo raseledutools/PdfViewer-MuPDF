@@ -931,7 +931,11 @@ class BpBlockingService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        startForeground(BpC.NOTIF_ID, buildNotification())
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(BpC.NOTIF_ID, buildNotification(), android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+        } else {
+            startForeground(BpC.NOTIF_ID, buildNotification())
+        }
 
         // FIX: Session start করার সাথে সাথেই overlay দেখানো হচ্ছে।
         // আগে শুধু trackLoop() একটা blocked app detect করলে overlay আসতো,
