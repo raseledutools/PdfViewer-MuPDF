@@ -296,7 +296,7 @@ fun BlockOverlayScreen(
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text = ""${profile.profileName}"",
+                        text = "\u201C${profile.profileName}\u201D",
                         fontSize = 13.sp,
                         color = Color(0xFF64748B),
                         letterSpacing = 0.5.sp
@@ -532,8 +532,7 @@ fun SelfControlInfoSection(profile: BlockingFocusProfile) {
             Text("Self Control Mode", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = com.rasel.RasFocus.ui.theme.RasFocusTheme.colors.primary)
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "বাকি সময়: $remainingLabel
-Timer শেষ হলে block উঠবে। এখন unlock করা যাবে না।",
+                text = "বাকি সময়: $remainingLabel\nTimer শেষ হলে block উঠবে। এখন unlock করা যাবে না।",
                 fontSize = 14.sp,
                 color = Color(0xFF94A3B8),
                 textAlign = TextAlign.Center,
