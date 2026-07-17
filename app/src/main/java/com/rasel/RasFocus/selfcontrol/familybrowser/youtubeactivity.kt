@@ -970,9 +970,17 @@ class YoutubeActivity : ComponentActivity() {
                     if (skipBtn) { skipBtn.click(); }
                     var ads = document.querySelectorAll('.ytp-ad-overlay-container, ytm-promoted-video-renderer, .ad-showing');
                     ads.forEach(function(ad) { ad.style.display = 'none'; });
-                    var adText = document.querySelector('.ytp-ad-text');
-                    var video = document.querySelector('video');
-                    if (adText && video && video.duration > 0) { video.currentTime = video.duration; }
+                    // ★ FIX (black screen after ad-block): আগে এখানে ad চলাকালীন
+                    // video.currentTime = video.duration সেট করে জোর করে ad শেষ
+                    // করা হতো। কিন্তু YouTube ad ও main video একই <video> element
+                    // শেয়ার করে — HTML5 API দিয়ে সরাসরি currentTime জোর করে
+                    // পাল্টালে YouTube-এর নিজস্ব player state machine-এর সাথে
+                    // real <video> element-এর state desync হয়ে যেত। এর ফলে audio
+                    // pipeline ঠিক চলতো (আলাদা track), কিন্তু video renderer/surface
+                    // নতুন frame নিতে ব্যর্থ হতো — তাই ad block হওয়ার পরপরই স্ক্রিন
+                    // কালো থেকে যেত। skipBtn.click() (উপরে) YouTube-এর নিজের player
+                    // এর মাধ্যমেই properly skip করে, তাই এই forced-seek hack টা
+                    // সম্পূর্ণ সরিয়ে দেওয়া হলো।
                 }, 500);
             })();
         """.trimIndent(), null)
