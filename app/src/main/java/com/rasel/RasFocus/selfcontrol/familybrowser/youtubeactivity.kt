@@ -2,14 +2,18 @@ package com.rasel.RasFocus.selfcontrol.familybrowser
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.PictureInPictureParams
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.res.Configuration
 import android.graphics.Color
+import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
+import android.util.Rational
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -42,8 +46,22 @@ class YoutubeActivity : ComponentActivity() {
     // onPageFinished এর দ্বিতীয় check স্কিপ করে দেয়।
     private var adultBlockAlreadyShownForThisLoad = false
 
-    // Mini player চালু আছে কিনা track করার জন্য
+    // Mini player চালু আছে কিনা track করার জন্য (পুরনো overlay-permission-based
+    // floating service path — screen lock এ এখনো এটাই ব্যবহার হয়)
     private var isMiniPlayerActive = false
+
+    // ── System Picture-in-Picture (Android native PiP) ──────────────────────
+    // isMiniPlayerActive থেকে আলাদা রাখা হলো ইচ্ছাকৃতভাবে — দুটো সম্পূর্ণ আলাদা
+    // mechanism। isMiniPlayerActive = নিজস্ব overlay service (screen lock এ
+    // ব্যবহার হয়, overlay permission লাগে)। isInSystemPip = Android-এর built-in
+    // PiP API (home button/recent-apps এ ব্যবহার হয়, কোনো extra permission লাগে
+    // না)। দুটো একসাথে active হলে conflict হবে, তাই home-button path এ শুধু
+    // একটাই বেছে নেওয়া হয় (দেখুন onUserLeaveHint)।
+    private var isInSystemPip = false
+
+    // Video-র actual aspect ratio ধরে রাখি যাতে PiP window সঠিক shape এ খোলে
+    // (16:9 hardcode না করে — vertical Shorts এ mismatch হতো)
+    private var lastKnownVideoAspectRatio: Rational = Rational(16, 9)
 
     // ── LAYER 2: Wake Lock ─────────────────────────────────────────────────────
     private var wakeLock: PowerManager.WakeLock? = null
@@ -338,6 +356,7 @@ class YoutubeActivity : ComponentActivity() {
                 ),
                 "RasBlockBridge"
             )
+            addJavascriptInterface(PipAspectBridge(), "RasPipAspectBridge")
 
             webViewClient = object : WebViewClient() {
                 override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
@@ -354,6 +373,7 @@ class YoutubeActivity : ComponentActivity() {
                     injectAdBlocker(view)
                     injectSettingsRemover(view)
                     adBlocker.injectContentScanner(view)
+                    injectVideoAspectRatioTracker(view)
 
                     // FIX: এই navigation এ shouldOverrideUrlLoading/shouldInterceptRequest
                     // এ URL-level check করে ইতিমধ্যে একবার block page দেখানো হয়ে থাকলে,
@@ -1012,6 +1032,36 @@ class YoutubeActivity : ComponentActivity() {
         """.trimIndent(), null)
     }
 
+    /**
+     * System PiP window খোলার সময় সঠিক aspect ratio ব্যবহার করার জন্য video-র
+     * videoWidth/videoHeight periodically পড়ে RasPipAspectBridge দিয়ে Kotlin
+     * এ পাঠায়। guard flag দিয়ে single interval নিশ্চিত করা হয়েছে (অন্য
+     * injectXxx function গুলোর মতো একই pattern) — না হলে YouTube এর SPA
+     * navigation এ প্রতিবার onPageFinished fire হওয়ায় interval জমতে থাকতো।
+     */
+    private fun injectVideoAspectRatioTracker(view: WebView) {
+        view.evaluateJavascript("""
+            (function() {
+                if (window.__rasPipAspectTrackerActive__) return;
+                window.__rasPipAspectTrackerActive__ = true;
+                var lastW = 0, lastH = 0;
+                setInterval(function() {
+                    try {
+                        var v = document.querySelector('video');
+                        if (!v || !v.videoWidth || !v.videoHeight) return;
+                        // মান একই থাকলে বৃথা bridge call এড়িয়ে যাও
+                        if (v.videoWidth === lastW && v.videoHeight === lastH) return;
+                        lastW = v.videoWidth;
+                        lastH = v.videoHeight;
+                        if (window.RasPipAspectBridge) {
+                            window.RasPipAspectBridge.onVideoDimensions(v.videoWidth, v.videoHeight);
+                        }
+                    } catch(e) {}
+                }, 1000);
+            })();
+        """.trimIndent(), null)
+    }
+
     private fun checkAdultSearchKeyword(url: String): String? {
         return try {
             val uri = android.net.Uri.parse(url)
@@ -1052,6 +1102,33 @@ class YoutubeActivity : ComponentActivity() {
         @android.webkit.JavascriptInterface
         fun onGoHome() {
             runOnUiThread { wv.loadUrl("https://m.youtube.com/") }
+        }
+    }
+
+    /**
+     * System PiP window সঠিক shape এ খোলার জন্য video-র actual
+     * videoWidth/videoHeight দরকার — নাহলে vertical Shorts এও 16:9 PiP
+     * window খুলে video-টা squeezed/letterboxed দেখাতো। JS periodically
+     * এই bridge কল করে সর্বশেষ dimension পাঠায়; আমরা শুধু ratio টা মনে
+     * রাখি (aspectRatioUpdated), actual PiP entry-র সময় ব্যবহার করবো।
+     */
+    inner class PipAspectBridge {
+        @android.webkit.JavascriptInterface
+        fun onVideoDimensions(width: Int, height: Int) {
+            if (width <= 0 || height <= 0) return
+            runOnUiThread {
+                // PictureInPictureParams.setAspectRatio() এর সীমা: ratio টা
+                // 2.39:1 থেকে 1:2.39 এর মধ্যে থাকতে হবে (Android spec) —
+                // এর বাইরে গেলে system IllegalArgumentException ছুঁড়ে।
+                // অতিরিক্ত লম্বা/চ্যাপ্টা কোনো edge-case video তে crash
+                // এড়াতে clamp করে রাখলাম।
+                val clampedW = width.coerceAtMost(height * 239 / 100)
+                val clampedH = height.coerceAtMost(width * 239 / 100)
+                lastKnownVideoAspectRatio = Rational(
+                    if (width > height * 239 / 100) clampedW else width,
+                    if (height > width * 239 / 100) clampedH else height
+                )
+            }
         }
     }
 
