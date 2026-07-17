@@ -414,11 +414,11 @@ fun StayFocusedApp(
                         3 -> {
                             // Parents tab — PC + Phone control (same as combo)
                             Box(Modifier.weight(1f)) {
+                                val mainVm: com.rasel.RasFocus.MainViewModel = viewModel()
                                 ParentalRootScreen(
-                                    viewModel      = viewModel,
+                                    viewModel      = mainVm,
                                     isComboMode    = false,
-                                    hideOwnFooter  = true,
-                                    onBackToCombo  = null
+                                    hideOwnFooter  = true
                                 )
                             }
                         }
