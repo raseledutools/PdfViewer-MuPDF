@@ -65,36 +65,42 @@ android {
             useSupportLibrary = true
         }
 
-        // MuPDF native .so libs — all ABIs needed for full flavor
+        // FIX: narrowed from all 4 ABIs to just armeabi-v7a — user only
+        // needs the armeabi-v7a APK now (universal dropped below too).
+        // abiFilters controls which ABIs' native libs get merged/processed
+        // BEFORE splitting, so narrowing this (not just splits.abi.include)
+        // is what actually skips merging/stripping arm64-v8a/x86/x86_64
+        // .so files — real build-time savings, not just fewer output files.
+        // To bring other ABIs back later, list them here again AND re-add
+        // them to splits.abi.include below.
         ndk {
-            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+            abiFilters += listOf("armeabi-v7a")
         }
     }
 
-    // ✅ ABI splits — build TIME optimization: only produce 2 APKs instead of 5.
-    // - universal: bundles ALL ABIs, for real distribution (any phone can install)
-    // - armeabi-v7a: single-ABI, small, for the developer's own device during
-    //   local/debug testing (dev's test phone is armeabi-v7a)
-    // arm64-v8a/x86/x86_64 per-ABI splits removed on purpose — they were built
-    // but never used (CI only ever uploaded one anyway), so this cuts real
-    // Gradle build time. If a per-arm64-v8a APK is needed again later, add
-    // "arm64-v8a" back to the include(...) list below.
+    // ✅ ABI splits — build TIME optimization: only produce armeabi-v7a.
+    // arm64-v8a/x86/x86_64 per-ABI splits removed earlier on purpose (built
+    // but never used). Universal APK (isUniversalApk) also turned off now —
+    // user confirmed they only need the armeabi-v7a APK, not a bundle-all-
+    // ABIs one, so producing it was pure wasted build time. To bring it back
+    // later, set isUniversalApk = true again.
     splits {
         abi {
             isEnable = true
             reset()
             include("armeabi-v7a")
-            isUniversalApk = true
+            isUniversalApk = false
         }
     }
 
-    // ✅ Product Flavors — light = PDF ছাড়া (ছোট, OpenCV/pdfium/scanLib নাই), full = PDF সহ
+    // ✅ Product Flavor — only "full" (PDF/MuPDF support) remains.
+    // "light" flavor removed — user confirmed it's never built (CI only ever
+    // ran assembleFullRelease) and doesn't need it going forward. A single
+    // flavor in a dimension is valid AGP config; kept the flavor system
+    // itself (rather than collapsing to no-flavor) since fullImplementation
+    // dependency scoping and src/full/java below still rely on it existing.
     flavorDimensions += "mode"
     productFlavors {
-        create("light") {
-            dimension = "mode"
-            // applicationId same — google-services.json match করার জন্য
-        }
         create("full") {
             dimension = "mode"
             // MuPDF + pdfium native .so libs এর জন্য
@@ -106,9 +112,6 @@ android {
     sourceSets {
         getByName("full") {
             java.srcDirs("src/full/java")
-        }
-        getByName("light") {
-            java.srcDirs("src/light/java")
         }
     }
 
