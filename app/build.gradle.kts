@@ -78,20 +78,15 @@ android {
         }
     }
 
-    // ✅ ABI splits — build TIME optimization: only produce armeabi-v7a.
-    // arm64-v8a/x86/x86_64 per-ABI splits removed earlier on purpose (built
-    // but never used). Universal APK (isUniversalApk) also turned off now —
-    // user confirmed they only need the armeabi-v7a APK, not a bundle-all-
-    // ABIs one, so producing it was pure wasted build time. To bring it back
-    // later, set isUniversalApk = true again.
-    splits {
-        abi {
-            isEnable = true
-            reset()
-            include("armeabi-v7a")
-            isUniversalApk = false
-        }
-    }
+    // FIX: removed the splits.abi block entirely — AGP rejects having the
+    // same ABI in BOTH ndk.abiFilters and splits.abi.include ("Conflicting
+    // configuration" build failure). splits.abi exists to produce MULTIPLE
+    // per-ABI output APKs from a broader set; since only ONE APK
+    // (armeabi-v7a) is wanted now, splitting isn't the right mechanism at
+    // all — ndk.abiFilters alone (above) already restricts the single
+    // output APK to just that ABI. To bring back multiple split APKs or a
+    // universal one later, re-add a splits { abi { ... } } block WITHOUT
+    // also restricting the same ABI in ndk.abiFilters.
 
     // ✅ Product Flavor — only "full" (PDF/MuPDF support) remains.
     // "light" flavor removed — user confirmed it's never built (CI only ever
