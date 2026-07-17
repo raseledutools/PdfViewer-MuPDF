@@ -90,7 +90,7 @@ internal val BpRedAccent  = Color(0xFFE53935)
 // ─────────────────────────────────────────────────────────────────────────────
 // Enums
 // ─────────────────────────────────────────────────────────────────────────────
-enum class BpScreen       { SETUP, RUNNING, UNLOCK, LOCK_DETAIL, ALLOW_LIST, COMPLETE_AUTO_START }
+enum class BpScreen       { SETUP, RUNNING, UNLOCK, LOCK_DETAIL, ALLOW_LIST }
 enum class BpLockMode     { SELF_CONTROL, PARENTS_CONTROL, LONG_TEXT }
 enum class BpPhoneOption  { COMPLETE, CUSTOMIZE }
 enum class BpAllowTab     { APPS, WEBSITES }
@@ -120,12 +120,6 @@ object BpC {
     const val LOCK_SELF        = "self"
     const val LOCK_PARENTS     = "parents"
     const val LOCK_LONGTEXT    = "longtext"
-
-    // ── Phone mode key ──
-    const val KEY_PHONE_MODE   = "phone_mode"
-    const val PHONE_COMPLETE   = "complete"
-    const val PHONE_CUSTOMIZE  = "customize"
-    const val OVERLAY_APP_LIMIT = 4  // launcher page এ সর্বোচ্চ এতটা app দেখাবে
 
     const val LONG_UNLOCK_TEXT =
         "I acknowledge that I set this focus session to improve my productivity. " +
@@ -527,15 +521,7 @@ private fun BpSetupDialog(onDismiss: () -> Unit, onSessionStart: () -> Unit) {
                     // Bottom CTA
                     Box(Modifier.fillMaxWidth().background(Color(0xFF060B14)).padding(horizontal = 16.dp, vertical = 12.dp)) {
                         Button(
-                            onClick = {
-                                // FIX: Complete mode-এ apps list skip — সরাসরি ALLOW_LIST-এ যাই
-                                // BpAllowListScreen-এ isComplete=true দেওয়া আছে, ওটা LaunchedEffect
-                                // দিয়ে auto-start করবে apps list না দেখিয়ে
-                                screen = if (phoneOption == BpPhoneOption.COMPLETE)
-                                    BpScreen.COMPLETE_AUTO_START  // নতুন screen — direct start
-                                else
-                                    BpScreen.ALLOW_LIST
-                            },
+                            onClick = { screen = BpScreen.ALLOW_LIST },
                             modifier = Modifier.fillMaxWidth().height(52.dp),
                             shape = RoundedCornerShape(14.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = BpTealMid)
@@ -552,41 +538,6 @@ private fun BpSetupDialog(onDismiss: () -> Unit, onSessionStart: () -> Unit) {
 
                 // ── LOCK_DETAIL: merged into SETUP above, kept as stub ──────
                 BpScreen.LOCK_DETAIL -> { screen = BpScreen.ALLOW_LIST }
-
-                // FIX: Complete mode → apps list দেখাবে না, সরাসরি session start
-                BpScreen.COMPLETE_AUTO_START -> {
-                    LaunchedEffect(Unit) {
-                        // Complete mode-এ DEFAULT_ALLOWED pkg গুলো allowed
-                        val finalPkgs = (BpC.DEFAULT_ALLOWED).toSet()
-                        val lockModeString = when(lockMode) {
-                            BpLockMode.SELF_CONTROL -> BpC.LOCK_SELF
-                            BpLockMode.PARENTS_CONTROL -> BpC.LOCK_PARENTS
-                            BpLockMode.LONG_TEXT -> BpC.LOCK_LONGTEXT
-                        }
-                        val totalMs = (days.toLongOrNull() ?: 0L) * 86_400_000L +
-                                      (hours.toLongOrNull() ?: 0L) * 3_600_000L +
-                                      (minutes.toLongOrNull() ?: 0L) * 60_000L
-                        val endTime = System.currentTimeMillis() + totalMs
-
-                        context.getSharedPreferences(BpC.PREFS, Context.MODE_PRIVATE).edit()
-                            .putLong(BpC.KEY_BREAK_END, endTime)
-                            .putString(BpC.KEY_ALLOWED, finalPkgs.joinToString(","))
-                            .putString(BpC.KEY_LOCK_MODE, lockModeString)
-                            .putString(BpC.KEY_PARENT_PASS, parentPass)
-                            .putString(BpC.KEY_PHONE_MODE, BpC.PHONE_COMPLETE)
-                            .apply()
-
-                        if (blockInternet) promptInternetPanel(context)
-
-                        val svcIntent = Intent(context, BpBlockingService::class.java)
-                        context.startForegroundService(svcIntent)
-                        onDismiss()
-                    }
-                    // Loading দেখাও
-                    Box(Modifier.fillMaxSize().background(BpGrayBg), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = BpTealAccent)
-                    }
-                }
 
                 BpScreen.ALLOW_LIST -> BpAllowListScreen(
                     selectedPkgs = allowedPkgs, selectedWebs = allowedWebs,
@@ -617,14 +568,11 @@ private fun BpSetupDialog(onDismiss: () -> Unit, onSessionStart: () -> Unit) {
                             BpLockMode.LONG_TEXT -> BpC.LOCK_LONGTEXT
                         }
 
-                        val phoneModeString = if (phoneOption == BpPhoneOption.COMPLETE) BpC.PHONE_COMPLETE else BpC.PHONE_CUSTOMIZE
-
                         context.getSharedPreferences(BpC.PREFS, Context.MODE_PRIVATE).edit()
                             .putLong(BpC.KEY_BREAK_END, endTime)
                             .putString(BpC.KEY_ALLOWED, finalPkgs.joinToString(","))
                             .putString(BpC.KEY_LOCK_MODE, lockModeString)
                             .putString(BpC.KEY_PARENT_PASS, parentPass)
-                            .putString(BpC.KEY_PHONE_MODE, phoneModeString)
                             .apply()
                             
                         if (blockInternet) promptInternetPanel(context)
@@ -983,13 +931,7 @@ class BpBlockingService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Android 14+ (API 34) এ startForeground() এ serviceType pass করতে হয়,
-        // না হলে SecurityException crash হয়। specialUse manifest-এ declare করা আছে।
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            startForeground(BpC.NOTIF_ID, buildNotification(), android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
-        } else {
-            startForeground(BpC.NOTIF_ID, buildNotification())
-        }
+        startForeground(BpC.NOTIF_ID, buildNotification())
 
         // FIX: Session start করার সাথে সাথেই overlay দেখানো হচ্ছে।
         // আগে শুধু trackLoop() একটা blocked app detect করলে overlay আসতো,
@@ -1302,89 +1244,17 @@ class BpBlockingService : Service() {
         timerCard.addView(timerInner)
         root.addView(timerCard)
 
-        val phoneMode = getSharedPreferences(BpC.PREFS, MODE_PRIVATE)
-            .getString(BpC.KEY_PHONE_MODE, BpC.PHONE_COMPLETE)
+        root.addView(blockTv(context, "ALLOWED APPS", 10f, Typeface.BOLD,
+            android.graphics.Color.parseColor("#2D4A6B"), bot = dp(12), grav = Gravity.CENTER).apply {
+            letterSpacing = 0.15f
+        })
 
-        if (phoneMode == BpC.PHONE_CUSTOMIZE) {
-            // ── Customize mode: allowed apps দেখাও ──────────────────────────
-            root.addView(blockTv(context, "ALLOWED APPS", 10f, Typeface.BOLD,
-                android.graphics.Color.parseColor("#2D4A6B"), bot = dp(12), grav = Gravity.CENTER).apply {
-                letterSpacing = 0.15f
-            })
-
-            val appsContainer = LinearLayout(context).apply {
-                orientation = LinearLayout.VERTICAL
-                layoutParams = LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
-                )
-            }
-            root.addView(appsContainer)
-
-            // প্রথমে OVERLAY_APP_LIMIT টা app দেখাও
-            loadAllowedAppsToView(context, appsContainer, limit = BpC.OVERLAY_APP_LIMIT)
-
-            // মোট কতটা custom app আছে গুনি
-            val raw = getSharedPreferences(BpC.PREFS, MODE_PRIVATE)
-                .getString(BpC.KEY_ALLOWED, "") ?: ""
-            val allPkgs = raw.split(",").filter { it.isNotEmpty() }
-                .filter { pkg -> try { packageManager.getApplicationInfo(pkg, 0); true } catch (_: Exception) { false } }
-            val extraCount = allPkgs.size - BpC.OVERLAY_APP_LIMIT
-
-            if (extraCount > 0) {
-                // "আরো X টা দেখো" button
-                val seeAllBtn = object : LinearLayout(context) {
-                    private val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        color = android.graphics.Color.parseColor("#0E1E35")
-                    }
-                    private val rimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        color = android.graphics.Color.parseColor("#1A3A5C")
-                        style = Paint.Style.STROKE
-                        strokeWidth = dp(1).toFloat()
-                    }
-                    private val rect = RectF()
-                    override fun dispatchDraw(c: Canvas) {
-                        val r = dp(12).toFloat()
-                        rect.set(0f, 0f, width.toFloat(), height.toFloat())
-                        c.drawRoundRect(rect, r, r, bgPaint)
-                        c.drawRoundRect(rect, r, r, rimPaint)
-                        super.dispatchDraw(c)
-                    }
-                }.apply {
-                    orientation = LinearLayout.HORIZONTAL
-                    gravity = Gravity.CENTER
-                    setPadding(dp(16), dp(12), dp(16), dp(12))
-                    setWillNotDraw(false)
-                    layoutParams = LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
-                    ).also { it.topMargin = dp(8) }
-                }
-
-                val arrowTv = blockTv(context, "⊕", 16f,
-                    color = android.graphics.Color.parseColor("#2DD4AA"), grav = Gravity.CENTER).apply {
-                    layoutParams = LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
-                    ).also { it.marginEnd = dp(8) }
-                }
-                val labelTv = blockTv(context, "আরো $extraCount টা app দেখো", 13f,
-                    color = android.graphics.Color.parseColor("#2DD4AA"), grav = Gravity.CENTER).apply {
-                    layoutParams = LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
-                    )
-                }
-                seeAllBtn.addView(arrowTv)
-                seeAllBtn.addView(labelTv)
-
-                // Click → button সরিয়ে বাকি apps দেখাও
-                seeAllBtn.setOnClickListener {
-                    (seeAllBtn.parent as? LinearLayout)?.removeView(seeAllBtn)
-                    // বাকি apps load করো (limit ছাড়া, কিন্তু আগেরগুলো skip)
-                    loadAllowedAppsToView(context, appsContainer,
-                        limit = Int.MAX_VALUE, skip = BpC.OVERLAY_APP_LIMIT)
-                }
-                root.addView(seeAllBtn)
-            }
+        val appsContainer = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         }
-        // Complete mode এ apps section দেখাবে না — শুধু timer আর unlock button
+        root.addView(appsContainer)
+        loadAllowedAppsToView(context, appsContainer)
 
         addUnlockButtonToOverlay(context, root)
 
@@ -1703,49 +1573,34 @@ class BpBlockingService : Service() {
         stopSelf()
     }
 
-    private fun loadAllowedAppsToView(
-        context: Context,
-        container: LinearLayout,
-        limit: Int = Int.MAX_VALUE,
-        skip: Int = 0
-    ) {
+    private fun loadAllowedAppsToView(context: Context, container: LinearLayout) {
         val raw = getSharedPreferences(BpC.PREFS, MODE_PRIVATE).getString(BpC.KEY_ALLOWED, "") ?: ""
-        // Customize mode: DEFAULT_ALLOWED বাদ দিয়ে শুধু user-added apps দেখাই
-        val customPkgs = raw.split(",").filter { it.isNotEmpty() && it !in BpC.DEFAULT_ALLOWED }
+        val pkgs = (raw.split(",").filter { it.isNotEmpty() } + BpC.DEFAULT_ALLOWED).distinct()
         val pm = packageManager
 
-        val allPkgs = customPkgs.filter { pkg ->
+        val allPkgs = pkgs.filter { pkg ->
             try { pm.getApplicationInfo(pkg, 0); true } catch (_: Exception) { false }
         }
 
         if (allPkgs.isEmpty()) {
-            container.addView(blockTv(context, "কোনো custom app allow করা হয়নি", 13f,
-                color = android.graphics.Color.parseColor("#5C6BC0"), bot = 0, grav = Gravity.CENTER))
+            container.addView(blockTv(context, "কোনো app allow করা হয়নি", 13f, color = android.graphics.Color.parseColor("#5C6BC0"), bot = 0, grav = Gravity.CENTER))
             return
         }
 
-        // skip করে limit পর্যন্ত নাও
-        val visiblePkgs = allPkgs.drop(skip).take(limit)
-        if (visiblePkgs.isEmpty()) return
-
         var row: LinearLayout? = null
-        visiblePkgs.forEachIndexed { idx, pkg ->
-            // container এ আগে কতটা row আছে সেটা থেকে global index বের করি
-            // যাতে grid এর column alignment ঠিক থাকে
-            val globalIdx = skip + idx
-            if (globalIdx % 2 == 0) {
+        allPkgs.forEachIndexed { idx, pkg ->
+            if (idx % 2 == 0) {
                 row = LinearLayout(context).apply {
                     orientation = LinearLayout.HORIZONTAL
-                    layoutParams = LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
-                    ).also { it.setMargins(0, 0, 0, dp(10)) }
+                    layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                        .also { it.setMargins(0, 0, 0, dp(10)) }
                 }
                 container.addView(row)
             }
 
             val chip = buildAppChip(context, pkg, pm)
             chip.layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).also {
-                it.setMargins(if (globalIdx % 2 == 0) 0 else dp(8), 0, 0, 0)
+                it.setMargins(if (idx % 2 == 0) 0 else dp(8), 0, 0, 0)
             }
             chip.setOnClickListener {
                 val launchIntent = pm.getLaunchIntentForPackage(pkg)
@@ -1760,9 +1615,7 @@ class BpBlockingService : Service() {
             row?.addView(chip)
         }
 
-        // শেষ row তে একটাই app থাকলে ডানদিকে empty placeholder দাও
-        val totalVisible = skip + visiblePkgs.size
-        if (totalVisible % 2 != 0) {
+        if (allPkgs.size % 2 != 0) {
             row?.addView(View(context).apply {
                 layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
                     .also { it.setMargins(dp(8), 0, 0, 0) }
