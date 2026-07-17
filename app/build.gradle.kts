@@ -140,12 +140,30 @@ android {
             // even for sideloading. Same fixedSigning keystore as debug, so
             // switching from the old debug build to this release build won't
             // trigger a signature-mismatch "App not installed" either.
+            //
+            // FIX #2: user wants ~1min dev-speed builds like debug (was
+            // 10min), size increase is fine. R8 "full mode"
+            // (android.enableR8.fullMode=true in gradle.properties) +
+            // isShrinkResources is, by far, the single biggest release-build-
+            // time cost on an app with this many dependencies (Firebase,
+            // Room, MLKit, CameraX, MuPDF, PDFBox, Compose) — R8 has to
+            // trace/optimize/minify the ENTIRE merged dependency graph.
+            // Turning both off skips that pass entirely, which should get
+            // this close to debug-build speed.
+            //
+            // AGP requires isShrinkResources and isMinifyEnabled to match —
+            // both off together, or the build fails at config time with
+            // "Resource shrinking requires code shrinking to be turned on."
+            //
+            // TO REVERT for an actual Play Store / production release later:
+            // set both back to true (proguardFiles(...) below is left in
+            // place, ready to go — it's simply unused while minify is off).
             val keystoreB64 = System.getenv("KEYSTORE_BASE64") ?: ""
             if (keystoreB64.isNotEmpty()) {
                 signingConfig = signingConfigs.getByName("fixedSigning")
             }
-            isMinifyEnabled = true
-            isShrinkResources = true
+            isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
