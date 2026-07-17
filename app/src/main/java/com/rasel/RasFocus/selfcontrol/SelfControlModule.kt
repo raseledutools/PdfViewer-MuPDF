@@ -520,13 +520,13 @@ fun TopHeader(navController: NavController? = null, onMenuClick: () -> Unit = {}
                 Card(
                     modifier = Modifier.weight(1f).clickable { navController.navigate("deep_study") },
                     shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF001A0A)),
+                    colors = CardDefaults.cardColors(containerColor = PremiumTealMid),
                     elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Brush.horizontalGradient(listOf(Color(0xFF005C3B), Color(0xFF001A0A))))
+                            .background(Brush.horizontalGradient(listOf(PremiumTealMid, PremiumTealDark)))
                             .padding(horizontal = 12.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -576,7 +576,7 @@ fun StudyToolsCard(context: Context) {
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
-                    brush = Brush.horizontalGradient(listOf(Color(0xFF0D0D1A), Color(0xFF1A1A35))),
+                    brush = Brush.horizontalGradient(listOf(PremiumTealDark, PremiumTealMid)),
                     shape = RoundedCornerShape(20.dp)
                 )
                 .padding(horizontal = 16.dp, vertical = 13.dp),
@@ -2134,7 +2134,7 @@ fun LockVerificationDialog(
     Dialog(onDismissRequest = onCancel) {
         Card(
             shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF16162A)),
+            colors = CardDefaults.cardColors(containerColor = PremiumTealDark),
             modifier = Modifier.fillMaxWidth().padding(16.dp)
         ) {
             Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -2154,7 +2154,7 @@ fun LockVerificationDialog(
                         Button(
                             onClick = onCancel,
                             modifier = Modifier.fillMaxWidth().height(46.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A1A35)),
+                            colors = ButtonDefaults.buttonColors(containerColor = PremiumTealMid),
                             shape = RoundedCornerShape(12.dp),
                             border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF4FACFE).copy(alpha = 0.5f))
                         ) { Text("OK", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4FACFE)) }
@@ -2347,7 +2347,7 @@ fun BrowserSettingsDialog(context: Context, appType: String, onDismiss: () -> Un
                     .fillMaxWidth(0.9f)
                     .fillMaxHeight(0.8f)
                     .clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) {}
-                    .background(color = Color(0xFF16162A), shape = RoundedCornerShape(24.dp))
+                    .background(PremiumTealDark, shape = RoundedCornerShape(24.dp))
                     .padding(24.dp)
             ) {
                 Text(
@@ -2513,9 +2513,9 @@ fun PremiumUpgradeDialog(
         Card(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
-                .background(Color(0xFF0F0F1E), RoundedCornerShape(28.dp)),
+                .background(PremiumTealDark, RoundedCornerShape(28.dp)),
             shape = RoundedCornerShape(28.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF0F0F1E))
+            colors = CardDefaults.cardColors(containerColor = PremiumTealDark)
         ) {
             Column(
                 modifier = Modifier
