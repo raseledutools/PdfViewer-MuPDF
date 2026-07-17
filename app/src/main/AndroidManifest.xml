@@ -357,7 +357,7 @@
     <activity
         android:name=".selfcontrol.familybrowser.FacebookActivity"
         android:exported="false"
-        android:theme="@style/Theme.RasFocus"
+        android:theme="@style/Theme.RasFocus.Facebook"
         android:hardwareAccelerated="true"
         android:launchMode="singleTask"
         android:taskAffinity="${applicationId}.facebook"

@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Theme.RasFocus" parent="Theme.AppCompat.NoActionBar" />
+
+    <!-- Facebook Activity — windowBackground টা Facebook এর bg color (#f0f2f5) দিয়ে
+         set করা হচ্ছে যাতে Activity open হওয়ার সাথে সাথেই white flash না দেখায়।
+         WebView load হওয়ার আগের মুহূর্তেই Android এই background দেখায়। -->
+    <style name="Theme.RasFocus.Facebook" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">#f0f2f5</item>
+        <item name="android:windowIsTranslucent">false</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
 </resources>
