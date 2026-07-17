@@ -522,34 +522,43 @@ class YoutubeActivity : ComponentActivity() {
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         val wv = webView
-        if (wv != null && wv.canGoBack()) {
-            wv.goBack()
-            return
-        }
+
         if (isMiniPlayerActive) {
             stopFloatingAndDestroy()
             return
         }
+
         if (wv == null) {
             super.onBackPressed()
             return
         }
 
+        // আগে video চলছে কিনা check করো — চললে mini player, না চললে goBack/close
         wv.evaluateJavascript("""
             (function() {
                 try {
                     var v = document.querySelector('video');
-                    if (v && !v.paused && !v.ended && v.readyState > 2 && !v.muted) {
+                    var isWatchPage = window.location.href.indexOf('/watch') !== -1
+                        || window.location.href.indexOf('/shorts') !== -1;
+                    if (v && !v.paused && !v.ended && v.readyState > 2 && isWatchPage) {
                         return 'playing';
                     }
-                    return v ? 'playing' : 'not_playing';
-                } catch(e) { return 'unknown'; }
+                    return 'not_playing';
+                } catch(e) { return 'not_playing'; }
             })();
         """.trimIndent()) { result ->
-            if (result?.contains("not_playing") != true) {
+            if (result?.contains("playing") == true) {
+                // ★ Video চলছে + watch page → original YouTube এর মতো mini player
                 launchFloatingDirectly(wv, moveActivityToBack = true)
             } else {
-                runOnUiThread { @Suppress("DEPRECATION") super.onBackPressed() }
+                // Video চলছে না → browser এর মতো previous page এ যাও
+                runOnUiThread {
+                    if (wv.canGoBack()) {
+                        wv.goBack()
+                    } else {
+                        @Suppress("DEPRECATION") super.onBackPressed()
+                    }
+                }
             }
         }
     }
