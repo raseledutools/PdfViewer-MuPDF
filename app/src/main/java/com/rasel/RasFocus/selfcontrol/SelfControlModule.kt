@@ -88,7 +88,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.*
 import com.rasel.RasFocus.selfcontrol.familybrowser.FamilyBrowserActivity
-import com.rasel.RasFocus.combo.parental.ParentalRootScreen
 
 private val PrimaryBlue    = Color(0xFF4A6FE3)
 private val DarkBlue       = Color(0xFF2E4BC6)
@@ -328,10 +327,7 @@ fun StayFocusedApp(
                     Spacer(Modifier.height(16.dp))
                     ExtremBlockCard(onClick = { navController.navigate("extreme_block") })
                     Spacer(Modifier.height(16.dp))
-                    Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Box(Modifier.weight(1f)) { BlockingPlanCard(navController) }
-                        Box(Modifier.weight(1f)) { TakeRestCard() }
-                    }
+                    BlockingPlanCard(navController)
                     Spacer(Modifier.height(16.dp))
                     FamilyBrowserCard(context)
                     Spacer(Modifier.height(16.dp))
@@ -342,6 +338,8 @@ fun StayFocusedApp(
                     TakeABreakCard(onSessionStart = { bpSessionActive = true })
                     Spacer(Modifier.height(16.dp))
                     NormalModeCard()
+                    Spacer(Modifier.height(16.dp))
+                    TakeRestCard()
                     Spacer(Modifier.height(20.dp))
                     QuickActionsSection(viewModel, navController, context)
                     Spacer(Modifier.height(20.dp))
@@ -382,13 +380,16 @@ fun StayFocusedApp(
                             }
                         }
                         1 -> {
-                            // Modes tab — blocking controls
                             Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                                 TopHeader(navController) { scope.launch { drawerState.open() } }
+                                Spacer(Modifier.height(16.dp))
+                                FocusLauncherCard(onSessionStart = { bpSessionActive = true })
                                 Spacer(Modifier.height(16.dp))
                                 ExtremBlockCard(onClick = { navController.navigate("extreme_block") })
                                 Spacer(Modifier.height(16.dp))
                                 BlockingPlanCard(navController)
+                                Spacer(Modifier.height(16.dp))
+                                FamilyBrowserCard(context)
                                 Spacer(Modifier.height(16.dp))
                                 NormalModeCard()
                                 Spacer(Modifier.height(16.dp))
@@ -401,7 +402,6 @@ fun StayFocusedApp(
                             }
                         }
                         2 -> {
-                            // Analytics tab
                             Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                                 TopHeader(navController) { scope.launch { drawerState.open() } }
                                 Spacer(Modifier.height(16.dp))
@@ -412,20 +412,14 @@ fun StayFocusedApp(
                             }
                         }
                         3 -> {
-                            // Parents tab — PC + Phone control (same as combo)
-                            Box(Modifier.weight(1f)) {
-                                val mainVm: com.rasel.RasFocus.MainViewModel = viewModel()
-                                ParentalRootScreen(
-                                    viewModel      = mainVm,
-                                    isComboMode    = false,
-                                    hideOwnFooter  = true
-                                )
+                            // Fix: don't keep composing Column/TopHeader while navigating away.
+                            // Previously this caused "CompositionLocal LocalLifecycleOwner not present"
+                            // crashes on release/minified builds due to a race between navigation
+                            // tearing down this composable and it still trying to recompose.
+                            LaunchedEffect(Unit) {
+                                onSettingsClick()
+                                selectedTab = 1
                             }
-                        }
-                        4 -> {
-                            // Settings tab — navigate করো, tab reset করো।
-                            // LaunchedEffect এ করলে একটা frame render হয়ে flicker দেখায়।
-                            // onSelect এ directly handle করা হয়েছে নিচে।
                         }
                     }
                     SelfControlBottomNav(selectedTab) { selectedTab = it }
@@ -769,61 +763,33 @@ fun NormalModeCard() {
     val prefs = context.getSharedPreferences("rasfocus_prefs", Context.MODE_PRIVATE)
     var isStrict by remember { mutableStateOf(prefs.getBoolean("strict_mode", false)) }
 
-    val activeGradient   = Brush.horizontalGradient(listOf(Color(0xFF7B1515), Color(0xFF3D0000)))
-    val inactiveGradient = Brush.horizontalGradient(listOf(Color(0xFF1E2433), Color(0xFF151B28)))
-    val accentColor      = if (isStrict) Color(0xFFFF5252) else Color(0xFF64748B)
-
-    com.rasel.RasFocus.ui.theme.PremiumCard(
-        Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-        onClick = {
+    Card(
+        Modifier.fillMaxWidth().padding(horizontal = 20.dp).clickable {
             isStrict = !isStrict
             prefs.edit().putBoolean("strict_mode", isStrict).apply()
-            Toast.makeText(context, if (isStrict) "Strict Mode Active" else "Strict Mode Off", Toast.LENGTH_SHORT).show()
-        }
+            Toast.makeText(context, if (isStrict) "Strict Mode Active: Uninstall Blocked" else "Strict Mode Disabled", Toast.LENGTH_SHORT).show()
+        },
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = if (isStrict) SoftRed else OrangeCard)
     ) {
-        Box(
-            Modifier.fillMaxWidth()
-                .background(if (isStrict) activeGradient else inactiveGradient, RoundedCornerShape(20.dp))
-        ) {
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 15.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
-                Box(
-                    Modifier.size(44.dp).background(accentColor.copy(alpha = 0.15f), RoundedCornerShape(13.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Default.Lock, null, tint = accentColor, modifier = Modifier.size(22.dp))
-                }
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        "Strict Mode",
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 15.sp,
-                        color = SoftWhite,
-                        letterSpacing = 0.2.sp
-                    )
-                    Text(
-                        if (isStrict) "Uninstall & disable locked" else "Tap to enable protection",
-                        fontSize = 11.sp,
-                        color = SoftWhite.copy(alpha = 0.55f)
-                    )
+        Column(Modifier.padding(20.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Security, contentDescription = null, modifier = Modifier.size(22.dp), tint = if (isStrict) RedAccent else TextDark)
+                    Spacer(Modifier.width(10.dp))
+                    Text("Strict Mode", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = TextDark)
                 }
                 Switch(
-                    checked = isStrict,
-                    onCheckedChange = {
+                    checked = isStrict, onCheckedChange = {
                         isStrict = it
                         prefs.edit().putBoolean("strict_mode", isStrict).apply()
                     },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor  = Color(0xFFFF5252),
-                        checkedTrackColor  = Color(0xFFFF5252).copy(alpha = 0.25f),
-                        uncheckedThumbColor = Color(0xFF475569),
-                        uncheckedTrackColor = Color(0xFF475569).copy(alpha = 0.2f)
-                    )
+                    colors = SwitchDefaults.colors(checkedThumbColor = RedAccent, checkedTrackColor = RedAccent.copy(alpha = 0.3f))
                 )
             }
+            Spacer(Modifier.height(8.dp))
+            Text("Cannot disable Accessibility or uninstall the app during active sessions.",
+                fontSize = 13.sp, color = TextDark.copy(alpha = 0.7f))
         }
     }
 }
@@ -849,116 +815,69 @@ fun QuickActionsSection(viewModel: SelfControlViewModel, navController: NavContr
     // is 24), so the "frosted" look comes from layered translucency + a
     // soft gradient border + a faint top sheen instead — same trick used
     // by most glass UIs when they need to support older OS versions.
+    val glassBase = Brush.linearGradient(listOf(Color(0xFF10192E), Color(0xFF161F38), Color(0xFF10192E)))
+    val glassBorder = Brush.linearGradient(listOf(White.copy(alpha = 0.32f), White.copy(alpha = 0.04f), White.copy(alpha = 0.14f)))
+    val rowFrost = White.copy(alpha = 0.035f)
+    val dividerColor = White.copy(alpha = 0.07f)
+
     Column(Modifier.padding(horizontal = 20.dp)) {
-        Text("Quick Actions", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = TextGray, letterSpacing = 0.3.sp)
-        Spacer(Modifier.height(10.dp))
+        Text("Quick Actions", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = TextGray)
+        Spacer(Modifier.height(12.dp))
 
-        // ── Top row: 2 colorful stat cards ──
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            // Apps Blocked
-            Card(
-                Modifier.weight(1f).clickable { navController.navigate("single_apps") },
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF0D2137)),
-                elevation = CardDefaults.cardElevation(4.dp)
-            ) {
-                Box(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Color(0xFF1565C0), Color(0xFF0D2137))), RoundedCornerShape(16.dp)).padding(14.dp)) {
-                    Column {
-                        Box(Modifier.size(36.dp).background(Color(0xFF42A5F5).copy(alpha = 0.18f), RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.MobileOff, null, tint = Color(0xFF42A5F5), modifier = Modifier.size(19.dp))
-                        }
-                        Spacer(Modifier.height(10.dp))
-                        Text(appsBlockedCount.toString(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 22.sp)
-                        Text("Apps Blocked", color = Color(0xFF42A5F5).copy(alpha = 0.85f), fontSize = 11.sp)
-                    }
-                }
-            }
-            // Sites Blocked
-            Card(
-                Modifier.weight(1f).clickable { navController.navigate("single_website") },
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1A0D37)),
-                elevation = CardDefaults.cardElevation(4.dp)
-            ) {
-                Box(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Color(0xFF6A1B9A), Color(0xFF1A0D37))), RoundedCornerShape(16.dp)).padding(14.dp)) {
-                    Column {
-                        Box(Modifier.size(36.dp).background(Color(0xFFCE93D8).copy(alpha = 0.18f), RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.DesktopWindows, null, tint = Color(0xFFCE93D8), modifier = Modifier.size(19.dp))
-                        }
-                        Spacer(Modifier.height(10.dp))
-                        Text(sitesBlockedCount.toString(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 22.sp)
-                        Text("Sites Blocked", color = Color(0xFFCE93D8).copy(alpha = 0.85f), fontSize = 11.sp)
-                    }
-                }
-            }
-        }
-
-        Spacer(Modifier.height(10.dp))
-
-        // ── Bottom row: Schedule + Adult Block ──
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            // Schedule Blocks
-            Card(
-                Modifier.weight(1f).clickable { navController.navigate("schedule_blocks") },
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1200)),
-                elevation = CardDefaults.cardElevation(4.dp)
-            ) {
-                Box(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Color(0xFFE65100), Color(0xFF1A1200))), RoundedCornerShape(16.dp)).padding(14.dp)) {
-                    Column {
-                        Box(Modifier.size(36.dp).background(Color(0xFFFFB74D).copy(alpha = 0.18f), RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.Schedule, null, tint = Color(0xFFFFB74D), modifier = Modifier.size(19.dp))
-                        }
-                        Spacer(Modifier.height(10.dp))
-                        Text("Schedule", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                        Text("Block Profiles", color = Color(0xFFFFB74D).copy(alpha = 0.85f), fontSize = 11.sp)
-                    }
-                }
-            }
-            // Adult Block
-            Card(
-                Modifier.weight(1f).clickable { navController.navigate("adult_block") },
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF001A08)),
-                elevation = CardDefaults.cardElevation(4.dp)
-            ) {
-                Box(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Color(0xFF1B5E20), Color(0xFF001A08))), RoundedCornerShape(16.dp)).padding(14.dp)) {
-                    Column {
-                        Box(Modifier.size(36.dp).background(Color(0xFF66BB6A).copy(alpha = 0.18f), RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.Shield, null, tint = Color(0xFF66BB6A), modifier = Modifier.size(19.dp))
-                        }
-                        Spacer(Modifier.height(10.dp))
-                        Text("Adult Block", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                        Text("Safe · Active", color = Color(0xFF66BB6A).copy(alpha = 0.85f), fontSize = 11.sp)
-                    }
-                }
-            }
-        }
-
-        Spacer(Modifier.height(10.dp))
-
-        // ── Keywords toggle card ──
-        Card(
-            Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF001616)),
-            elevation = CardDefaults.cardElevation(4.dp)
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .shadow(18.dp, RoundedCornerShape(28.dp), ambientColor = Color.Black.copy(alpha = 0.5f), spotColor = Color.Black.copy(alpha = 0.5f))
+                .clip(RoundedCornerShape(28.dp))
+                .background(glassBase)
+                .border(1.dp, glassBorder, RoundedCornerShape(28.dp))
         ) {
-            Box(Modifier.fillMaxWidth().background(Brush.horizontalGradient(listOf(Color(0xFF00695C), Color(0xFF001616))), RoundedCornerShape(16.dp)).padding(horizontal = 14.dp, vertical = 13.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Box(Modifier.size(36.dp).background(Color(0xFF4DB6AC).copy(alpha = 0.18f), RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.FilterList, null, tint = Color(0xFF4DB6AC), modifier = Modifier.size(19.dp))
-                    }
+            // Faint top sheen — mimics light catching the top edge of glass.
+            // Brush.verticalGradient() with no explicit start/end stretches
+            // to whatever box it's drawn on, so this stays correct at any size.
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(70.dp)
+                    .align(Alignment.TopCenter)
+                    .background(Brush.verticalGradient(listOf(White.copy(alpha = 0.09f), Color.Transparent)))
+            )
+
+            Column {
+                QuickActionRow(icon = Icons.Default.MobileOff, label = "Apps Blocked",
+                    value = appsBlockedCount.toString(), accentColor = AccentBlue, frost = rowFrost, dividerColor = dividerColor, divider = true,
+                    onClick = { navController.navigate("single_apps") })
+                QuickActionRow(icon = Icons.Default.DesktopWindows, label = "Sites Blocked",
+                    value = sitesBlockedCount.toString(), accentColor = Color(0xFF9B7BFF), frost = rowFrost, dividerColor = dividerColor, divider = true,
+                    onClick = { navController.navigate("single_website") })
+                QuickActionRow(icon = Icons.Default.Schedule, label = "Schedule Blocks",
+                    value = "Profiles", accentColor = Color(0xFFFFB258), frost = rowFrost, dividerColor = dividerColor, divider = true,
+                    onClick = { navController.navigate("schedule_blocks") })
+                QuickActionRow(icon = Icons.Default.Shield, label = "Adult Block",
+                    value = "Safe", accentColor = AccentGreen, frost = rowFrost, dividerColor = dividerColor, divider = true,
+                    onClick = { navController.navigate("adult_block") })
+
+                // Keywords toggle row — restyled to match the glass rows above
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .background(rowFrost)
+                        .padding(horizontal = 20.dp, vertical = 20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    GlassIconChip(icon = Icons.Default.Shield, accentColor = Color(0xFF5CD6C0), text = "A|")
+                    Spacer(Modifier.width(16.dp))
                     Column(Modifier.weight(1f)) {
-                        Text("Keyword Filter", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                        Text("Shorts · Reels · Distractions", color = Color(0xFF4DB6AC).copy(alpha = 0.8f), fontSize = 11.sp)
+                        Text(if (keywordsEnabled) "Active" else "Inactive", color = White, fontWeight = FontWeight.Bold, fontSize = 18.sp, letterSpacing = 0.2.sp)
+                        Spacer(Modifier.height(2.dp))
+                        Text("Keywords Blocked (Shorts/Reels)", color = White.copy(alpha = 0.55f), fontSize = 13.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.1.sp)
                     }
                     Switch(
                         checked = keywordsEnabled,
                         onCheckedChange = { viewModel.toggleKeywords(it, context) },
                         colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White, checkedTrackColor = Color(0xFF00BCD4),
-                            uncheckedThumbColor = Color(0xFF90A4AE), uncheckedTrackColor = Color(0xFF263238)
+                            checkedThumbColor = White, checkedTrackColor = Color(0xFF5CD6C0),
+                            uncheckedThumbColor = White.copy(alpha = 0.8f), uncheckedTrackColor = White.copy(alpha = 0.15f)
                         )
                     )
                 }
@@ -1074,11 +993,10 @@ fun TemplateCard(emoji: String, title: String, subtitle: String, detail: String,
 @Composable
 fun SelfControlBottomNav(selected: Int, onSelect: (Int) -> Unit) {
     val items = listOf(
-        Triple("Dashboard", Icons.Default.Dashboard,      Icons.Outlined.Dashboard),
-        Triple("Modes",     Icons.Default.FlashOn,        Icons.Outlined.FlashOn),
-        Triple("Analytics", Icons.Default.BarChart,       Icons.Outlined.BarChart),
-        Triple("Parents",   Icons.Default.FamilyRestroom, Icons.Outlined.FamilyRestroom),
-        Triple("Account",   Icons.Default.Person,         Icons.Outlined.Person)
+        Triple("Dashboard", Icons.Default.Dashboard, Icons.Outlined.Dashboard),
+        Triple("Modes", Icons.Default.FlashOn, Icons.Outlined.FlashOn),
+        Triple("Analytics", Icons.Default.BarChart, Icons.Outlined.BarChart),
+        Triple("Account", Icons.Default.Person, Icons.Outlined.Person)
     )
     NavigationBar(containerColor = White, tonalElevation = 8.dp) {
         items.forEachIndexed { index, (label, filledIcon, outlinedIcon) ->
@@ -1242,42 +1160,77 @@ private fun AccountRow(
 
 @Composable
 fun ExtremBlockCard(onClick: () -> Unit) {
+    // Dark red / crimson gradient — বোঝায় এটা সবচেয়ে কঠোর mode
+    val gradientStart = Color(0xFF7B0000)
+    val gradientEnd   = Color(0xFFB71C1C)
+
     com.rasel.RasFocus.ui.theme.PremiumCard(Modifier.fillMaxWidth().padding(horizontal = 20.dp), onClick = onClick) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color(0xFF0A0A0A), RoundedCornerShape(20.dp))
-                .border(1.dp, Color(0xFF2A0000), RoundedCornerShape(20.dp))
+                .background(
+                    brush = Brush.horizontalGradient(listOf(gradientStart, gradientEnd)),
+                    shape = RoundedCornerShape(20.dp)
+                )
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    .padding(horizontal = 20.dp, vertical = 18.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Red gradient icon — এটাই এই card এর identity
+                // Icon box
                 Box(
                     modifier = Modifier
-                        .size(46.dp)
-                        .background(
-                            Brush.linearGradient(listOf(Color(0xFF7F1D1D), Color(0xFFDC2626))),
-                            RoundedCornerShape(13.dp)
-                        ),
+                        .size(52.dp)
+                        .background(SoftWhite.copy(alpha = 0.15f), RoundedCornerShape(14.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.Shield, null, tint = Color.White, modifier = Modifier.size(24.dp))
+                    Icon(
+                        imageVector = Icons.Default.Shield,
+                        contentDescription = null,
+                        tint = SoftWhite,
+                        modifier = Modifier.size(30.dp)
+                    )
                 }
+                Spacer(Modifier.width(16.dp))
                 Column(Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Extreme Block", fontWeight = FontWeight.Medium, fontSize = 15.sp, color = Color(0xFFF5F5F5), letterSpacing = 0.2.sp)
-                        Box(Modifier.background(Color(0xFF450A0A), RoundedCornerShape(99.dp)).padding(horizontal = 7.dp, vertical = 2.dp)) {
-                            Text("MAX", fontSize = 9.sp, fontWeight = FontWeight.Medium, color = Color(0xFFFCA5A5), letterSpacing = 1.sp)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "Extreme Block",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = SoftWhite
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .background(SoftWhite.copy(alpha = 0.25f), RoundedCornerShape(50.dp))
+                                .padding(horizontal = 8.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                "MAX",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = SoftWhite,
+                                letterSpacing = 1.sp
+                            )
                         }
                     }
-                    Text("Adult · Reels · Apps · Full protection", fontSize = 11.sp, color = Color(0xFF6B7280))
+                    Spacer(Modifier.height(3.dp))
+                    Text(
+                        "সর্বোচ্চ blocking — Adult, Reels, Apps & Protection",
+                        fontSize = 12.sp,
+                        color = SoftWhite.copy(alpha = 0.78f),
+                        lineHeight = 16.sp
+                    )
                 }
-                Icon(Icons.Default.ChevronRight, null, tint = Color(0xFF374151), modifier = Modifier.size(18.dp))
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = SoftWhite.copy(alpha = 0.6f),
+                    modifier = Modifier.size(24.dp)
+                )
             }
         }
     }
@@ -1288,71 +1241,138 @@ fun ExtremBlockCard(onClick: () -> Unit) {
 // ─────────────────────────────────────────────────────────────────────────────
 @Composable
 fun BlockingPlanCard(navController: NavController) {
-    com.rasel.RasFocus.ui.theme.PremiumCard(
-        Modifier.fillMaxWidth(),
-        onClick = { navController.navigate("blocking_plan") }
-    ) {
+    val gradientStart = Color(0xFF1565C0)
+    val gradientEnd   = Color(0xFF0D47A1)
+
+    com.rasel.RasFocus.ui.theme.PremiumCard(Modifier.fillMaxWidth().padding(horizontal = 20.dp), onClick = { navController.navigate("blocking_plan") }) {
         Box(
-            Modifier.fillMaxWidth()
-                .background(Color(0xFF0D1117), RoundedCornerShape(20.dp))
-                .border(1.dp, Color(0xFF1E3A5F), RoundedCornerShape(20.dp))
-                .padding(16.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    brush = Brush.horizontalGradient(listOf(gradientStart, gradientEnd)),
+                    shape = RoundedCornerShape(20.dp)
+                )
         ) {
-            Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 18.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Box(
-                    Modifier.size(40.dp)
-                        .background(Color(0xFF1E3A5F), RoundedCornerShape(11.dp)),
+                    modifier = Modifier
+                        .size(52.dp)
+                        .background(SoftWhite.copy(alpha = 0.15f), RoundedCornerShape(14.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.PlaylistAddCheck, null, tint = Color(0xFF60A5FA), modifier = Modifier.size(20.dp))
+                    Icon(
+                        imageVector = Icons.Default.PlaylistAddCheck,
+                        contentDescription = null,
+                        tint = SoftWhite,
+                        modifier = Modifier.size(30.dp)
+                    )
                 }
-                Spacer(Modifier.height(10.dp))
-                Text("Blocking Profile", color = Color(0xFFE2E8F0), fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                Text("Apps & websites rules", color = Color(0xFF4B6584), fontSize = 10.sp)
-                Spacer(Modifier.height(10.dp))
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Open", color = Color(0xFF3B82F6), fontSize = 10.sp, fontWeight = FontWeight.Medium)
-                    Icon(Icons.Default.ArrowForward, null, tint = Color(0xFF3B82F6), modifier = Modifier.size(11.dp))
+                Spacer(Modifier.width(16.dp))
+                Column(Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "Create Blocking Apps and Website Profile",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            color = SoftWhite,
+                            lineHeight = 20.sp
+                        )
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Apps ও Websites এর জন্য custom blocking profile তৈরি করো",
+                        fontSize = 12.sp,
+                        color = SoftWhite.copy(alpha = 0.78f),
+                        lineHeight = 16.sp
+                    )
                 }
+                Spacer(Modifier.width(8.dp))
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = SoftWhite.copy(alpha = 0.6f),
+                    modifier = Modifier.size(24.dp)
+                )
             }
         }
-
     }
 }
+
 // ─────────────────────────────────────────────────────────────────────────────
-// UI: TakeRestCard
+// UI: TakeRestCard — take_rest.kt এর MainActivity launch করে
 // ─────────────────────────────────────────────────────────────────────────────
 @Composable
 fun TakeRestCard() {
     val context = LocalContext.current
-    com.rasel.RasFocus.ui.theme.PremiumCard(
-        Modifier.fillMaxWidth(),
-        onClick = {
-            Toast.makeText(context, "Rest mode coming soon", Toast.LENGTH_SHORT).show()
-        }
-    ) {
+    val gradientStart = Color(0xFF1A237E)
+    val gradientEnd   = Color(0xFF3949AB)
+
+    com.rasel.RasFocus.ui.theme.PremiumCard(Modifier.fillMaxWidth().padding(horizontal = 20.dp), onClick = { val intent = Intent(context, com.rasel.RasFocus.selfcontrol.TakeRestActivity::class.java); intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); context.startActivity(intent) }) {
         Box(
-            Modifier.fillMaxWidth()
-                .background(Color(0xFF0D1117), RoundedCornerShape(20.dp))
-                .border(1.dp, Color(0xFF1A3A1A), RoundedCornerShape(20.dp))
-                .padding(16.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    brush = Brush.horizontalGradient(listOf(gradientStart, gradientEnd)),
+                    shape = RoundedCornerShape(20.dp)
+                )
         ) {
-            Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 18.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Box(
-                    Modifier.size(40.dp)
-                        .background(Color(0xFF1A3A1A), RoundedCornerShape(11.dp)),
+                    modifier = Modifier
+                        .size(52.dp)
+                        .background(SoftWhite.copy(alpha = 0.15f), RoundedCornerShape(14.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.PhoneAndroid, null, tint = Color(0xFF4ADE80), modifier = Modifier.size(20.dp))
+                    Text("😴", fontSize = 26.sp)
                 }
-                Spacer(Modifier.height(10.dp))
-                Text("Button Phone", color = Color(0xFFE2E8F0), fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                Text("Minimal · Call only", color = Color(0xFF4B6584), fontSize = 10.sp)
-                Spacer(Modifier.height(10.dp))
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Enable", color = Color(0xFF22C55E), fontSize = 10.sp, fontWeight = FontWeight.Medium)
-                    Icon(Icons.Default.ArrowForward, null, tint = Color(0xFF22C55E), modifier = Modifier.size(11.dp))
+                Spacer(Modifier.width(16.dp))
+                Column(Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "Take Rest",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = SoftWhite
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .background(SoftWhite.copy(alpha = 0.25f), RoundedCornerShape(50.dp))
+                                .padding(horizontal = 8.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                "BREAK",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = SoftWhite,
+                                letterSpacing = 1.sp
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(3.dp))
+                    Text(
+                        "নির্দিষ্ট সময়ের জন্য ফোন block করে বিশ্রাম নাও",
+                        fontSize = 12.sp,
+                        color = SoftWhite.copy(alpha = 0.78f),
+                        lineHeight = 16.sp
+                    )
                 }
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = SoftWhite.copy(alpha = 0.6f),
+                    modifier = Modifier.size(24.dp)
+                )
             }
         }
     }
@@ -1366,67 +1386,80 @@ fun TakeRestCard() {
 fun FamilyBrowserCard(context: Context) {
     var showChooser by remember { mutableStateOf(false) }
 
-    // Card click → directly open RasBrowser full page
-    // "3 apps" chip → chooser sheet (YouTube / Facebook / RasBrowser)
     com.rasel.RasFocus.ui.theme.PremiumCard(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-        onClick   = {
-            val intent = Intent(context, FamilyBrowserActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            context.startActivity(intent)
-        }
+        onClick   = { showChooser = true }
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
-                    brush = Brush.horizontalGradient(listOf(Color(0xFF0A2540), Color(0xFF0D3060))),
+                    brush = Brush.linearGradient(
+                        colors = listOf(Color(0xFF0F2847), Color(0xFF0D2240))
+                    ),
                     shape = RoundedCornerShape(20.dp)
                 )
-                .padding(horizontal = 16.dp, vertical = 13.dp)
+                .padding(horizontal = 18.dp, vertical = 16.dp)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(13.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(
-                            Brush.linearGradient(listOf(Color(0xFF3B82F6), Color(0xFF1D4ED8))),
-                            RoundedCornerShape(12.dp)
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Default.Language, null, tint = Color.White, modifier = Modifier.size(20.dp))
-                }
-                Column(Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text("RasBrowser", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFF1F5F9), letterSpacing = 0.2.sp)
-                        Box(
-                            Modifier.background(Color(0xFF4ADE80).copy(alpha = 0.18f), RoundedCornerShape(50.dp))
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
-                            Text("SAFE", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4ADE80), letterSpacing = 1.sp)
+            Column {
+                // ── Title row ──────────────────────────────────────────────
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .background(Color(0xFF60A5FA).copy(alpha = 0.12f), RoundedCornerShape(13.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Language,
+                            contentDescription = null,
+                            tint = Color(0xFF60A5FA),
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                    Spacer(Modifier.width(14.dp))
+                    Column(Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                "RasBrowser",
+                                fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFFF1F5F9)
+                            )
+                            Spacer(Modifier.width(7.dp))
+                            Box(
+                                modifier = Modifier
+                                    .background(Color(0xFF4ADE80).copy(alpha = 0.18f), RoundedCornerShape(50.dp))
+                                    .padding(horizontal = 7.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    "SAFE",
+                                    fontSize = 9.sp, fontWeight = FontWeight.ExtraBold,
+                                    color = Color(0xFF4ADE80), letterSpacing = 1.sp
+                                )
+                            }
                         }
+                        Text(
+                            "Family browser · ad blocking · content filter",
+                            fontSize = 11.sp, color = Color(0xFF64748B), lineHeight = 15.sp
+                        )
                     }
-                    Text("Ad-free · Safe · Family browser", fontSize = 10.sp, color = Color(0xFF60A5FA).copy(alpha = 0.7f))
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        tint = Color(0xFF475569),
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
-                // "More apps" chip
-                Box(
-                    Modifier
-                        .background(Color(0xFF60A5FA).copy(alpha = 0.12f), RoundedCornerShape(10.dp))
-                        .border(1.dp, Color(0xFF60A5FA).copy(alpha = 0.2f), RoundedCornerShape(10.dp))
-                        .clickable { showChooser = true }
-                        .padding(horizontal = 9.dp, vertical = 6.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Icon(Icons.Default.Apps, null, tint = Color(0xFF60A5FA), modifier = Modifier.size(13.dp))
-                        Text("Apps", fontSize = 11.sp, color = Color(0xFF60A5FA), fontWeight = FontWeight.SemiBold)
-                    }
+
+                // ── Stats row ──────────────────────────────────────────────
+                Spacer(Modifier.height(10.dp))
+                HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
+                Spacer(Modifier.height(10.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                    BrowserStatChip(Icons.Default.Shield,      "Adult filter")
+                    BrowserStatChip(Icons.Default.Block,       "Ads blocked")
+                    BrowserStatChip(Icons.Default.Apps,        "3 apps")
                 }
-                Icon(Icons.Default.ChevronRight, null, tint = Color(0xFF60A5FA).copy(alpha = 0.5f), modifier = Modifier.size(18.dp))
             }
         }
     }
