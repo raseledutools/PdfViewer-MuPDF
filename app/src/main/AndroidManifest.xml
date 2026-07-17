@@ -468,10 +468,22 @@
         android:hardwareAccelerated="true"
         android:windowSoftInputMode="adjustResize" />
 
+    <!-- FIX: was foregroundServiceType="dataSync" — the required
+         FOREGROUND_SERVICE_DATA_SYNC permission was never declared, so
+         startForeground() in onStartCommand() threw a SecurityException the
+         instant Button Phone Mode started (before showOverlay() ever got a
+         chance to run), crashing the app instead of showing the overlay.
+         Switched to "specialUse" — the permission for that type is already
+         declared above, and it's the same fix already applied to
+         UnifiedBlockerService for the identical problem. -->
     <service
         android:name=".selfcontrol.BpBlockingService"
         android:exported="false"
-        android:foregroundServiceType="dataSync" />
+        android:foregroundServiceType="specialUse">
+        <property
+            android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+            android:value="RasFocus Button Phone Mode — focus-session app blocking overlay" />
+    </service>
 
     <!-- STREAMING_CHUNK:Finalizing receivers and child modules... -->
 
