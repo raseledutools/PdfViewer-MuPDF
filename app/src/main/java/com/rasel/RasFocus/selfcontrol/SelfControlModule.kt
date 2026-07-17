@@ -763,33 +763,61 @@ fun NormalModeCard() {
     val prefs = context.getSharedPreferences("rasfocus_prefs", Context.MODE_PRIVATE)
     var isStrict by remember { mutableStateOf(prefs.getBoolean("strict_mode", false)) }
 
-    Card(
-        Modifier.fillMaxWidth().padding(horizontal = 20.dp).clickable {
+    val activeGradient   = Brush.horizontalGradient(listOf(Color(0xFF7B1515), Color(0xFF3D0000)))
+    val inactiveGradient = Brush.horizontalGradient(listOf(Color(0xFF1E2433), Color(0xFF151B28)))
+    val accentColor      = if (isStrict) Color(0xFFFF5252) else Color(0xFF64748B)
+
+    com.rasel.RasFocus.ui.theme.PremiumCard(
+        Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+        onClick = {
             isStrict = !isStrict
             prefs.edit().putBoolean("strict_mode", isStrict).apply()
-            Toast.makeText(context, if (isStrict) "Strict Mode Active: Uninstall Blocked" else "Strict Mode Disabled", Toast.LENGTH_SHORT).show()
-        },
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = if (isStrict) SoftRed else OrangeCard)
+            Toast.makeText(context, if (isStrict) "Strict Mode Active" else "Strict Mode Off", Toast.LENGTH_SHORT).show()
+        }
     ) {
-        Column(Modifier.padding(20.dp)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Security, contentDescription = null, modifier = Modifier.size(22.dp), tint = if (isStrict) RedAccent else TextDark)
-                    Spacer(Modifier.width(10.dp))
-                    Text("Strict Mode", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = TextDark)
+        Box(
+            Modifier.fillMaxWidth()
+                .background(if (isStrict) activeGradient else inactiveGradient, RoundedCornerShape(20.dp))
+        ) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 15.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Box(
+                    Modifier.size(44.dp).background(accentColor.copy(alpha = 0.15f), RoundedCornerShape(13.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.Lock, null, tint = accentColor, modifier = Modifier.size(22.dp))
+                }
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        "Strict Mode",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp,
+                        color = SoftWhite,
+                        letterSpacing = 0.2.sp
+                    )
+                    Text(
+                        if (isStrict) "Uninstall & disable locked" else "Tap to enable protection",
+                        fontSize = 11.sp,
+                        color = SoftWhite.copy(alpha = 0.55f)
+                    )
                 }
                 Switch(
-                    checked = isStrict, onCheckedChange = {
+                    checked = isStrict,
+                    onCheckedChange = {
                         isStrict = it
                         prefs.edit().putBoolean("strict_mode", isStrict).apply()
                     },
-                    colors = SwitchDefaults.colors(checkedThumbColor = RedAccent, checkedTrackColor = RedAccent.copy(alpha = 0.3f))
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor  = Color(0xFFFF5252),
+                        checkedTrackColor  = Color(0xFFFF5252).copy(alpha = 0.25f),
+                        uncheckedThumbColor = Color(0xFF475569),
+                        uncheckedTrackColor = Color(0xFF475569).copy(alpha = 0.2f)
+                    )
                 )
             }
-            Spacer(Modifier.height(8.dp))
-            Text("Cannot disable Accessibility or uninstall the app during active sessions.",
-                fontSize = 13.sp, color = TextDark.copy(alpha = 0.7f))
         }
     }
 }
@@ -1176,61 +1204,41 @@ fun ExtremBlockCard(onClick: () -> Unit) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 18.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(horizontal = 18.dp, vertical = 15.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                // Icon box
                 Box(
                     modifier = Modifier
-                        .size(52.dp)
-                        .background(SoftWhite.copy(alpha = 0.15f), RoundedCornerShape(14.dp)),
+                        .size(44.dp)
+                        .background(SoftWhite.copy(alpha = 0.12f), RoundedCornerShape(13.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Shield,
-                        contentDescription = null,
-                        tint = SoftWhite,
-                        modifier = Modifier.size(30.dp)
-                    )
+                    Icon(Icons.Default.Shield, null, tint = SoftWhite, modifier = Modifier.size(23.dp))
                 }
-                Spacer(Modifier.width(16.dp))
                 Column(Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                         Text(
                             "Extreme Block",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp,
-                            color = SoftWhite
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 15.sp,
+                            color = SoftWhite,
+                            letterSpacing = 0.2.sp
                         )
-                        Spacer(Modifier.width(8.dp))
                         Box(
-                            modifier = Modifier
-                                .background(SoftWhite.copy(alpha = 0.25f), RoundedCornerShape(50.dp))
-                                .padding(horizontal = 8.dp, vertical = 2.dp)
+                            Modifier.background(Color(0xFFFF5252).copy(alpha = 0.25f), RoundedCornerShape(50.dp))
+                                .padding(horizontal = 7.dp, vertical = 2.dp)
                         ) {
-                            Text(
-                                "MAX",
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = SoftWhite,
-                                letterSpacing = 1.sp
-                            )
+                            Text("MAX", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFF8A80), letterSpacing = 1.sp)
                         }
                     }
-                    Spacer(Modifier.height(3.dp))
                     Text(
-                        "সর্বোচ্চ blocking — Adult, Reels, Apps & Protection",
-                        fontSize = 12.sp,
-                        color = SoftWhite.copy(alpha = 0.78f),
-                        lineHeight = 16.sp
+                        "Adult · Reels · Apps · Protection",
+                        fontSize = 11.sp,
+                        color = SoftWhite.copy(alpha = 0.6f)
                     )
                 }
-                Icon(
-                    imageVector = Icons.Default.ChevronRight,
-                    contentDescription = null,
-                    tint = SoftWhite.copy(alpha = 0.6f),
-                    modifier = Modifier.size(24.dp)
-                )
+                Icon(Icons.Default.ChevronRight, null, tint = SoftWhite.copy(alpha = 0.45f), modifier = Modifier.size(20.dp))
             }
         }
     }
@@ -1256,48 +1264,33 @@ fun BlockingPlanCard(navController: NavController) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 18.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(horizontal = 18.dp, vertical = 15.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 Box(
                     modifier = Modifier
-                        .size(52.dp)
-                        .background(SoftWhite.copy(alpha = 0.15f), RoundedCornerShape(14.dp)),
+                        .size(44.dp)
+                        .background(SoftWhite.copy(alpha = 0.12f), RoundedCornerShape(13.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.PlaylistAddCheck,
-                        contentDescription = null,
-                        tint = SoftWhite,
-                        modifier = Modifier.size(30.dp)
-                    )
+                    Icon(Icons.Default.PlaylistAddCheck, null, tint = SoftWhite, modifier = Modifier.size(23.dp))
                 }
-                Spacer(Modifier.width(16.dp))
                 Column(Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "Create Blocking Apps and Website Profile",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp,
-                            color = SoftWhite,
-                            lineHeight = 20.sp
-                        )
-                    }
-                    Spacer(Modifier.height(4.dp))
                     Text(
-                        "Apps ও Websites এর জন্য custom blocking profile তৈরি করো",
-                        fontSize = 12.sp,
-                        color = SoftWhite.copy(alpha = 0.78f),
-                        lineHeight = 16.sp
+                        "Blocking Profile",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp,
+                        color = SoftWhite,
+                        letterSpacing = 0.2.sp
+                    )
+                    Text(
+                        "Apps · Websites · Custom rules",
+                        fontSize = 11.sp,
+                        color = SoftWhite.copy(alpha = 0.6f)
                     )
                 }
-                Spacer(Modifier.width(8.dp))
-                Icon(
-                    imageVector = Icons.Default.ChevronRight,
-                    contentDescription = null,
-                    tint = SoftWhite.copy(alpha = 0.6f),
-                    modifier = Modifier.size(24.dp)
-                )
+                Icon(Icons.Default.ChevronRight, null, tint = SoftWhite.copy(alpha = 0.45f), modifier = Modifier.size(20.dp))
             }
         }
     }
@@ -1324,55 +1317,41 @@ fun TakeRestCard() {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 18.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(horizontal = 18.dp, vertical = 15.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 Box(
                     modifier = Modifier
-                        .size(52.dp)
-                        .background(SoftWhite.copy(alpha = 0.15f), RoundedCornerShape(14.dp)),
+                        .size(44.dp)
+                        .background(SoftWhite.copy(alpha = 0.12f), RoundedCornerShape(13.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("😴", fontSize = 26.sp)
+                    Text("😴", fontSize = 22.sp)
                 }
-                Spacer(Modifier.width(16.dp))
                 Column(Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                         Text(
                             "Take Rest",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp,
-                            color = SoftWhite
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 15.sp,
+                            color = SoftWhite,
+                            letterSpacing = 0.2.sp
                         )
-                        Spacer(Modifier.width(8.dp))
                         Box(
-                            modifier = Modifier
-                                .background(SoftWhite.copy(alpha = 0.25f), RoundedCornerShape(50.dp))
-                                .padding(horizontal = 8.dp, vertical = 2.dp)
+                            Modifier.background(Color(0xFF7986CB).copy(alpha = 0.25f), RoundedCornerShape(50.dp))
+                                .padding(horizontal = 7.dp, vertical = 2.dp)
                         ) {
-                            Text(
-                                "BREAK",
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = SoftWhite,
-                                letterSpacing = 1.sp
-                            )
+                            Text("BREAK", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFFB3BCF5), letterSpacing = 1.sp)
                         }
                     }
-                    Spacer(Modifier.height(3.dp))
                     Text(
-                        "নির্দিষ্ট সময়ের জন্য ফোন block করে বিশ্রাম নাও",
-                        fontSize = 12.sp,
-                        color = SoftWhite.copy(alpha = 0.78f),
-                        lineHeight = 16.sp
+                        "Phone lock করে বিশ্রাম নাও",
+                        fontSize = 11.sp,
+                        color = SoftWhite.copy(alpha = 0.6f)
                     )
                 }
-                Icon(
-                    imageVector = Icons.Default.ChevronRight,
-                    contentDescription = null,
-                    tint = SoftWhite.copy(alpha = 0.6f),
-                    modifier = Modifier.size(24.dp)
-                )
+                Icon(Icons.Default.ChevronRight, null, tint = SoftWhite.copy(alpha = 0.45f), modifier = Modifier.size(20.dp))
             }
         }
     }
@@ -1386,9 +1365,16 @@ fun TakeRestCard() {
 fun FamilyBrowserCard(context: Context) {
     var showChooser by remember { mutableStateOf(false) }
 
+    // Card click → directly open RasBrowser full page
+    // "3 apps" chip → chooser sheet (YouTube / Facebook / RasBrowser)
     com.rasel.RasFocus.ui.theme.PremiumCard(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-        onClick   = { showChooser = true }
+        onClick   = {
+            val intent = Intent(context, FamilyBrowserActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+        }
     ) {
         Box(
             modifier = Modifier
@@ -1456,9 +1442,19 @@ fun FamilyBrowserCard(context: Context) {
                 HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
                 Spacer(Modifier.height(10.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    BrowserStatChip(Icons.Default.Shield,      "Adult filter")
-                    BrowserStatChip(Icons.Default.Block,       "Ads blocked")
-                    BrowserStatChip(Icons.Default.Apps,        "3 apps")
+                    BrowserStatChip(Icons.Default.Shield, "Adult filter")
+                    BrowserStatChip(Icons.Default.Block,  "Ads blocked")
+                    Box(
+                        Modifier
+                            .background(Color(0xFF60A5FA).copy(alpha = 0.1f), RoundedCornerShape(50.dp))
+                            .clickable { showChooser = true }
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Icon(Icons.Default.Apps, null, tint = Color(0xFF60A5FA), modifier = Modifier.size(12.dp))
+                            Text("3 apps ↗", fontSize = 11.sp, color = Color(0xFF60A5FA), fontWeight = FontWeight.SemiBold)
+                        }
+                    }
                 }
             }
         }
