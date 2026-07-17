@@ -3,14 +3,19 @@ import java.util.Base64
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    // FIX: Kotlin 2.0+ decoupled the Compose compiler from the Kotlin
-    // compiler itself — this project uses Kotlin 2.1.10 (RasFocus-final
-    // uses 1.9.24, which is why it never needed this plugin; not something
-    // to copy from there, this is specific to this project's newer Kotlin
-    // version). Version already declared with apply false at the root
-    // build.gradle.kts, just needed to actually be applied here.
     id("com.google.gms.google-services")
-    id("kotlin-kapt")
+    // FIX: build-speed — replaced kotlin-kapt with KSP for Room's annotation
+    // processing. KAPT generates full Java stubs then runs a separate
+    // compilation pass over them; KSP hooks directly into the Kotlin
+    // compiler's own pass, meaningfully faster for the one processor this
+    // project uses (Room). Version already declared "apply false" at the
+    // root build.gradle.kts (1.9.24-1.0.20 — correctly paired with this
+    // project's actual Kotlin version, 1.9.24, confirmed at the root; the
+    // comment above about "this project uses Kotlin 2.1.10" is stale/
+    // inherited from elsewhere — do NOT pair a 2.1.10-* KSP version with
+    // what's actually configured here, that would be a hard version
+    // mismatch).
+    id("com.google.devtools.ksp")
 }
 
 android {
@@ -270,7 +275,7 @@ dependencies {
     // Room
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
-    kapt("androidx.room:room-compiler:2.6.1")
+    ksp("androidx.room:room-compiler:2.6.1")
 
     // Firebase & Play Services
     implementation(platform("com.google.firebase:firebase-bom:32.7.3"))
