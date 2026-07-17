@@ -355,7 +355,8 @@ class AdBlocker(private val context: Context) {
 
                     if (!shouldBlock) {
                         const titleText = document.title.toLowerCase();
-                        const bodyText = document.body ? document.body.innerText.substring(0, 5000).toLowerCase() : "";
+                        // textContent পড়া layout trigger করে না — innerText করত
+                        const bodyText = document.body ? document.body.textContent.substring(0, 5000).toLowerCase() : "";
                         const contentToScan = titleText + " " + bodyText;
 
                         shouldBlock = badWords.some(word => {
@@ -389,7 +390,9 @@ class AdBlocker(private val context: Context) {
                 if (!window.hasFamilyBlockerObserver) {
                     window.hasFamilyBlockerObserver = true;
                     const observer = new MutationObserver(function(mutations) {
-                        checkContent();
+                        // শুধু নতুন node এলে scan করো — attribute change-এ না
+                        var hasNewNodes = mutations.some(function(m) { return m.addedNodes.length > 0; });
+                        if (hasNewNodes) checkContent();
                     });
                     if (document.body) {
                         observer.observe(document.body, { childList: true, subtree: true });

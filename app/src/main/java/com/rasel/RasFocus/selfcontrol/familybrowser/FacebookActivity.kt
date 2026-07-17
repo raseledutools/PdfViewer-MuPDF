@@ -621,7 +621,13 @@ class FacebookActivity : ComponentActivity() {
                     } catch(e) {}
                 }
                 applySettings();
-                setInterval(applySettings, 1000);
+                // setInterval বাদ — MutationObserver দিয়ে শুধু নতুন node এলে run করো
+                try {
+                    new MutationObserver(function(mutations) {
+                        var hasNewNodes = mutations.some(function(m) { return m.addedNodes.length > 0; });
+                        if (hasNewNodes) applySettings();
+                    }).observe(document.body || document.documentElement, { childList: true, subtree: true });
+                } catch(e) {}
             })();
         """.trimIndent()
         view.evaluateJavascript(js, null)
@@ -635,35 +641,26 @@ class FacebookActivity : ComponentActivity() {
 
                 function removeOpenAppElements() {
                     try {
+                        // Only target specific fb:// / intent:// links — no broad DOM scan
                         document.querySelectorAll('a[href^="fb://"], a[href^="intent://"], a[href^="market://"]')
                             .forEach(function(el) {
                                 var parent = el.closest('[class*="banner"], [id*="banner"], [data-testid*="app"], [role="banner"]');
                                 if (parent) parent.style.display = 'none'; else el.style.display = 'none';
                             });
-                        var bannerPhrases = [
-                            'open in app', 'use app', 'get the app', 'open the facebook app',
-                            'open app', 'get app', 'get apps for', 'faster experience',
-                            'for a faster experience', 'download the app', 'try the app',
-                            'switch to the app', 'view in app', 'continue in app',
-                            'get the best experience', 'best experience on the app'
-                        ];
-                        document.querySelectorAll('div, a, button, span').forEach(function(el) {
-                            var txt = (el.innerText || '').toLowerCase().trim();
-                            if (!txt || txt.length > 80) return;
-                            var hit = bannerPhrases.some(function(p) { return txt.indexOf(p) !== -1; });
-                            if (hit) {
-                                var parent = el.closest('[class*="banner"], [id*="banner"], [data-testid*="app"]') || el;
-                                parent.style.display = 'none';
-                            }
-                        });
+                        // Target "open in app" banners by data attribute — no innerText scan
+                        document.querySelectorAll('[data-sigil*="appbanner"], [id*="MAppBanner"], [class*="appBanner"]')
+                            .forEach(function(el) { el.style.display = 'none'; });
                     } catch(e) {}
                 }
                 removeOpenAppElements();
+                // MutationObserver only — remove setInterval to stop repeated full-DOM scans
                 try {
-                    new MutationObserver(function() { removeOpenAppElements(); })
-                        .observe(document.body || document.documentElement, { childList: true, subtree: true });
+                    new MutationObserver(function(mutations) {
+                        // Only run if nodes were actually added, not on every attribute change
+                        var hasNewNodes = mutations.some(function(m) { return m.addedNodes.length > 0; });
+                        if (hasNewNodes) removeOpenAppElements();
+                    }).observe(document.body || document.documentElement, { childList: true, subtree: true });
                 } catch(e) {}
-                setInterval(removeOpenAppElements, 1000);
             })();
         """.trimIndent(), null)
     }
