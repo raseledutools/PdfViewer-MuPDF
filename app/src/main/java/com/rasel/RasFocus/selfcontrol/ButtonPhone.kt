@@ -90,7 +90,7 @@ internal val BpRedAccent  = Color(0xFFE53935)
 // ─────────────────────────────────────────────────────────────────────────────
 // Enums
 // ─────────────────────────────────────────────────────────────────────────────
-enum class BpScreen       { SETUP, RUNNING, UNLOCK, LOCK_DETAIL, ALLOW_LIST }
+enum class BpScreen       { SETUP, RUNNING, UNLOCK, LOCK_DETAIL, ALLOW_LIST, COMPLETE_AUTO_START }
 enum class BpLockMode     { SELF_CONTROL, PARENTS_CONTROL, LONG_TEXT }
 enum class BpPhoneOption  { COMPLETE, CUSTOMIZE }
 enum class BpAllowTab     { APPS, WEBSITES }
@@ -521,7 +521,15 @@ private fun BpSetupDialog(onDismiss: () -> Unit, onSessionStart: () -> Unit) {
                     // Bottom CTA
                     Box(Modifier.fillMaxWidth().background(Color(0xFF060B14)).padding(horizontal = 16.dp, vertical = 12.dp)) {
                         Button(
-                            onClick = { screen = BpScreen.ALLOW_LIST },
+                            onClick = {
+                                // FIX: Complete mode-এ apps list skip — সরাসরি ALLOW_LIST-এ যাই
+                                // BpAllowListScreen-এ isComplete=true দেওয়া আছে, ওটা LaunchedEffect
+                                // দিয়ে auto-start করবে apps list না দেখিয়ে
+                                screen = if (phoneOption == BpPhoneOption.COMPLETE)
+                                    BpScreen.COMPLETE_AUTO_START  // নতুন screen — direct start
+                                else
+                                    BpScreen.ALLOW_LIST
+                            },
                             modifier = Modifier.fillMaxWidth().height(52.dp),
                             shape = RoundedCornerShape(14.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = BpTealMid)
@@ -538,6 +546,40 @@ private fun BpSetupDialog(onDismiss: () -> Unit, onSessionStart: () -> Unit) {
 
                 // ── LOCK_DETAIL: merged into SETUP above, kept as stub ──────
                 BpScreen.LOCK_DETAIL -> { screen = BpScreen.ALLOW_LIST }
+
+                // FIX: Complete mode → apps list দেখাবে না, সরাসরি session start
+                BpScreen.COMPLETE_AUTO_START -> {
+                    LaunchedEffect(Unit) {
+                        // Complete mode-এ DEFAULT_ALLOWED pkg গুলো allowed
+                        val finalPkgs = (BpC.DEFAULT_ALLOWED).toSet()
+                        val lockModeString = when(lockMode) {
+                            BpLockMode.SELF_CONTROL -> BpC.LOCK_SELF
+                            BpLockMode.PARENTS_CONTROL -> BpC.LOCK_PARENTS
+                            BpLockMode.LONG_TEXT -> BpC.LOCK_LONGTEXT
+                        }
+                        val totalMs = (days.toLongOrNull() ?: 0L) * 86_400_000L +
+                                      (hours.toLongOrNull() ?: 0L) * 3_600_000L +
+                                      (minutes.toLongOrNull() ?: 0L) * 60_000L
+                        val endTime = System.currentTimeMillis() + totalMs
+
+                        context.getSharedPreferences(BpC.PREFS, Context.MODE_PRIVATE).edit()
+                            .putLong(BpC.KEY_BREAK_END, endTime)
+                            .putString(BpC.KEY_ALLOWED, finalPkgs.joinToString(","))
+                            .putString(BpC.KEY_LOCK_MODE, lockModeString)
+                            .putString(BpC.KEY_PARENT_PASS, parentPass)
+                            .apply()
+
+                        if (blockInternet) promptInternetPanel(context)
+
+                        val svcIntent = Intent(context, BpBlockingService::class.java)
+                        context.startForegroundService(svcIntent)
+                        onDismiss()
+                    }
+                    // Loading দেখাও
+                    Box(Modifier.fillMaxSize().background(BpGrayBg), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = BpTealAccent)
+                    }
+                }
 
                 BpScreen.ALLOW_LIST -> BpAllowListScreen(
                     selectedPkgs = allowedPkgs, selectedWebs = allowedWebs,
