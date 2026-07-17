@@ -88,6 +88,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.*
 import com.rasel.RasFocus.selfcontrol.familybrowser.FamilyBrowserActivity
+import com.rasel.RasFocus.combo.parental.ParentalRootScreen
 
 private val PrimaryBlue    = Color(0xFF4A6FE3)
 private val DarkBlue       = Color(0xFF2E4BC6)
@@ -380,16 +381,13 @@ fun StayFocusedApp(
                             }
                         }
                         1 -> {
+                            // Modes tab — blocking controls
                             Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                                 TopHeader(navController) { scope.launch { drawerState.open() } }
-                                Spacer(Modifier.height(16.dp))
-                                FocusLauncherCard(onSessionStart = { bpSessionActive = true })
                                 Spacer(Modifier.height(16.dp))
                                 ExtremBlockCard(onClick = { navController.navigate("extreme_block") })
                                 Spacer(Modifier.height(16.dp))
                                 BlockingPlanCard(navController)
-                                Spacer(Modifier.height(16.dp))
-                                FamilyBrowserCard(context)
                                 Spacer(Modifier.height(16.dp))
                                 NormalModeCard()
                                 Spacer(Modifier.height(16.dp))
@@ -402,6 +400,7 @@ fun StayFocusedApp(
                             }
                         }
                         2 -> {
+                            // Analytics tab
                             Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                                 TopHeader(navController) { scope.launch { drawerState.open() } }
                                 Spacer(Modifier.height(16.dp))
@@ -412,13 +411,21 @@ fun StayFocusedApp(
                             }
                         }
                         3 -> {
-                            // Fix: don't keep composing Column/TopHeader while navigating away.
-                            // Previously this caused "CompositionLocal LocalLifecycleOwner not present"
-                            // crashes on release/minified builds due to a race between navigation
-                            // tearing down this composable and it still trying to recompose.
+                            // Parents tab — PC + Phone control (same as combo)
+                            Box(Modifier.weight(1f)) {
+                                ParentalRootScreen(
+                                    viewModel      = viewModel,
+                                    isComboMode    = false,
+                                    hideOwnFooter  = true,
+                                    onBackToCombo  = null
+                                )
+                            }
+                        }
+                        4 -> {
+                            // Account tab
                             LaunchedEffect(Unit) {
                                 onSettingsClick()
-                                selectedTab = 1
+                                selectedTab = 0
                             }
                         }
                     }
@@ -1021,10 +1028,11 @@ fun TemplateCard(emoji: String, title: String, subtitle: String, detail: String,
 @Composable
 fun SelfControlBottomNav(selected: Int, onSelect: (Int) -> Unit) {
     val items = listOf(
-        Triple("Dashboard", Icons.Default.Dashboard, Icons.Outlined.Dashboard),
-        Triple("Modes", Icons.Default.FlashOn, Icons.Outlined.FlashOn),
-        Triple("Analytics", Icons.Default.BarChart, Icons.Outlined.BarChart),
-        Triple("Account", Icons.Default.Person, Icons.Outlined.Person)
+        Triple("Dashboard", Icons.Default.Dashboard,      Icons.Outlined.Dashboard),
+        Triple("Modes",     Icons.Default.FlashOn,        Icons.Outlined.FlashOn),
+        Triple("Analytics", Icons.Default.BarChart,       Icons.Outlined.BarChart),
+        Triple("Parents",   Icons.Default.FamilyRestroom, Icons.Outlined.FamilyRestroom),
+        Triple("Account",   Icons.Default.Person,         Icons.Outlined.Person)
     )
     NavigationBar(containerColor = White, tonalElevation = 8.dp) {
         items.forEachIndexed { index, (label, filledIcon, outlinedIcon) ->
