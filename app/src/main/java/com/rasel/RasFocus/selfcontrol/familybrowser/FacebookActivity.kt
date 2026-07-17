@@ -547,14 +547,9 @@ class FacebookActivity : ComponentActivity() {
                                 }
                             });
                         });
-                        document.querySelectorAll('*').forEach(function(el) {
-                            var s = window.getComputedStyle(el);
-                            if ((s.position === 'fixed' || s.position === 'sticky') && s.bottom === '0px') {
-                                var rect = el.getBoundingClientRect();
-                                // FIX: Do not hide large overlays like search that cover the screen (height > 150)
-                                if (rect.height < 150) el.style.display = 'none';
-                            }
-                        });
+                        // FIX: removed querySelectorAll('*') + getComputedStyle loop —
+                        // it traversed every DOM node on every mutation causing
+                        // main-thread jank that rendered Facebook completely white.
                     } catch(e) {}
                 }
                 removeFooter();
