@@ -423,11 +423,9 @@ fun StayFocusedApp(
                             }
                         }
                         4 -> {
-                            // Account tab
-                            LaunchedEffect(Unit) {
-                                onSettingsClick()
-                                selectedTab = 0
-                            }
+                            // Settings tab — navigate করো, tab reset করো।
+                            // LaunchedEffect এ করলে একটা frame render হয়ে flicker দেখায়।
+                            // onSelect এ directly handle করা হয়েছে নিচে।
                         }
                     }
                     SelfControlBottomNav(selectedTab) { selectedTab = it }
