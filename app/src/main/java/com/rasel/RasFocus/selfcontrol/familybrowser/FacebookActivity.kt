@@ -81,7 +81,7 @@ class FacebookActivity : ComponentActivity() {
         private const val FB_USER_AGENT =
             "Mozilla/5.0 (Linux; Android 14; Pixel 8) " +
             "AppleWebKit/537.36 (KHTML, like Gecko) " +
-            "Chrome/124.0.6367.82 Mobile Safari/537.36"
+            "Chrome/131.0.6778.135 Mobile Safari/537.36"
 
         // FIX: আগে এখানে YoutubeActivity এর সাথে "sync রাখা" আলাদা একটা copy
         // hardcoded ছিল — দুই জায়গায় আলাদা লিস্ট মেইনটেইন করতে হতো, এবং নতুন
@@ -199,6 +199,10 @@ class FacebookActivity : ComponentActivity() {
                 cacheMode                         = WebSettings.LOAD_DEFAULT
                 userAgentString                   = FB_USER_AGENT
                 setSupportZoom(true)
+                // Safe Browsing কিছু Facebook CDN URL ভুলভাবে block করে সাদা দেখায়
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    safeBrowsingEnabled = false
+                }
             }
 
             // ── Cookie persistence — login session/data phone এ save থাকবে ──────
@@ -233,6 +237,50 @@ class FacebookActivity : ComponentActivity() {
                     injectSettingsRemover(view)
                     adBlocker.injectContentScanner(view)
                     flushCookies()
+                }
+
+                // ── Error handling — blank/white page fix ─────────────────────
+                // network error বা HTTP error হলে auto-retry করে,
+                // তারপরেও fail হলে user-friendly error page দেখায়।
+                private var retryCount = 0
+                private val MAX_RETRY = 2
+
+                override fun onReceivedError(
+                    view: WebView,
+                    request: android.webkit.WebResourceRequest,
+                    error: android.webkit.WebResourceError
+                ) {
+                    if (!request.isForMainFrame) return // sub-resource error ignore করো
+                    if (retryCount < MAX_RETRY) {
+                        retryCount++
+                        view.postDelayed({ view.reload() }, 1200L)
+                    } else {
+                        retryCount = 0
+                        view.loadDataWithBaseURL(
+                            null, buildErrorPage(view.url ?: "https://m.facebook.com/"),
+                            "text/html", "UTF-8", null
+                        )
+                    }
+                }
+
+                override fun onReceivedHttpError(
+                    view: WebView,
+                    request: android.webkit.WebResourceRequest,
+                    errorResponse: android.webkit.WebResourceResponse
+                ) {
+                    if (!request.isForMainFrame) return
+                    val code = errorResponse.statusCode
+                    // 5xx server error → retry; 4xx (403/404) → error page সরাসরি
+                    if (code in 500..599 && retryCount < MAX_RETRY) {
+                        retryCount++
+                        view.postDelayed({ view.reload() }, 1500L)
+                    } else if (code in 400..599) {
+                        retryCount = 0
+                        view.loadDataWithBaseURL(
+                            null, buildErrorPage(view.url ?: "https://m.facebook.com/"),
+                            "text/html", "UTF-8", null
+                        )
+                    }
                 }
 
                 override fun shouldInterceptRequest(
@@ -449,6 +497,27 @@ class FacebookActivity : ComponentActivity() {
     }
 
     /** সব cookie/login session সাথে সাথে disk এ লিখে দাও — data local এ থাকবে */
+    /** Network/HTTP error হলে দেখানো হয় — blank সাদা page এর বদলে retry button সহ */
+    private fun buildErrorPage(retryUrl: String): String = """
+        <!DOCTYPE html><html><head><meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <style>
+          body{margin:0;display:flex;flex-direction:column;align-items:center;
+               justify-content:center;min-height:100vh;
+               background:#f0f2f5;font-family:Helvetica,Arial,sans-serif;color:#1c1e21}
+          .icon{font-size:56px;margin-bottom:16px}
+          h2{margin:0 0 8px;font-size:20px}
+          p{margin:0 0 24px;font-size:14px;color:#65676b;text-align:center;padding:0 24px}
+          button{background:#1877f2;color:#fff;border:none;border-radius:8px;
+                 padding:12px 32px;font-size:16px;font-weight:600;cursor:pointer}
+        </style></head><body>
+        <div class="icon">😕</div>
+        <h2>পেজ লোড হয়নি</h2>
+        <p>ইন্টারনেট সংযোগ চেক করুন, তারপর আবার চেষ্টা করুন।</p>
+        <button onclick="window.location.href='$retryUrl'">আবার চেষ্টা করুন</button>
+        </body></html>
+    """.trimIndent()
+
     private fun flushCookies() {
         try {
             CookieManager.getInstance().flush()
