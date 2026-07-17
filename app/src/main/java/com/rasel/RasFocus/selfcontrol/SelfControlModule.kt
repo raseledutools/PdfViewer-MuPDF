@@ -850,69 +850,116 @@ fun QuickActionsSection(viewModel: SelfControlViewModel, navController: NavContr
     // is 24), so the "frosted" look comes from layered translucency + a
     // soft gradient border + a faint top sheen instead — same trick used
     // by most glass UIs when they need to support older OS versions.
-    val glassBase = Brush.linearGradient(listOf(Color(0xFF10192E), Color(0xFF161F38), Color(0xFF10192E)))
-    val glassBorder = Brush.linearGradient(listOf(White.copy(alpha = 0.32f), White.copy(alpha = 0.04f), White.copy(alpha = 0.14f)))
-    val rowFrost = White.copy(alpha = 0.035f)
-    val dividerColor = White.copy(alpha = 0.07f)
-
     Column(Modifier.padding(horizontal = 20.dp)) {
-        Text("Quick Actions", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = TextGray)
-        Spacer(Modifier.height(12.dp))
+        Text("Quick Actions", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = TextGray, letterSpacing = 0.3.sp)
+        Spacer(Modifier.height(10.dp))
 
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .shadow(18.dp, RoundedCornerShape(28.dp), ambientColor = Color.Black.copy(alpha = 0.5f), spotColor = Color.Black.copy(alpha = 0.5f))
-                .clip(RoundedCornerShape(28.dp))
-                .background(glassBase)
-                .border(1.dp, glassBorder, RoundedCornerShape(28.dp))
+        // ── Top row: 2 colorful stat cards ──
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            // Apps Blocked
+            Card(
+                Modifier.weight(1f).clickable { navController.navigate("single_apps") },
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF0D2137)),
+                elevation = CardDefaults.cardElevation(4.dp)
+            ) {
+                Box(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Color(0xFF1565C0), Color(0xFF0D2137))), RoundedCornerShape(16.dp)).padding(14.dp)) {
+                    Column {
+                        Box(Modifier.size(36.dp).background(Color(0xFF42A5F5).copy(alpha = 0.18f), RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.MobileOff, null, tint = Color(0xFF42A5F5), modifier = Modifier.size(19.dp))
+                        }
+                        Spacer(Modifier.height(10.dp))
+                        Text(appsBlockedCount.toString(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 22.sp)
+                        Text("Apps Blocked", color = Color(0xFF42A5F5).copy(alpha = 0.85f), fontSize = 11.sp)
+                    }
+                }
+            }
+            // Sites Blocked
+            Card(
+                Modifier.weight(1f).clickable { navController.navigate("single_website") },
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1A0D37)),
+                elevation = CardDefaults.cardElevation(4.dp)
+            ) {
+                Box(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Color(0xFF6A1B9A), Color(0xFF1A0D37))), RoundedCornerShape(16.dp)).padding(14.dp)) {
+                    Column {
+                        Box(Modifier.size(36.dp).background(Color(0xFFCE93D8).copy(alpha = 0.18f), RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.DesktopWindows, null, tint = Color(0xFFCE93D8), modifier = Modifier.size(19.dp))
+                        }
+                        Spacer(Modifier.height(10.dp))
+                        Text(sitesBlockedCount.toString(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 22.sp)
+                        Text("Sites Blocked", color = Color(0xFFCE93D8).copy(alpha = 0.85f), fontSize = 11.sp)
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(10.dp))
+
+        // ── Bottom row: Schedule + Adult Block ──
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            // Schedule Blocks
+            Card(
+                Modifier.weight(1f).clickable { navController.navigate("schedule_blocks") },
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1200)),
+                elevation = CardDefaults.cardElevation(4.dp)
+            ) {
+                Box(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Color(0xFFE65100), Color(0xFF1A1200))), RoundedCornerShape(16.dp)).padding(14.dp)) {
+                    Column {
+                        Box(Modifier.size(36.dp).background(Color(0xFFFFB74D).copy(alpha = 0.18f), RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.Schedule, null, tint = Color(0xFFFFB74D), modifier = Modifier.size(19.dp))
+                        }
+                        Spacer(Modifier.height(10.dp))
+                        Text("Schedule", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        Text("Block Profiles", color = Color(0xFFFFB74D).copy(alpha = 0.85f), fontSize = 11.sp)
+                    }
+                }
+            }
+            // Adult Block
+            Card(
+                Modifier.weight(1f).clickable { navController.navigate("adult_block") },
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF001A08)),
+                elevation = CardDefaults.cardElevation(4.dp)
+            ) {
+                Box(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Color(0xFF1B5E20), Color(0xFF001A08))), RoundedCornerShape(16.dp)).padding(14.dp)) {
+                    Column {
+                        Box(Modifier.size(36.dp).background(Color(0xFF66BB6A).copy(alpha = 0.18f), RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.Shield, null, tint = Color(0xFF66BB6A), modifier = Modifier.size(19.dp))
+                        }
+                        Spacer(Modifier.height(10.dp))
+                        Text("Adult Block", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        Text("Safe · Active", color = Color(0xFF66BB6A).copy(alpha = 0.85f), fontSize = 11.sp)
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(10.dp))
+
+        // ── Keywords toggle card ──
+        Card(
+            Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF001616)),
+            elevation = CardDefaults.cardElevation(4.dp)
         ) {
-            // Faint top sheen — mimics light catching the top edge of glass.
-            // Brush.verticalGradient() with no explicit start/end stretches
-            // to whatever box it's drawn on, so this stays correct at any size.
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(70.dp)
-                    .align(Alignment.TopCenter)
-                    .background(Brush.verticalGradient(listOf(White.copy(alpha = 0.09f), Color.Transparent)))
-            )
-
-            Column {
-                QuickActionRow(icon = Icons.Default.MobileOff, label = "Apps Blocked",
-                    value = appsBlockedCount.toString(), accentColor = AccentBlue, frost = rowFrost, dividerColor = dividerColor, divider = true,
-                    onClick = { navController.navigate("single_apps") })
-                QuickActionRow(icon = Icons.Default.DesktopWindows, label = "Sites Blocked",
-                    value = sitesBlockedCount.toString(), accentColor = Color(0xFF9B7BFF), frost = rowFrost, dividerColor = dividerColor, divider = true,
-                    onClick = { navController.navigate("single_website") })
-                QuickActionRow(icon = Icons.Default.Schedule, label = "Schedule Blocks",
-                    value = "Profiles", accentColor = Color(0xFFFFB258), frost = rowFrost, dividerColor = dividerColor, divider = true,
-                    onClick = { navController.navigate("schedule_blocks") })
-                QuickActionRow(icon = Icons.Default.Shield, label = "Adult Block",
-                    value = "Safe", accentColor = AccentGreen, frost = rowFrost, dividerColor = dividerColor, divider = true,
-                    onClick = { navController.navigate("adult_block") })
-
-                // Keywords toggle row — restyled to match the glass rows above
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .background(rowFrost)
-                        .padding(horizontal = 20.dp, vertical = 20.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    GlassIconChip(icon = Icons.Default.Shield, accentColor = Color(0xFF5CD6C0), text = "A|")
-                    Spacer(Modifier.width(16.dp))
+            Box(Modifier.fillMaxWidth().background(Brush.horizontalGradient(listOf(Color(0xFF00695C), Color(0xFF001616))), RoundedCornerShape(16.dp)).padding(horizontal = 14.dp, vertical = 13.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Box(Modifier.size(36.dp).background(Color(0xFF4DB6AC).copy(alpha = 0.18f), RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.FilterList, null, tint = Color(0xFF4DB6AC), modifier = Modifier.size(19.dp))
+                    }
                     Column(Modifier.weight(1f)) {
-                        Text(if (keywordsEnabled) "Active" else "Inactive", color = White, fontWeight = FontWeight.Bold, fontSize = 18.sp, letterSpacing = 0.2.sp)
-                        Spacer(Modifier.height(2.dp))
-                        Text("Keywords Blocked (Shorts/Reels)", color = White.copy(alpha = 0.55f), fontSize = 13.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.1.sp)
+                        Text("Keyword Filter", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                        Text("Shorts · Reels · Distractions", color = Color(0xFF4DB6AC).copy(alpha = 0.8f), fontSize = 11.sp)
                     }
                     Switch(
                         checked = keywordsEnabled,
                         onCheckedChange = { viewModel.toggleKeywords(it, context) },
                         colors = SwitchDefaults.colors(
-                            checkedThumbColor = White, checkedTrackColor = Color(0xFF5CD6C0),
-                            uncheckedThumbColor = White.copy(alpha = 0.8f), uncheckedTrackColor = White.copy(alpha = 0.15f)
+                            checkedThumbColor = Color.White, checkedTrackColor = Color(0xFF00BCD4),
+                            uncheckedThumbColor = Color(0xFF90A4AE), uncheckedTrackColor = Color(0xFF263238)
                         )
                     )
                 }
@@ -1388,82 +1435,52 @@ fun FamilyBrowserCard(context: Context) {
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
-                    brush = Brush.linearGradient(
-                        colors = listOf(Color(0xFF0F2847), Color(0xFF0D2240))
-                    ),
+                    brush = Brush.horizontalGradient(listOf(Color(0xFF0A2540), Color(0xFF0D3060))),
                     shape = RoundedCornerShape(20.dp)
                 )
-                .padding(horizontal = 18.dp, vertical = 16.dp)
+                .padding(horizontal = 16.dp, vertical = 13.dp)
         ) {
-            Column {
-                // ── Title row ──────────────────────────────────────────────
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .background(Color(0xFF60A5FA).copy(alpha = 0.12f), RoundedCornerShape(13.dp)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Language,
-                            contentDescription = null,
-                            tint = Color(0xFF60A5FA),
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                    Spacer(Modifier.width(14.dp))
-                    Column(Modifier.weight(1f)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                "RasBrowser",
-                                fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFFF1F5F9)
-                            )
-                            Spacer(Modifier.width(7.dp))
-                            Box(
-                                modifier = Modifier
-                                    .background(Color(0xFF4ADE80).copy(alpha = 0.18f), RoundedCornerShape(50.dp))
-                                    .padding(horizontal = 7.dp, vertical = 2.dp)
-                            ) {
-                                Text(
-                                    "SAFE",
-                                    fontSize = 9.sp, fontWeight = FontWeight.ExtraBold,
-                                    color = Color(0xFF4ADE80), letterSpacing = 1.sp
-                                )
-                            }
-                        }
-                        Text(
-                            "Family browser · ad blocking · content filter",
-                            fontSize = 11.sp, color = Color(0xFF64748B), lineHeight = 15.sp
-                        )
-                    }
-                    Icon(
-                        imageVector = Icons.Default.ChevronRight,
-                        contentDescription = null,
-                        tint = Color(0xFF475569),
-                        modifier = Modifier.size(20.dp)
-                    )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(13.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(
+                            Brush.linearGradient(listOf(Color(0xFF3B82F6), Color(0xFF1D4ED8))),
+                            RoundedCornerShape(12.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.Language, null, tint = Color.White, modifier = Modifier.size(20.dp))
                 }
-
-                // ── Stats row ──────────────────────────────────────────────
-                Spacer(Modifier.height(10.dp))
-                HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
-                Spacer(Modifier.height(10.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    BrowserStatChip(Icons.Default.Shield, "Adult filter")
-                    BrowserStatChip(Icons.Default.Block,  "Ads blocked")
-                    Box(
-                        Modifier
-                            .background(Color(0xFF60A5FA).copy(alpha = 0.1f), RoundedCornerShape(50.dp))
-                            .clickable { showChooser = true }
-                            .padding(horizontal = 8.dp, vertical = 3.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Icon(Icons.Default.Apps, null, tint = Color(0xFF60A5FA), modifier = Modifier.size(12.dp))
-                            Text("3 apps ↗", fontSize = 11.sp, color = Color(0xFF60A5FA), fontWeight = FontWeight.SemiBold)
+                Column(Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text("RasBrowser", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFF1F5F9), letterSpacing = 0.2.sp)
+                        Box(
+                            Modifier.background(Color(0xFF4ADE80).copy(alpha = 0.18f), RoundedCornerShape(50.dp))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text("SAFE", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4ADE80), letterSpacing = 1.sp)
                         }
                     }
+                    Text("Ad-free · Safe · Family browser", fontSize = 10.sp, color = Color(0xFF60A5FA).copy(alpha = 0.7f))
                 }
+                // "More apps" chip
+                Box(
+                    Modifier
+                        .background(Color(0xFF60A5FA).copy(alpha = 0.12f), RoundedCornerShape(10.dp))
+                        .border(1.dp, Color(0xFF60A5FA).copy(alpha = 0.2f), RoundedCornerShape(10.dp))
+                        .clickable { showChooser = true }
+                        .padding(horizontal = 9.dp, vertical = 6.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Icon(Icons.Default.Apps, null, tint = Color(0xFF60A5FA), modifier = Modifier.size(13.dp))
+                        Text("Apps", fontSize = 11.sp, color = Color(0xFF60A5FA), fontWeight = FontWeight.SemiBold)
+                    }
+                }
+                Icon(Icons.Default.ChevronRight, null, tint = Color(0xFF60A5FA).copy(alpha = 0.5f), modifier = Modifier.size(18.dp))
             }
         }
     }
