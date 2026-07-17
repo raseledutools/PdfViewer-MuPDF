@@ -328,7 +328,10 @@ fun StayFocusedApp(
                     Spacer(Modifier.height(16.dp))
                     ExtremBlockCard(onClick = { navController.navigate("extreme_block") })
                     Spacer(Modifier.height(16.dp))
-                    BlockingPlanCard(navController)
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Box(Modifier.weight(1f)) { BlockingPlanCard(navController) }
+                        Box(Modifier.weight(1f)) { TakeRestCard() }
+                    }
                     Spacer(Modifier.height(16.dp))
                     FamilyBrowserCard(context)
                     Spacer(Modifier.height(16.dp))
@@ -339,8 +342,6 @@ fun StayFocusedApp(
                     TakeABreakCard(onSessionStart = { bpSessionActive = true })
                     Spacer(Modifier.height(16.dp))
                     NormalModeCard()
-                    Spacer(Modifier.height(16.dp))
-                    TakeRestCard()
                     Spacer(Modifier.height(20.dp))
                     QuickActionsSection(viewModel, navController, context)
                     Spacer(Modifier.height(20.dp))
@@ -1243,57 +1244,42 @@ private fun AccountRow(
 
 @Composable
 fun ExtremBlockCard(onClick: () -> Unit) {
-    // Dark red / crimson gradient — বোঝায় এটা সবচেয়ে কঠোর mode
-    val gradientStart = Color(0xFF7B0000)
-    val gradientEnd   = Color(0xFFB71C1C)
-
     com.rasel.RasFocus.ui.theme.PremiumCard(Modifier.fillMaxWidth().padding(horizontal = 20.dp), onClick = onClick) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(
-                    brush = Brush.horizontalGradient(listOf(gradientStart, gradientEnd)),
-                    shape = RoundedCornerShape(20.dp)
-                )
+                .background(Color(0xFF0A0A0A), RoundedCornerShape(20.dp))
+                .border(1.dp, Color(0xFF2A0000), RoundedCornerShape(20.dp))
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 18.dp, vertical = 15.dp),
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(14.dp)
             ) {
+                // Red gradient icon — এটাই এই card এর identity
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
-                        .background(SoftWhite.copy(alpha = 0.12f), RoundedCornerShape(13.dp)),
+                        .size(46.dp)
+                        .background(
+                            Brush.linearGradient(listOf(Color(0xFF7F1D1D), Color(0xFFDC2626))),
+                            RoundedCornerShape(13.dp)
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.Shield, null, tint = SoftWhite, modifier = Modifier.size(23.dp))
+                    Icon(Icons.Default.Shield, null, tint = Color.White, modifier = Modifier.size(24.dp))
                 }
                 Column(Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                        Text(
-                            "Extreme Block",
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 15.sp,
-                            color = SoftWhite,
-                            letterSpacing = 0.2.sp
-                        )
-                        Box(
-                            Modifier.background(Color(0xFFFF5252).copy(alpha = 0.25f), RoundedCornerShape(50.dp))
-                                .padding(horizontal = 7.dp, vertical = 2.dp)
-                        ) {
-                            Text("MAX", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFF8A80), letterSpacing = 1.sp)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Extreme Block", fontWeight = FontWeight.Medium, fontSize = 15.sp, color = Color(0xFFF5F5F5), letterSpacing = 0.2.sp)
+                        Box(Modifier.background(Color(0xFF450A0A), RoundedCornerShape(99.dp)).padding(horizontal = 7.dp, vertical = 2.dp)) {
+                            Text("MAX", fontSize = 9.sp, fontWeight = FontWeight.Medium, color = Color(0xFFFCA5A5), letterSpacing = 1.sp)
                         }
                     }
-                    Text(
-                        "Adult · Reels · Apps · Protection",
-                        fontSize = 11.sp,
-                        color = SoftWhite.copy(alpha = 0.6f)
-                    )
+                    Text("Adult · Reels · Apps · Full protection", fontSize = 11.sp, color = Color(0xFF6B7280))
                 }
-                Icon(Icons.Default.ChevronRight, null, tint = SoftWhite.copy(alpha = 0.45f), modifier = Modifier.size(20.dp))
+                Icon(Icons.Default.ChevronRight, null, tint = Color(0xFF374151), modifier = Modifier.size(18.dp))
             }
         }
     }
@@ -1304,109 +1290,71 @@ fun ExtremBlockCard(onClick: () -> Unit) {
 // ─────────────────────────────────────────────────────────────────────────────
 @Composable
 fun BlockingPlanCard(navController: NavController) {
-    val gradientStart = Color(0xFF1565C0)
-    val gradientEnd   = Color(0xFF0D47A1)
-
-    com.rasel.RasFocus.ui.theme.PremiumCard(Modifier.fillMaxWidth().padding(horizontal = 20.dp), onClick = { navController.navigate("blocking_plan") }) {
+    com.rasel.RasFocus.ui.theme.PremiumCard(
+        Modifier.fillMaxWidth(),
+        onClick = { navController.navigate("blocking_plan") }
+    ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    brush = Brush.horizontalGradient(listOf(gradientStart, gradientEnd)),
-                    shape = RoundedCornerShape(20.dp)
-                )
+            Modifier.fillMaxWidth()
+                .background(Color(0xFF0D1117), RoundedCornerShape(20.dp))
+                .border(1.dp, Color(0xFF1E3A5F), RoundedCornerShape(20.dp))
+                .padding(16.dp)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 18.dp, vertical = 15.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
+            Column {
                 Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .background(SoftWhite.copy(alpha = 0.12f), RoundedCornerShape(13.dp)),
+                    Modifier.size(40.dp)
+                        .background(Color(0xFF1E3A5F), RoundedCornerShape(11.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.PlaylistAddCheck, null, tint = SoftWhite, modifier = Modifier.size(23.dp))
+                    Icon(Icons.Default.PlaylistAddCheck, null, tint = Color(0xFF60A5FA), modifier = Modifier.size(20.dp))
                 }
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        "Blocking Profile",
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 15.sp,
-                        color = SoftWhite,
-                        letterSpacing = 0.2.sp
-                    )
-                    Text(
-                        "Apps · Websites · Custom rules",
-                        fontSize = 11.sp,
-                        color = SoftWhite.copy(alpha = 0.6f)
-                    )
+                Spacer(Modifier.height(10.dp))
+                Text("Blocking Profile", color = Color(0xFFE2E8F0), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                Text("Apps & websites rules", color = Color(0xFF4B6584), fontSize = 10.sp)
+                Spacer(Modifier.height(10.dp))
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Open", color = Color(0xFF3B82F6), fontSize = 10.sp, fontWeight = FontWeight.Medium)
+                    Icon(Icons.Default.ArrowForward, null, tint = Color(0xFF3B82F6), modifier = Modifier.size(11.dp))
                 }
-                Icon(Icons.Default.ChevronRight, null, tint = SoftWhite.copy(alpha = 0.45f), modifier = Modifier.size(20.dp))
             }
         }
+
     }
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
-// UI: TakeRestCard — take_rest.kt এর MainActivity launch করে
+// UI: TakeRestCard
 // ─────────────────────────────────────────────────────────────────────────────
 @Composable
 fun TakeRestCard() {
     val context = LocalContext.current
-    val gradientStart = Color(0xFF1A237E)
-    val gradientEnd   = Color(0xFF3949AB)
-
-    com.rasel.RasFocus.ui.theme.PremiumCard(Modifier.fillMaxWidth().padding(horizontal = 20.dp), onClick = { val intent = Intent(context, com.rasel.RasFocus.selfcontrol.TakeRestActivity::class.java); intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); context.startActivity(intent) }) {
+    com.rasel.RasFocus.ui.theme.PremiumCard(
+        Modifier.fillMaxWidth(),
+        onClick = {
+            Toast.makeText(context, "Rest mode coming soon", Toast.LENGTH_SHORT).show()
+        }
+    ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    brush = Brush.horizontalGradient(listOf(gradientStart, gradientEnd)),
-                    shape = RoundedCornerShape(20.dp)
-                )
+            Modifier.fillMaxWidth()
+                .background(Color(0xFF0D1117), RoundedCornerShape(20.dp))
+                .border(1.dp, Color(0xFF1A3A1A), RoundedCornerShape(20.dp))
+                .padding(16.dp)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 18.dp, vertical = 15.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
+            Column {
                 Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .background(SoftWhite.copy(alpha = 0.12f), RoundedCornerShape(13.dp)),
+                    Modifier.size(40.dp)
+                        .background(Color(0xFF1A3A1A), RoundedCornerShape(11.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("😴", fontSize = 22.sp)
+                    Icon(Icons.Default.PhoneAndroid, null, tint = Color(0xFF4ADE80), modifier = Modifier.size(20.dp))
                 }
-                Column(Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                        Text(
-                            "Take Rest",
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 15.sp,
-                            color = SoftWhite,
-                            letterSpacing = 0.2.sp
-                        )
-                        Box(
-                            Modifier.background(Color(0xFF7986CB).copy(alpha = 0.25f), RoundedCornerShape(50.dp))
-                                .padding(horizontal = 7.dp, vertical = 2.dp)
-                        ) {
-                            Text("BREAK", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFFB3BCF5), letterSpacing = 1.sp)
-                        }
-                    }
-                    Text(
-                        "Phone lock করে বিশ্রাম নাও",
-                        fontSize = 11.sp,
-                        color = SoftWhite.copy(alpha = 0.6f)
-                    )
+                Spacer(Modifier.height(10.dp))
+                Text("Button Phone", color = Color(0xFFE2E8F0), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                Text("Minimal · Call only", color = Color(0xFF4B6584), fontSize = 10.sp)
+                Spacer(Modifier.height(10.dp))
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Enable", color = Color(0xFF22C55E), fontSize = 10.sp, fontWeight = FontWeight.Medium)
+                    Icon(Icons.Default.ArrowForward, null, tint = Color(0xFF22C55E), modifier = Modifier.size(11.dp))
                 }
-                Icon(Icons.Default.ChevronRight, null, tint = SoftWhite.copy(alpha = 0.45f), modifier = Modifier.size(20.dp))
             }
         }
     }
