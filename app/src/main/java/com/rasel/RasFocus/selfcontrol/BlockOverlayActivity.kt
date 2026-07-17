@@ -8,6 +8,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -229,6 +231,7 @@ fun BlockOverlayScreen(
             Spacer(Modifier.weight(1f))
 
             // ── MIDDLE: Blocked app card (professional glass card) ───────────
+            val cardScrollState = rememberScrollState()
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -238,7 +241,9 @@ fun BlockOverlayScreen(
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.15f))
             ) {
                 Column(
-                    modifier = Modifier.padding(28.dp),
+                    modifier = Modifier
+                        .padding(28.dp)
+                        .verticalScroll(cardScrollState),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // App icon with blocked overlay
