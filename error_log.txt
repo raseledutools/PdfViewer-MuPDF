@@ -8,13 +8,13 @@
 > Task :app:mergeFullReleaseJavaResource FAILED
 * What went wrong:
 Execution failed for task ':app:mergeFullReleaseJavaResource'.
-BUILD FAILED in 4m 24s
+BUILD FAILED in 4m 14s
 
 === LAST 50 LINES ===
 > Task :app:compileFullReleaseJavaWithJavac
 file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/build/generated/ksp/fullRelease/classes', not found
 file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/build/generated/ksp/fullRelease/classes', not found
-Build cache key for task ':app:compileFullReleaseJavaWithJavac' is 07915779cca42d361fc64b40faf0dc75
+Build cache key for task ':app:compileFullReleaseJavaWithJavac' is 3162a814b00576b7dd774767697ad7b0
 Task ':app:compileFullReleaseJavaWithJavac' is not up-to-date because:
   No history is available.
 The input changes require a full rebuild for incremental task ':app:compileFullReleaseJavaWithJavac'.
@@ -24,15 +24,15 @@ Transforming core-for-system-modules.jar with JdkImageTransform
 Full recompilation is required because no incremental change information is available. This is usually caused by clean builds or changing compiler arguments.
 Compiling with toolchain '/usr/lib/jvm/temurin-17-jdk-amd64'.
 Compiling with JDK Java compiler API.
-Class dependency analysis for incremental compilation took 0.019 secs.
-Created classpath snapshot for incremental compilation in 1.681 secs.
-Stored cache entry for task ':app:compileFullReleaseJavaWithJavac' with cache key 07915779cca42d361fc64b40faf0dc75
+Class dependency analysis for incremental compilation took 0.024 secs.
+Created classpath snapshot for incremental compilation in 1.006 secs.
+Stored cache entry for task ':app:compileFullReleaseJavaWithJavac' with cache key 3162a814b00576b7dd774767697ad7b0
 AAPT2 aapt2-8.2.2-10154469-linux Daemon #0: shutdown
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784357423992.json
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784357771448.json
 
 0 problems were found storing the configuration cache.
 
-See the complete report at file:///home/runner/work/RasFocus-final/RasFocus-final/build/reports/configuration-cache/98wn9kbjk91n622ub57j9ww5w/6jm0vvm23t4vor14r6qpn2q53/configuration-cache-report.html
+See the complete report at file:///home/runner/work/RasFocus-final/RasFocus-final/build/reports/configuration-cache/aemb0rc6r9ivvt63x9ru5ymwd/6jm0vvm23t4vor14r6qpn2q53/configuration-cache-report.html
 
 FAILURE: Build failed with an exception.
 
@@ -58,6 +58,6 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.9/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 4m 24s
+BUILD FAILED in 4m 14s
 35 actionable tasks: 25 executed, 10 from cache
 Configuration cache entry stored.
