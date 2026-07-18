@@ -43,6 +43,8 @@
     android:maxSdkVersion="32" />
 <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+<!-- Android 13+ এ PDF/document access এর জন্য READ_MEDIA_DOCUMENTS লাগে -->
+<uses-permission android:name="android.permission.READ_MEDIA_DOCUMENTS" />
 <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />
 <uses-permission android:name="android.permission.VIBRATE" />
 <uses-permission android:name="android.permission.CAMERA" />

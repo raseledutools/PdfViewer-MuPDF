@@ -18,4 +18,11 @@
     <files-path
         name="internal_files"
         path="." />
+    <!-- File manager থেকে সব জায়গার PDF open করতে root path দরকার -->
+    <external-path
+        name="external_root"
+        path="." />
+    <root-path
+        name="root"
+        path="." />
 </paths>

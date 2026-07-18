@@ -271,6 +271,18 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                         val path = uri.path ?: throw IllegalStateException("Invalid file URI")
                         java.io.File(path).readBytes()
                     }
+                    "content" -> {
+                        // content:// URI — file manager, Drive, Downloads etc.
+                        // Try to take persistable permission first (best-effort)
+                        try {
+                            context.contentResolver.takePersistableUriPermission(
+                                uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            )
+                        } catch (_: SecurityException) {}
+
+                        context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                            ?: throw IllegalStateException("Cannot open: $uri\n\nFile manager এ RasFocus কে storage permission দাও")
+                    }
                     else -> {
                         context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
                             ?: throw IllegalStateException("ContentResolver returned null for $uri")
