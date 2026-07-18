@@ -181,13 +181,16 @@ private fun StudyToolsMain(
             }
         }
 
+        // ── Personal Diary (সবার আগে) ──────────────────────────────
+        SectionTitle("📓 Personal Diary", AccentPurple, AccentPink)
+        PersonalDiaryCard(onClick = onOpenDiary)
+
         // ── Doc Scanner (CamScanner-style) ──────────────────────────────
         SectionTitle("📷 Doc Scanner", AccentCyan, AccentBlue)
         DocScannerCard(onClick = onDocScanner)
 
-        // ── PDF Tools ───────────────────────────────────────────────────
+        // ── PDF Tools (Merge বাদ — শুধু PDF & Image Tools) ──────────────
         SectionTitle("📄 PDF Tools", AccentRed, AccentOrange)
-        NativePdfMergeCard(onClick = onPdfMerge)
         NativePdfToolsCard(onClick = onPdfTools)
 
         // ── Native Tools ────────────────────────────────────────────────
@@ -237,10 +240,6 @@ private fun StudyToolsMain(
             ),
             onOpenUrl = onOpenUrl
         )
-
-        // ── Personal Diary ──────────────────────────────────────────────
-        SectionTitle("📓 Personal Diary", AccentPurple, AccentPink)
-        PersonalDiaryCard(onClick = onOpenDiary)
 
         // ── Tomorrow's Tasks ────────────────────────────────────────────
         SectionTitle("✅ Tomorrow's Tasks", AccentGreen, AccentTeal)
@@ -1551,100 +1550,148 @@ private fun TopBar(title: String, onBack: () -> Unit) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Personal Diary Card (navigates to diary.kt)
+// Personal Diary Card (navigates to diary.kt) + Home Screen Shortcut
 // ─────────────────────────────────────────────────────────────────────────────
 @Composable
 private fun PersonalDiaryCard(onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp)
-            .clickable { onClick() },
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        elevation = CardDefaults.cardElevation(8.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    Brush.linearGradient(listOf(Color(0xFF1A1835), Color(0xFF251840))),
-                    RoundedCornerShape(24.dp)
-                )
-                .padding(horizontal = 20.dp, vertical = 20.dp)
+    val context = LocalContext.current
+    var shortcutAdded by remember { mutableStateOf(false) }
+
+    // Home screen shortcut pinning
+    fun addShortcut() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val sm = context.getSystemService(ShortcutManager::class.java)
+            if (sm.isRequestPinShortcutSupported) {
+                val intent = Intent(context, com.rasel.RasFocus.MainActivity::class.java).apply {
+                    action = "com.rasel.RasFocus.OPEN_DIARY"
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                }
+                val info = ShortcutInfo.Builder(context, "diary_shortcut")
+                    .setShortLabel("Diary")
+                    .setLongLabel("Personal Diary")
+                    .setIcon(android.graphics.drawable.Icon.createWithResource(context, android.R.drawable.ic_menu_edit))
+                    .setIntent(intent)
+                    .build()
+                sm.requestPinShortcut(info, null)
+                shortcutAdded = true
+            }
+        }
+    }
+
+    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+        Card(
+            modifier = Modifier.fillMaxWidth().clickable { onClick() },
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+            elevation = CardDefaults.cardElevation(8.dp)
         ) {
-            // Glow accent top-right
             Box(
                 modifier = Modifier
-                    .size(72.dp)
-                    .align(Alignment.TopEnd)
+                    .fillMaxWidth()
                     .background(
-                        Brush.radialGradient(listOf(AccentPurple.copy(alpha = 0.25f), Color.Transparent)),
-                        CircleShape
+                        Brush.linearGradient(listOf(Color(0xFF1A1835), Color(0xFF251840))),
+                        RoundedCornerShape(24.dp)
                     )
-            )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // Icon circle
+                    .padding(horizontal = 20.dp, vertical = 20.dp)
+            ) {
+                // Glow accent top-right
                 Box(
                     modifier = Modifier
-                        .size(56.dp)
+                        .size(72.dp)
+                        .align(Alignment.TopEnd)
                         .background(
-                            Brush.linearGradient(listOf(AccentPurple.copy(alpha = 0.3f), AccentPink.copy(alpha = 0.2f))),
+                            Brush.radialGradient(listOf(AccentPurple.copy(alpha = 0.25f), Color.Transparent)),
                             CircleShape
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("📓", fontSize = 26.sp)
+                        )
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .background(
+                                Brush.linearGradient(listOf(AccentPurple.copy(alpha = 0.3f), AccentPink.copy(alpha = 0.2f))),
+                                CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("📓", fontSize = 26.sp)
+                    }
+                    Spacer(Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "Personal Diary",
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextWhite
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            SimpleDateFormat("dd MMM yyyy — EEEE", Locale.getDefault()).format(Date()),
+                            fontSize = 11.sp,
+                            color = AccentPurple
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            "আজকের অনুভূতি, চিন্তা ও স্মৃতি লিখে রাখো",
+                            fontSize = 12.sp,
+                            color = TextMuted
+                        )
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(AccentPurple.copy(alpha = 0.15f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowForward,
+                            contentDescription = "Open Diary",
+                            tint = AccentPurple,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
-                Spacer(Modifier.width(16.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        "Personal Diary",
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextWhite
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        SimpleDateFormat("dd MMM yyyy — EEEE", Locale.getDefault()).format(Date()),
-                        fontSize = 11.sp,
-                        color = AccentPurple
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        "আজকের অনুভূতি, চিন্তা ও স্মৃতি লিখে রাখো",
-                        fontSize = 12.sp,
-                        color = TextMuted
-                    )
-                }
-                Spacer(Modifier.width(8.dp))
-                // Arrow indicator
                 Box(
                     modifier = Modifier
-                        .size(36.dp)
-                        .background(AccentPurple.copy(alpha = 0.15f), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowForward,
-                        contentDescription = "Open Diary",
-                        tint = AccentPurple,
-                        modifier = Modifier.size(18.dp)
+                        .align(Alignment.BottomStart)
+                        .padding(top = 72.dp)
+                        .height(3.dp)
+                        .fillMaxWidth(0.5f)
+                        .background(
+                            Brush.horizontalGradient(listOf(AccentPurple, AccentPink, Color.Transparent)),
+                            RoundedCornerShape(2.dp)
+                        )
+                )
+            }
+        }
+
+        // ── Home Screen Shortcut button — Diary card এর ঠিক নিচে ─────────
+        Spacer(Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
+            Box(
+                modifier = Modifier
+                    .background(
+                        if (shortcutAdded) AccentGreen.copy(alpha = 0.15f)
+                        else AccentPurple.copy(alpha = 0.12f),
+                        RoundedCornerShape(12.dp)
+                    )
+                    .clickable { addShortcut() }
+                    .padding(horizontal = 14.dp, vertical = 8.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(if (shortcutAdded) "✅" else "📌", fontSize = 14.sp)
+                    Text(
+                        if (shortcutAdded) "Shortcut Added!" else "Add to Home Screen",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (shortcutAdded) AccentGreen else AccentPurple
                     )
                 }
             }
-            // Bottom gradient bar
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(top = 72.dp)
-                    .height(3.dp)
-                    .fillMaxWidth(0.5f)
-                    .background(
-                        Brush.horizontalGradient(listOf(AccentPurple, AccentPink, Color.Transparent)),
-                        RoundedCornerShape(2.dp)
-                    )
-            )
         }
     }
 }
@@ -1715,44 +1762,115 @@ private fun TaskSection() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// WebView screen
+// WebView screen — RasBrowser-style settings (fast render, Chrome UA, bypass JS)
 // ─────────────────────────────────────────────────────────────────────────────
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 private fun StudyWebView(url: String, title: String, onBack: () -> Unit) {
     var canGoBack  by remember { mutableStateOf(false) }
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
+    var pageTitle  by remember { mutableStateOf(title) }
+    var progress   by remember { mutableStateOf(0) }
     BackHandler { if (canGoBack) webViewRef?.goBack() else onBack() }
 
+    // RasBrowser থেকে নেওয়া — WebView কে real Chrome মনে করাবে
+    val bypassJs = """
+        (function() {
+            try { Object.defineProperty(navigator, 'webdriver', { get: () => undefined, configurable: true }); } catch(e) {}
+            if (!window.chrome) {
+                window.chrome = {
+                    app: { isInstalled: false, InstallState: {}, RunningState: {} },
+                    runtime: { OnInstalledReason: {}, OnRestartRequiredReason: {}, PlatformArch: {}, PlatformNaclArch: {}, PlatformOs: {}, RequestUpdateCheckStatus: {} }
+                };
+            }
+            try { Object.defineProperty(navigator, 'plugins', { get: () => [1,2,3,4,5], configurable: true }); } catch(e) {}
+            try { Object.defineProperty(navigator, 'languages', { get: () => ['en-US','en','bn'], configurable: true }); } catch(e) {}
+            const origQuery = window.navigator.permissions?.query;
+            if (origQuery) {
+                window.navigator.permissions.query = (params) =>
+                    params.name === 'notifications'
+                        ? Promise.resolve({ state: Notification.permission })
+                        : origQuery.call(window.navigator.permissions, params);
+            }
+        })();
+    """.trimIndent()
+
     Column(modifier = Modifier.fillMaxSize().background(BgDeep)) {
-        Row(modifier = Modifier.fillMaxWidth().background(BgCard2).padding(horizontal = 12.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically) {
+        // Top bar
+        Row(
+            modifier = Modifier.fillMaxWidth().background(BgCard2).padding(horizontal = 12.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             IconButton(onClick = { if (canGoBack) webViewRef?.goBack() else onBack() }) {
                 Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = AccentBlue)
             }
             Spacer(Modifier.width(8.dp))
-            Text(title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextWhite, modifier = Modifier.weight(1f), maxLines = 1)
+            Text(pageTitle, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextWhite,
+                modifier = Modifier.weight(1f), maxLines = 1)
+            if (progress in 1..99) {
+                Spacer(Modifier.width(8.dp))
+                CircularProgressIndicator(
+                    progress = { progress / 100f },
+                    modifier = Modifier.size(20.dp),
+                    color = AccentBlue,
+                    strokeWidth = 2.dp
+                )
+            }
             IconButton(onClick = onBack) { Icon(Icons.Default.Close, contentDescription = "Close", tint = AccentRed) }
         }
+
         AndroidView(
             factory = { ctx ->
                 WebView(ctx).apply {
                     webViewClient = object : WebViewClient() {
+                        override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
+                            super.onPageStarted(view, url, favicon)
+                            view.evaluateJavascript(bypassJs, null)
+                        }
+                        override fun onPageFinished(view: WebView, url: String) {
+                            super.onPageFinished(view, url)
+                            canGoBack = view.canGoBack()
+                            view.evaluateJavascript(bypassJs, null)
+                        }
                         override fun doUpdateVisitedHistory(view: WebView?, url: String?, isReload: Boolean) {
                             canGoBack = view?.canGoBack() ?: false
                         }
                     }
-                    settings.apply {
-                        javaScriptEnabled = true; domStorageEnabled = true
-                        loadWithOverviewMode = true; useWideViewPort = true
-                        builtInZoomControls = true; displayZoomControls = false
-                        setSupportZoom(true); mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                    webChromeClient = object : android.webkit.WebChromeClient() {
+                        override fun onProgressChanged(view: WebView?, newProgress: Int) {
+                            progress = newProgress
+                        }
+                        override fun onReceivedTitle(view: WebView?, t: String?) {
+                            if (!t.isNullOrBlank()) pageTitle = t
+                        }
                     }
-                    loadUrl(url); webViewRef = this
+                    settings.apply {
+                        javaScriptEnabled = true
+                        domStorageEnabled = true
+                        databaseEnabled = true
+                        loadsImagesAutomatically = true
+                        mediaPlaybackRequiresUserGesture = false
+                        mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+                        setSupportZoom(true)
+                        builtInZoomControls = true
+                        displayZoomControls = false
+                        useWideViewPort = true
+                        loadWithOverviewMode = true
+                        cacheMode = WebSettings.LOAD_DEFAULT
+                        // Chrome 136 UA — sites WebView detect করতে পারবে না
+                        userAgentString = "Mozilla/5.0 (Linux; Android 15; Pixel 9 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.7103.125 Mobile Safari/537.36"
+                    }
+                    // Third-party cookie — login session ঠিক রাখে
+                    android.webkit.CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
+                    // Offscreen pre-raster — scroll smooth করে
+                    if (androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.OFF_SCREEN_PRERASTER)) {
+                        androidx.webkit.WebSettingsCompat.setOffscreenPreRaster(settings, true)
+                    }
+                    loadUrl(url)
+                    webViewRef = this
                 }
             },
             modifier = Modifier.fillMaxSize()
         )
     }
 }
-// ═════════════════════════════════════════════════════════════════════════════
