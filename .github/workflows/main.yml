@@ -46,7 +46,15 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew assembleFullRelease --build-cache --parallel --info 2>&1 | grep -E "error:|e:|\.kt:|Could not load|Unresolved reference|None of the following|No value passed" | head -50
+        run: |
+          ./gradlew assembleFullRelease --build-cache --parallel 2>&1 | tee /tmp/build.log || true
+
+      - name: Show compiler errors
+        if: always()
+        run: |
+          grep -E "^e: |error:|Unresolved reference|None of the following candidates|No value passed|Could not load module" /tmp/build.log || echo "No matching error lines found"
+          echo "--- Last 30 lines of build log ---"
+          tail -30 /tmp/build.log
 
       - name: Debug — list generated APKs
         run: find app/build/outputs/apk -name "*.apk" -print
