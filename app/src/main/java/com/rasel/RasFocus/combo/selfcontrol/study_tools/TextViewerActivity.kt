@@ -158,15 +158,55 @@ fun TextViewerScreen(uri: Uri?, fileName: String, onClose: () -> Unit) {
                                    "toml", "ini", "sh", "bat", "log", "csv", "java",
                                    "cpp", "c", "h", "dart", "swift", "rb", "php", "rs")
 
+    val isHtml  = ext in listOf("html", "htm")
+    val isDocx  = ext in listOf("docx", "doc")
+    val isPptx  = ext in listOf("pptx", "ppt")
+
     // Load file
     LaunchedEffect(uri) {
         if (uri == null) { isLoading = false; errorMsg = "ফাইল পাওয়া যায়নি"; return@LaunchedEffect }
         isLoading = true
         withContext(Dispatchers.IO) {
             try {
-                val text = context.contentResolver.openInputStream(uri)
-                    ?.bufferedReader()?.use { it.readText() }
-                    ?: throw IllegalStateException("ফাইল পড়া যায়নি")
+                val text: String = when {
+
+                    // ── DOCX: word/document.xml থেকে <w:t> tags extract ─────
+                    isDocx -> {
+                        val bytes = context.contentResolver.openInputStream(uri)?.readBytes()
+                            ?: throw IllegalStateException("ফাইল পড়া যায়নি")
+                        extractDocxText(bytes)
+                    }
+
+                    // ── PPTX: ppt/slides/slide*.xml থেকে <a:t> tags extract ─
+                    isPptx -> {
+                        val bytes = context.contentResolver.openInputStream(uri)?.readBytes()
+                            ?: throw IllegalStateException("ফাইল পড়া যায়নি")
+                        extractPptxText(bytes)
+                    }
+
+                    // ── PDF: PdfRenderer দিয়ে page count + hint show করো ────
+                    // (full text render PdfViewerActivity তে হয় — এখানে open করলে
+                    //  সেখানে route হওয়া উচিত, কিন্তু যদি এখানে আসে তাহলে hint দাও)
+                    ext == "pdf" -> {
+                        try {
+                            val pfd = context.contentResolver.openFileDescriptor(uri, "r")
+                            val renderer = android.graphics.pdf.PdfRenderer(pfd!!)
+                            val pageCount = renderer.pageCount
+                            renderer.close()
+                            pfd.close()
+                            "📄 এই PDF এ $pageCount টি পৃষ্ঠা আছে।\n\nPDF দেখতে ফাইলে ট্যাপ করে \"Open with RasFocus\" বেছে নিন — সেখানে পূর্ণ রেন্ডার হবে।"
+                        } catch (e: Exception) {
+                            "PDF read error: ${e.message}"
+                        }
+                    }
+
+                    // ── বাকি সব: plain text ──────────────────────────────────
+                    else -> {
+                        context.contentResolver.openInputStream(uri)
+                            ?.bufferedReader()?.use { it.readText() }
+                            ?: throw IllegalStateException("ফাইল পড়া যায়নি")
+                    }
+                }
                 rawText  = text
                 editText = text
                 isLoading = false
@@ -601,5 +641,123 @@ private fun mdInline(text: String): AnnotatedString = buildAnnotatedString {
             }
             else -> { append(text[i]); i++ }
         }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DOCX TEXT EXTRACTOR
+// word/document.xml এ <w:t> tags থেকে plain text বের করে
+// No external library needed — OOXML format = ZIP + XML
+// ─────────────────────────────────────────────────────────────────────────────
+private fun extractDocxText(bytes: ByteArray): String {
+    return try {
+        val zip = java.util.zip.ZipInputStream(bytes.inputStream())
+        var entry = zip.nextEntry
+        var xmlContent = ""
+        while (entry != null) {
+            if (entry.name == "word/document.xml") {
+                xmlContent = zip.bufferedReader(Charsets.UTF_8).readText()
+                break
+            }
+            zip.closeEntry()
+            entry = zip.nextEntry
+        }
+        zip.close()
+
+        if (xmlContent.isBlank()) return "❌ docx ফাইলে কোনো text পাওয়া যায়নি।"
+
+        // <w:t> tags extract করো, paragraph break এর জন্য <w:p> দেখো
+        val sb = StringBuilder()
+        var i = 0
+        while (i < xmlContent.length) {
+            when {
+                xmlContent.startsWith("<w:p ", i) || xmlContent.startsWith("<w:p>", i) -> {
+                    if (sb.isNotEmpty() && sb.last() != '\n') sb.append('\n')
+                    i += 4
+                }
+                xmlContent.startsWith("<w:t", i) -> {
+                    // <w:t xml:space="preserve"> or <w:t>
+                    val tagEnd = xmlContent.indexOf('>', i)
+                    if (tagEnd == -1) { i++; continue }
+                    val closeTag = xmlContent.indexOf("</w:t>", tagEnd)
+                    if (closeTag == -1) { i = tagEnd + 1; continue }
+                    val text = xmlContent.substring(tagEnd + 1, closeTag)
+                    sb.append(text)
+                    i = closeTag + 6
+                }
+                xmlContent[i] == '<' -> {
+                    val closeAngle = xmlContent.indexOf('>', i)
+                    i = if (closeAngle != -1) closeAngle + 1 else i + 1
+                }
+                else -> i++
+            }
+        }
+
+        val result = sb.toString().trim()
+        if (result.isBlank()) "❌ docx তে কোনো text নেই — সম্ভবত শুধু image বা table আছে।"
+        else result
+    } catch (e: Exception) {
+        "❌ docx parse error: ${e.message}"
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PPTX TEXT EXTRACTOR
+// ppt/slides/slide*.xml এ <a:t> tags থেকে slide-by-slide text বের করে
+// ─────────────────────────────────────────────────────────────────────────────
+private fun extractPptxText(bytes: ByteArray): String {
+    return try {
+        val slides = mutableMapOf<String, String>()  // entryName → xml
+
+        val zip = java.util.zip.ZipInputStream(bytes.inputStream())
+        var entry = zip.nextEntry
+        while (entry != null) {
+            if (entry.name.startsWith("ppt/slides/slide") && entry.name.endsWith(".xml")) {
+                slides[entry.name] = zip.bufferedReader(Charsets.UTF_8).readText()
+            }
+            zip.closeEntry()
+            entry = zip.nextEntry
+        }
+        zip.close()
+
+        if (slides.isEmpty()) return "❌ PPTX তে কোনো slide পাওয়া যায়নি।"
+
+        val sb = StringBuilder()
+        slides.entries.sortedBy { it.key }.forEachIndexed { idx, (name, xml) ->
+            val slideNum = idx + 1
+            sb.append("━━━ Slide $slideNum ━━━\n")
+
+            // <a:t> tags extract
+            var i = 0
+            while (i < xml.length) {
+                when {
+                    xml.startsWith("<a:p>", i) || xml.startsWith("<a:p ", i) -> {
+                        if (sb.isNotEmpty() && sb.last() != '\n') sb.append('\n')
+                        i += 4
+                    }
+                    xml.startsWith("<a:t>", i) || xml.startsWith("<a:t ", i) -> {
+                        val tagEnd   = xml.indexOf('>', i)
+                        if (tagEnd == -1) { i++; continue }
+                        val closeTag = xml.indexOf("</a:t>", tagEnd)
+                        if (closeTag == -1) { i = tagEnd + 1; continue }
+                        val text = xml.substring(tagEnd + 1, closeTag)
+                        if (text.isNotBlank()) sb.append(text)
+                        i = closeTag + 6
+                    }
+                    xml[i] == '<' -> {
+                        val closeAngle = xml.indexOf('>', i)
+                        i = if (closeAngle != -1) closeAngle + 1 else i + 1
+                    }
+                    else -> i++
+                }
+            }
+            sb.append("\n\n")
+        }
+
+        val result = sb.toString().trim()
+        if (result.isBlank()) "❌ PPTX তে কোনো text নেই — সম্ভবত শুধু image আছে।"
+        else result
+    } catch (e: Exception) {
+        "❌ pptx parse error: ${e.message}"
     }
 }
