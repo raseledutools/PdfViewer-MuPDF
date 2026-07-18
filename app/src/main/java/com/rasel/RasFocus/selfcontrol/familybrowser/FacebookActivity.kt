@@ -229,17 +229,18 @@ class FacebookActivity : ComponentActivity() {
                     super.onPageFinished(view, url)
                     view.alpha = 1f
                     flushCookies()
-                    // inject সব — footer remove, open-in-app banner remove, settings
+                    // Adult keyword block — loadUrl দিয়ে redirect করো,
+                    // loadDataWithBaseURL(null,...) page সাদা করে দেয়
+                    val adultHtml = checkAdultSearchKeyword(url)
+                    if (adultHtml != null) {
+                        view.loadDataWithBaseURL("https://m.facebook.com/", adultHtml, "text/html", "UTF-8", null)
+                        return
+                    }
+                    // JS injection — শুধু একবার inject হবে (guard flag দিয়ে)
+                    // onPageFinished এ inject করা safe কারণ DOM ready থাকে
                     injectFooterRemover(view)
                     injectRemoveOpenInAppButton(view)
                     injectSettingsRemover(view)
-                    // Adult search keyword block — onPageFinished এ আবার check করো
-                    // কারণ Facebook search redirect করে নতুন URL এ যায় এবং
-                    // shouldOverrideUrlLoading সব navigation এ fire করে না
-                    val adultHtml = checkAdultSearchKeyword(url)
-                    if (adultHtml != null) {
-                        view.loadDataWithBaseURL(null, adultHtml, "text/html", "UTF-8", null)
-                    }
                 }
 
                 override fun shouldInterceptRequest(
@@ -470,33 +471,29 @@ class FacebookActivity : ComponentActivity() {
                 function removeFooter() {
                     try {
                         var selectors = [
-                            '[role="navigation"]',
-                            '[data-sigil="MBackPlaceholder"]',
-                            '[data-testid="tab-bar"]',
-                            '._56be','._56bf',
-                            'footer','[role="contentinfo"]',
-                            '[data-sigil="marea"]'
+                            '[role="navigation"]','[data-sigil="MBackPlaceholder"]',
+                            '[data-testid="tab-bar"]','._56be','._56bf',
+                            'footer','[role="contentinfo"]','[data-sigil="marea"]',
+                            '[data-sigil="appbanner"]','[id*="MAppBanner"]','[class*="appBanner"]'
                         ];
                         selectors.forEach(function(sel) {
                             document.querySelectorAll(sel).forEach(function(el) {
                                 var rect = el.getBoundingClientRect();
-                                if (rect.bottom >= window.innerHeight - 100 && rect.height < 150) {
+                                if (rect.bottom >= window.innerHeight - 100 && rect.height < 150)
                                     el.style.display = 'none';
-                                }
                             });
                         });
-                        document.querySelectorAll('*').forEach(function(el) {
-                            var s = window.getComputedStyle(el);
-                            if ((s.position === 'fixed' || s.position === 'sticky') && s.bottom === '0px') {
-                                var rect = el.getBoundingClientRect();
-                                // FIX: Do not hide large overlays like search that cover the screen (height > 150)
-                                if (rect.height < 150) el.style.display = 'none';
-                            }
-                        });
+                        // querySelectorAll('*') + getComputedStyle সরানো হয়েছে —
+                        // এটা পুরো DOM traverse করে main thread block করত → white page
                     } catch(e) {}
                 }
                 removeFooter();
-                try { new MutationObserver(removeFooter).observe(document.body||document.documentElement,{childList:true,subtree:true}); } catch(e){}
+                try {
+                    new MutationObserver(function(mutations) {
+                        if (mutations.some(function(m) { return m.addedNodes.length > 0; }))
+                            removeFooter();
+                    }).observe(document.body||document.documentElement,{childList:true,subtree:true});
+                } catch(e) {}
             })();
         """.trimIndent(), null)
     }
@@ -542,9 +539,8 @@ class FacebookActivity : ComponentActivity() {
                         }
                         
                         if (hideReels) {
-                            // Hide Reels section in feed by finding the text "Reels"
                             document.querySelectorAll('span, div').forEach(function(el) {
-                                var txt = (el.innerText || '').toLowerCase();
+                                var txt = (el.textContent || '').toLowerCase();
                                 if (txt.trim() === 'reels' && el.childElementCount === 0) {
                                     var parent = el.closest('[data-mcomponent]') || el.closest('div[style*="background"]');
                                     if (parent) parent.style.display = 'none';
@@ -564,7 +560,12 @@ class FacebookActivity : ComponentActivity() {
                     } catch(e) {}
                 }
                 applySettings();
-                setInterval(applySettings, 1000);
+                try {
+                    new MutationObserver(function(mutations) {
+                        if (mutations.some(function(m) { return m.addedNodes.length > 0; }))
+                            applySettings();
+                    }).observe(document.body||document.documentElement,{childList:true,subtree:true});
+                } catch(e) {}
             })();
         """.trimIndent()
         view.evaluateJavascript(js, null)
@@ -575,38 +576,25 @@ class FacebookActivity : ComponentActivity() {
             (function() {
                 if (window.__rasFbOpenAppRemoverActive__) return;
                 window.__rasFbOpenAppRemoverActive__ = true;
-
                 function removeOpenAppElements() {
                     try {
+                        // Targeted selectors only — no innerText/full DOM scan
                         document.querySelectorAll('a[href^="fb://"], a[href^="intent://"], a[href^="market://"]')
                             .forEach(function(el) {
-                                var parent = el.closest('[class*="banner"], [id*="banner"], [data-testid*="app"], [role="banner"]');
+                                var parent = el.closest('[class*="banner"],[id*="banner"],[data-testid*="app"],[role="banner"]');
                                 if (parent) parent.style.display = 'none'; else el.style.display = 'none';
                             });
-                        var bannerPhrases = [
-                            'open in app', 'use app', 'get the app', 'open the facebook app',
-                            'open app', 'get app', 'get apps for', 'faster experience',
-                            'for a faster experience', 'download the app', 'try the app',
-                            'switch to the app', 'view in app', 'continue in app',
-                            'get the best experience', 'best experience on the app'
-                        ];
-                        document.querySelectorAll('div, a, button, span').forEach(function(el) {
-                            var txt = (el.innerText || '').toLowerCase().trim();
-                            if (!txt || txt.length > 80) return;
-                            var hit = bannerPhrases.some(function(p) { return txt.indexOf(p) !== -1; });
-                            if (hit) {
-                                var parent = el.closest('[class*="banner"], [id*="banner"], [data-testid*="app"]') || el;
-                                parent.style.display = 'none';
-                            }
-                        });
+                        document.querySelectorAll('[data-sigil*="appbanner"],[id*="MAppBanner"],[class*="appBanner"]')
+                            .forEach(function(el) { el.style.display = 'none'; });
                     } catch(e) {}
                 }
                 removeOpenAppElements();
                 try {
-                    new MutationObserver(function() { removeOpenAppElements(); })
-                        .observe(document.body || document.documentElement, { childList: true, subtree: true });
+                    new MutationObserver(function(mutations) {
+                        if (mutations.some(function(m) { return m.addedNodes.length > 0; }))
+                            removeOpenAppElements();
+                    }).observe(document.body||document.documentElement,{childList:true,subtree:true});
                 } catch(e) {}
-                setInterval(removeOpenAppElements, 1000);
             })();
         """.trimIndent(), null)
     }
