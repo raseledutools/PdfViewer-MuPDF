@@ -47,14 +47,26 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          ./gradlew assembleFullRelease --build-cache --parallel 2>&1 | tee /tmp/build.log || true
+          ./gradlew assembleFullRelease --build-cache --parallel 2>&1 | tee /tmp/build.log; BUILD_EXIT=${PIPESTATUS[0]}
+          exit $BUILD_EXIT
 
-      - name: Show compiler errors
-        if: always()
+      - name: On failure — commit error_log.txt to repo (readable by Claude)
+        if: failure()
         run: |
-          grep -E "^e: |error:|Unresolved reference|None of the following candidates|No value passed|Could not load module" /tmp/build.log || echo "No matching error lines found"
-          echo "--- Last 30 lines of build log ---"
-          tail -30 /tmp/build.log
+          # Extract only the actual compiler errors — no noise
+          grep -E "^e: |^error:|Unresolved reference|Cannot find|None of the following|Conflicting|Redeclaration|Unresolved|FAILED|BUILD FAILED" /tmp/build.log > /tmp/error_log.txt || true
+          echo "" >> /tmp/error_log.txt
+          echo "=== Last 40 lines ===" >> /tmp/build.log
+          tail -40 /tmp/build.log >> /tmp/error_log.txt
+
+          cp /tmp/error_log.txt error_log.txt
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add error_log.txt
+          git diff --cached --quiet && echo "No change" || git commit -m "ci: update error_log.txt [skip ci]"
+          git pull --rebase origin ${{ github.ref_name }} || true
+          git push origin HEAD:${{ github.ref_name }} || true
 
       - name: Debug — list generated APKs
         run: find app/build/outputs/apk -name "*.apk" -print
