@@ -8,13 +8,9 @@
 > Task :app:minifyFullReleaseWithR8 FAILED
 * What went wrong:
 Execution failed for task ':app:minifyFullReleaseWithR8'.
-BUILD FAILED in 7m 7s
+BUILD FAILED in 6m 53s
 
 === LAST 50 LINES ===
-Build cache key for task ':app:minifyFullReleaseWithR8' is 262dab2969401710670a1b1fc53d7e05
-Task ':app:minifyFullReleaseWithR8' is not up-to-date because:
-  No history is available.
-R8 is a new Android code shrinker. If you experience any issues, please file a bug at
 https://issuetracker.google.com, using 'Shrinker (R8)' as component name.
 Current version is: 8.2.47 (build 62baf24ba2b71f4e5bc04c7f01930bc5d47b02be from go/r8bot (luci-r8-custom-ci-archive-0-19z6)).
 
@@ -24,6 +20,10 @@ file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/build/gen
 INFO: /home/runner/work/RasFocus-final/RasFocus-final/app/build/intermediates/default_proguard_files/global/proguard-android-optimize.txt-8.2.2:15:1-15: R8: Ignoring option: -optimizations
 INFO: /home/runner/work/RasFocus-final/RasFocus-final/app/build/intermediates/default_proguard_files/global/proguard-android-optimize.txt-8.2.2:16:1-22: R8: Ignoring option: -optimizationpasses
 INFO: /home/runner/work/RasFocus-final/RasFocus-final/app/proguard-rules.pro:11:1-22: R8: Ignoring option: -optimizationpasses
+
+AAPT2 aapt2-8.2.2-10154469-linux Daemon #0: shutdown
+
+> Task :app:minifyFullReleaseWithR8
 WARNING: /home/runner/.gradle/caches/8.9/transforms/1e9b4b35712a5c8ba91be5ffcf8238cc/transformed/play-services-location-21.2.0-runtime.jar: R8: The companion object Companion could not be found in class com.google.android.gms.internal.location.zze
 ERROR: Missing classes detected while running R8. Please add the missing classes or apply additional keep rules that are generated in /home/runner/work/RasFocus-final/RasFocus-final/app/build/outputs/mapping/fullRelease/missing_rules.txt.
 ERROR: R8: Missing class io.grpc.InternalGlobalInterceptors (referenced from: java.util.List io.grpc.internal.ManagedChannelImplBuilder.getEffectiveInterceptors())
@@ -31,13 +31,13 @@ ERROR: R8: Missing class io.grpc.InternalGlobalInterceptors (referenced from: ja
 > Task :app:minifyFullReleaseWithR8 FAILED
 
 > Task :app:lintVitalAnalyzeFullRelease
-Stored cache entry for task ':app:lintVitalAnalyzeFullRelease' with cache key 3cb7dc8b98d29e83be5c304179643000
+Stored cache entry for task ':app:lintVitalAnalyzeFullRelease' with cache key c3e2da9cdea4e6d4513712ff837753dd
 Android Lint: Disposing Uast application environment in lint classloader [31.2.2]
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784365228472.json
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784366090104.json
 
 0 problems were found storing the configuration cache.
 
-See the complete report at file:///home/runner/work/RasFocus-final/RasFocus-final/build/reports/configuration-cache/euoacqezy0t5iq4g6yd0hq6zj/6jm0vvm23t4vor14r6qpn2q53/configuration-cache-report.html
+See the complete report at file:///home/runner/work/RasFocus-final/RasFocus-final/build/reports/configuration-cache/ensutkmqs8ref45v0rqvgj6kn/6jm0vvm23t4vor14r6qpn2q53/configuration-cache-report.html
 
 FAILURE: Build failed with an exception.
 
@@ -58,6 +58,6 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.9/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 7m 7s
-40 actionable tasks: 33 executed, 7 from cache
+BUILD FAILED in 6m 53s
+40 actionable tasks: 30 executed, 10 from cache
 Configuration cache entry stored.
