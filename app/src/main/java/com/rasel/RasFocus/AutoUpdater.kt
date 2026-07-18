@@ -250,16 +250,22 @@ object AutoUpdater {
             notificationManager.createNotificationChannel(channel)
         }
 
-        val installIntent = getInstallIntent(context, apkFile)
+        // MainActivity খুলুক — সেখান থেকে user নিজে install করবে।
+        // সরাসরি installer launch করলে MIUI/One UI তে hang হয়।
+        val openAppIntent = context.packageManager
+            .getLaunchIntentForPackage(context.packageName)
+            ?.apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP) }
+            ?: Intent().apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+
         val pendingIntent = PendingIntent.getActivity(
-            context, 0, installIntent,
+            context, 0, openAppIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.stat_sys_download_done) // built-in icon
+            .setSmallIcon(android.R.drawable.stat_sys_download_done)
             .setContentTitle("RasFocus Update Ready")
-            .setContentText("Version $newTag is downloaded. Tap to install.")
+            .setContentText("Version $newTag downloaded. Open the app to install.")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
@@ -275,6 +281,12 @@ object AutoUpdater {
 
     fun installDownloadedUpdate(context: Context, file: File) {
         try {
+            // File exist করে এবং valid APK size (কমপক্ষে 1MB) কিনা check
+            if (!file.exists() || file.length() < 1_000_000L) {
+                Toast.makeText(context, "APK file is missing or corrupted. Please try again.", Toast.LENGTH_LONG).show()
+                file.delete() // corrupt file মুছে দাও যাতে পরের check-এ re-download হয়
+                return
+            }
             val intent = getInstallIntent(context, file)
             context.startActivity(intent)
         } catch (e: Exception) {
