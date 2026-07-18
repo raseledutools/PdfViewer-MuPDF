@@ -47,19 +47,34 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          ./gradlew assembleFullRelease --build-cache --parallel 2>&1 | tee /tmp/build.log; BUILD_EXIT=${PIPESTATUS[0]}
+          # stdout + stderr দুইটাই capture — kapt error stderr-এ যায়
+          ./gradlew assembleFullRelease --build-cache --parallel --info 2>&1 | tee /tmp/build.log; BUILD_EXIT=${PIPESTATUS[0]}
           exit $BUILD_EXIT
 
       - name: On failure — commit error_log.txt to repo (readable by Claude)
         if: failure()
         run: |
-          # Extract only the actual compiler errors — no noise
-          grep -E "^e: |^error:|Unresolved reference|Cannot find|None of the following|Conflicting|Redeclaration|Unresolved|FAILED|BUILD FAILED|Could not load module|kaptGenerateStubs|kapt error" /tmp/build.log > /tmp/error_log.txt || true
-          # Also get full kapt output
-          grep -A5 -B2 "Could not load module" /tmp/build.log >> /tmp/error_log.txt || true
-          echo "" >> /tmp/error_log.txt
-          echo "=== Last 40 lines ===" >> /tmp/build.log
-          tail -40 /tmp/build.log >> /tmp/error_log.txt
+          {
+            echo "=== KOTLIN/KAPT ERRORS ==="
+            # Kotlin compiler errors (e: prefix)
+            grep -E "^e: " /tmp/build.log || true
+            echo ""
+
+            echo "=== UNRESOLVED / TYPE ERRORS ==="
+            grep -E "Unresolved reference|Cannot find|None of the following|Type mismatch|Overload resolution|Not enough information|Property delegate" /tmp/build.log || true
+            echo ""
+
+            echo "=== KAPT / MODULE ERRORS ==="
+            grep -E "Could not load module|kaptGenerateStubs|kapt error|annotation processing|Compilation error" /tmp/build.log || true
+            echo ""
+
+            echo "=== BUILD FAILURE ==="
+            grep -E "FAILED|BUILD FAILED|What went wrong|Execution failed" /tmp/build.log || true
+            echo ""
+
+            echo "=== LAST 50 LINES ==="
+            tail -50 /tmp/build.log
+          } > /tmp/error_log.txt 2>&1 || true
 
           cp /tmp/error_log.txt error_log.txt
 
