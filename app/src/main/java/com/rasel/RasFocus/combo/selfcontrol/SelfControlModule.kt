@@ -1302,46 +1302,56 @@ fun pinHomeScreenShortcuts(context: Context) {
 fun BrowserChooserDialog(context: Context, onDismiss: () -> Unit) {
     var showSettingsFor by remember { mutableStateOf<String?>(null) }
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+    // পুরো screen জুড়ে independent full page
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF0A0A1A))
     ) {
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.6f))
-                .clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { onDismiss() },
-            contentAlignment = Alignment.BottomCenter
+                .systemBarsPadding()
         ) {
+            // Top bar
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onDismiss) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "Back",
+                        tint = SoftWhite
+                    )
+                }
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    "Choose App",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = SoftWhite
+                )
+                Spacer(Modifier.weight(1f))
+                Text(
+                    "3 available",
+                    fontSize = 12.sp,
+                    color = Color(0xFF475569),
+                    modifier = Modifier.padding(end = 16.dp)
+                )
+            }
+
+            HorizontalDivider(color = Color.White.copy(alpha = 0.07f))
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) {}
-                    .background(
-                        color = Color(0xFF0A0A1A),
-                        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-                    )
-                    .padding(horizontal = 24.dp, vertical = 28.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .weight(1f)
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Box(
-                    modifier = Modifier
-                        .width(44.dp)
-                        .height(4.dp)
-                        .background(SoftWhite.copy(alpha = 0.18f), RoundedCornerShape(2.dp))
-                        .align(Alignment.CenterHorizontally)
-                )
-                Spacer(Modifier.height(4.dp))
-
-                Text(
-                    "Select App",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = SoftWhite,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-                Spacer(Modifier.height(4.dp))
-
                 BrowserAppRow(
                     context = context,
                     icon = Icons.Default.Security,
@@ -1350,7 +1360,7 @@ fun BrowserChooserDialog(context: Context, onDismiss: () -> Unit) {
                     onLaunch = {
                         onDismiss()
                         val intent = Intent(context, FamilyBrowserActivity::class.java)
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         context.startActivity(intent)
                     },
                     onSettings = { showSettingsFor = "RasBrowser" },
@@ -1364,9 +1374,10 @@ fun BrowserChooserDialog(context: Context, onDismiss: () -> Unit) {
                     title = "YouTube Premium",
                     onLaunch = {
                         onDismiss()
-                        val intent = Intent(context, com.rasel.RasFocus.selfcontrol.familybrowser.YoutubeActivity::class.java).apply {
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
+                        val intent = Intent(
+                            context,
+                            com.rasel.RasFocus.selfcontrol.familybrowser.YoutubeActivity::class.java
+                        ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
                         context.startActivity(intent)
                     },
                     onSettings = { showSettingsFor = "YouTube" },
@@ -1380,16 +1391,15 @@ fun BrowserChooserDialog(context: Context, onDismiss: () -> Unit) {
                     title = "Facebook",
                     onLaunch = {
                         onDismiss()
-                        val intent = Intent(context, com.rasel.RasFocus.selfcontrol.familybrowser.FacebookActivity::class.java).apply {
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
+                        val intent = Intent(
+                            context,
+                            com.rasel.RasFocus.selfcontrol.familybrowser.FacebookActivity::class.java
+                        ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
                         context.startActivity(intent)
                     },
                     onSettings = { showSettingsFor = "Facebook" },
                     onAddHome = { pinSingleHomeShortcut(context, "Facebook") }
                 )
-
-                Spacer(Modifier.height(8.dp))
             }
         }
     }

@@ -1484,70 +1484,57 @@ private fun BrowserStatChip(icon: ImageVector, label: String) {
 fun BrowserChooserDialog(context: Context, onDismiss: () -> Unit) {
     var showSettingsFor by remember { mutableStateOf<String?>(null) }
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+    // পুরো screen জুড়ে — dialog/overlay কিছু না, independent full page
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF0D1117))
     ) {
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.55f))
-                .clickable(
-                    indication = null,
-                    interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-                ) { onDismiss() },
-            contentAlignment = Alignment.BottomCenter
+                .systemBarsPadding()
         ) {
+            // Top bar — back button + title
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onDismiss) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Color(0xFFF1F5F9)
+                    )
+                }
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    "Choose App",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFFF1F5F9)
+                )
+                Spacer(Modifier.weight(1f))
+                Text(
+                    "3 available",
+                    fontSize = 12.sp,
+                    color = Color(0xFF475569),
+                    modifier = Modifier.padding(end = 16.dp)
+                )
+            }
+
+            HorizontalDivider(color = Color.White.copy(alpha = 0.07f))
+
+            // App rows
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(
-                        indication = null,
-                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-                    ) {}
-                    .background(
-                        Color(0xFF111827),
-                        RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
-                    )
+                    .weight(1f)
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Handle
-                Box(
-                    modifier = Modifier
-                        .width(32.dp).height(3.dp)
-                        .align(Alignment.CenterHorizontally)
-                        .padding(top = 0.dp)
-                ) {}
-                Spacer(Modifier.height(8.dp))
-                Box(
-                    modifier = Modifier
-                        .width(32.dp).height(3.dp)
-                        .background(Color(0xFF334155), RoundedCornerShape(2.dp))
-                        .align(Alignment.CenterHorizontally)
-                )
-                Spacer(Modifier.height(6.dp))
-
-                // Header
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 18.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        "Choose app",
-                        fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFFF1F5F9)
-                    )
-                    Text(
-                        "3 available",
-                        fontSize = 11.sp, color = Color(0xFF475569)
-                    )
-                }
-
-                HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
-
-                // App rows
                 BrowserAppRow(
                     context      = context,
                     iconVector   = Icons.Default.Security,
@@ -1558,7 +1545,7 @@ fun BrowserChooserDialog(context: Context, onDismiss: () -> Unit) {
                     onLaunch     = {
                         onDismiss()
                         val intent = Intent(context, FamilyBrowserActivity::class.java)
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         context.startActivity(intent)
                     },
                     onSettings   = { showSettingsFor = "RasBrowser" },
@@ -1602,8 +1589,6 @@ fun BrowserChooserDialog(context: Context, onDismiss: () -> Unit) {
                     onSettings   = { showSettingsFor = "Facebook" },
                     onAddHome    = { pinSingleHomeShortcut(context, "Facebook") }
                 )
-
-                Spacer(Modifier.height(24.dp))
             }
         }
     }
