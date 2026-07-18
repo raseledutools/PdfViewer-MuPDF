@@ -95,12 +95,22 @@ jobs:
           path: app/build/outputs/apk/full/release/*.apk
           retention-days: 30
 
+      # FIX: this used to glob *.apk here too, which published BOTH the
+      # universal APK AND the armeabi-v7a-only split (see app/build.gradle.kts
+      # — that split exists only for the developer's own 32-bit test device,
+      # never meant for public distribution). A user grabbing the
+      # armeabi-v7a-only build on a modern 64-bit-only phone gets an APK
+      # missing the matching MuPDF native library for their device — any
+      # attempt to open a PDF (e.g. "Open with RasFocus" from a file
+      # manager) throws UnsatisfiedLinkError and hard-crashes. Publishing
+      # only the *-universal.apk (bundles every ABI) removes that whole
+      # failure mode for anyone downloading from GitHub Releases.
       - name: Publish to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
           name: PdfViewer v1.0.${{ github.run_number }}
-          files: app/build/outputs/apk/full/release/*.apk
+          files: app/build/outputs/apk/full/release/*universal*.apk
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

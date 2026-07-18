@@ -236,13 +236,18 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
     var showToolbar     by remember { mutableStateOf(false) }
     var selectedColor   by remember { mutableStateOf(HL_YELLOW) }
 
-    // MuPDF Document + the ParcelFileDescriptor that backs it.
-    // Both must stay open together: pfd keeps the kernel fd alive so MuPDF
-    // can keep reading page data.  Closing pfd while pdfDoc is still in use
-    // caused the fd to be recycled by the OS and MuPDF would then read garbage
-    // — the root cause of the folder-open crash.
+    // MuPDF Document, opened from an in-memory byte buffer (not a raw fd
+    // path). FIX (crash opening PDFs via "Open with RasFocus" from a file
+    // manager): this used to open via Document.openDocument("/proc/self/fd/"
+    // + fd) using the ContentResolver's ParcelFileDescriptor directly. That
+    // /proc/self/fd trick is device-specific — it works on stock AOSP but
+    // fails (throws, or crashes natively) on many OEM ROMs (MIUI, One UI,
+    // ColorOS, etc.) and with content providers that hand back a
+    // non-seekable fd (common for file-manager/cloud "Open with" intents).
+    // Reading the whole file into memory first and handing MuPDF a plain
+    // byte[] avoids fd/path tricks entirely and works identically on every
+    // device.
     var pdfDoc   by remember { mutableStateOf<Document?>(null) }
-    var pdfPfd   by remember { mutableStateOf<android.os.ParcelFileDescriptor?>(null) }
 
     val listState = rememberLazyListState()
     val screenW   = context.resources.displayMetrics.widthPixels
@@ -254,33 +259,37 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
         // Close any previously-open document before loading the new one.
         withContext(Dispatchers.IO) {
             try { pdfDoc?.destroy() } catch (_: Exception) {}
-            try { pdfPfd?.close()  } catch (_: Exception) {}
         }
-        pdfDoc = null; pdfPfd = null
+        pdfDoc = null
         withContext(Dispatchers.IO) {
             try {
-                val doc: Document
-                val pfd: android.os.ParcelFileDescriptor?
-
-                when (uri.scheme) {
+                // Read the whole PDF into memory, regardless of scheme —
+                // works for file://, content://, and anything else a file
+                // manager / "Open with" intent might hand us.
+                val bytes: ByteArray = when (uri.scheme) {
                     "file" -> {
-                        // file:// — read directly by path (no content resolver needed)
                         val path = uri.path ?: throw IllegalStateException("Invalid file URI")
-                        pfd = null
-                        doc = Document.openDocument(path)
+                        java.io.File(path).readBytes()
                     }
                     else -> {
-                        // content:// — open via ContentResolver, keep pfd alive
-                        val openedPfd = context.contentResolver.openFileDescriptor(uri, "r")
+                        context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
                             ?: throw IllegalStateException("ContentResolver returned null for $uri")
-                        pfd = openedPfd
-                        doc = Document.openDocument("/proc/self/fd/${openedPfd.fd}")
                     }
                 }
 
+                // Explicit nulls need explicit types here — passing two bare
+                // `null`s to this 4-arg Java overload is what broke the build
+                // last time this was tried (Kotlin couldn't disambiguate the
+                // overload). accelerator (ByteArray?) and dir (Archive?) are
+                // both genuinely optional for a plain in-memory PDF.
+                val doc = Document.openDocument(
+                    bytes, "pdf",
+                    null as ByteArray?,
+                    null as com.artifex.mupdf.fitz.Archive?
+                )
+
                 withContext(Dispatchers.Main) {
                     pdfDoc = doc
-                    pdfPfd = pfd
                 }
                 val count = doc.countPages()
 
@@ -304,8 +313,21 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                     val origW  = (bounds.x1 - bounds.x0).coerceAtLeast(1f)
                     val origH  = (bounds.y1 - bounds.y0).coerceAtLeast(1f)
                     val baseS  = screenW.toFloat() / origW.toFloat()
-                    val bmpW   = screenW
-                    val bmpH   = (origH * baseS).roundToInt().coerceAtLeast(1)
+                    var bmpW   = screenW
+                    var bmpH   = (origH * baseS).roundToInt().coerceAtLeast(1)
+
+                    // FIX (crash on odd/huge pages): unlike reRenderPageSharper(),
+                    // this first-open loop had no MAX_RENDER_DIM cap — a PDF with an
+                    // unusually tall/wide page (e.g. a scanned poster or a single
+                    // giant page) could produce a bitmap so large that Android's
+                    // Canvas throws "trying to draw too large bitmap", crashing the
+                    // app the instant it tried to open. Same safety cap as zoom now
+                    // applies here too.
+                    if (bmpW > MAX_RENDER_DIM || bmpH > MAX_RENDER_DIM) {
+                        val shrink = MAX_RENDER_DIM.toFloat() / maxOf(bmpW, bmpH)
+                        bmpW = (bmpW * shrink).roundToInt().coerceAtLeast(1)
+                        bmpH = (bmpH * shrink).roundToInt().coerceAtLeast(1)
+                    }
 
                     if (i == 0) {
                         // Render page 0 NOW — synchronous on IO thread — so we
@@ -334,10 +356,17 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                     }
                     page.destroy()
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
+                // FIX (hard crash on "Open with RasFocus"): this used to be
+                // `catch (e: Exception)`. MuPDF's native calls (Document.openDocument,
+                // page.run, etc.) can throw Errors — most commonly
+                // UnsatisfiedLinkError if the device's native library ABI isn't
+                // packaged, or OutOfMemoryError on huge pages — neither of which is
+                // an Exception subclass, so they were never caught here and crashed
+                // the whole app instead of showing the error screen below.
                 withContext(Dispatchers.Main) {
                     isLoading = false
-                    errorMsg  = "PDF খোলা যায়নি: ${e.message}"
+                    errorMsg  = "PDF খোলা যায়নি: ${e.message ?: e.javaClass.simpleName}"
                 }
             }
         }
@@ -424,7 +453,6 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
         onDispose {
             bitmapCache.evictAll()
             try { pdfDoc?.destroy() } catch (_: Exception) {}
-            try { pdfPfd?.close()  } catch (_: Exception) {}
         }
     }
 
