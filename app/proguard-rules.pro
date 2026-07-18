@@ -82,6 +82,17 @@
 -keep class androidx.lifecycle.** { *; }
 -keep class androidx.lifecycle.ViewModel { *; }
 
+# -- gRPC (Firebase uses internally — R8 missing class fix) -------------------
+# Error: Missing class io.grpc.InternalGlobalInterceptors
+# Firebase/GMS libraries reference gRPC internals that R8 can't find at shrink
+# time because they live in a separate transitive dependency. dontwarn suppresses
+# the "missing class" error; keep ensures anything that IS present isn't stripped.
+-dontwarn io.grpc.**
+-keep class io.grpc.** { *; }
+-keepclassmembers class io.grpc.** { *; }
+-dontwarn io.grpc.internal.**
+-keep class io.grpc.internal.** { *; }
+
 # -- Android essentials --------------------------------------------------------
 -keepclassmembers class * implements android.os.Parcelable {
     public static final ** CREATOR;
