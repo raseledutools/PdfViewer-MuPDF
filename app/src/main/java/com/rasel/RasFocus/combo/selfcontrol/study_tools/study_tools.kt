@@ -153,7 +153,25 @@ private fun StudyToolsMain(
     onDocScanner: () -> Unit,
     onOpenDiary:  () -> Unit
 ) {
-    val scroll = rememberScrollState()
+    val scroll   = rememberScrollState()
+    val context  = LocalContext.current
+
+    // RasBrowser দিয়ে URL open করার helper
+    fun openInRasBrowser(url: String) {
+        try {
+            val intent = Intent(context,
+                com.rasel.RasFocus.combo.selfcontrol.familybrowser.FamilyBrowserActivity::class.java
+            ).apply {
+                action = Intent.ACTION_VIEW
+                putExtra("start_url", url)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            }
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            // fallback — RasBrowser না থাকলে internal WebView
+            onOpenUrl(url, url)
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -203,7 +221,7 @@ private fun StudyToolsMain(
             onGraphCalculator = onGraphCalculator
         )
 
-        // ── Math & Reference ────────────────────────────────────────────
+        // ── Math & Reference ── RasBrowser এ full-page খুলবে ───────────
         SectionTitle("📐 Math & Reference", AccentGreen, AccentTeal)
         ToolGrid(
             items = listOf(
@@ -212,10 +230,10 @@ private fun StudyToolsMain(
                 ToolItem("📊", "GeoGebra",      Color(0xFF56AB2F),  "https://www.geogebra.org/calculator"),
                 ToolItem("🔢", "Matrix Calc",   Color(0xFF11998E),  "https://matrix.reshish.com")
             ),
-            onOpenUrl = onOpenUrl
+            onOpenUrl = { url, _ -> openInRasBrowser(url) }
         )
 
-        // ── Dictionary & Translation ────────────────────────────────────
+        // ── Dictionary & Translation ── RasBrowser এ full-page ──────────
         SectionTitle("📖 Dictionary & Translation", AccentBlue, AccentCyan)
         ToolGrid(
             items = listOf(
@@ -224,10 +242,10 @@ private fun StudyToolsMain(
                 ToolItem("📚", "Oxford Dict",      Color(0xFF0078D7),   "https://www.oxfordlearnersdictionaries.com"),
                 ToolItem("🗣️", "Cambridge Dict",   Color(0xFF003087),   "https://dictionary.cambridge.org")
             ),
-            onOpenUrl = onOpenUrl
+            onOpenUrl = { url, _ -> openInRasBrowser(url) }
         )
 
-        // ── AI Section ──────────────────────────────────────────────────
+        // ── AI Section ── RasBrowser এ full-page, native app এর মতো ────
         SectionTitle("🤖 AI Section", AccentPurple, AccentPink)
         ToolGrid(
             items = listOf(
@@ -238,7 +256,7 @@ private fun StudyToolsMain(
                 ToolItem("🔍", "Perplexity",  Color(0xFF00CEC9),   "https://www.perplexity.ai"),
                 ToolItem("✨", "Gamma AI",    Color(0xFFA29BFE),   "https://gamma.app")
             ),
-            onOpenUrl = onOpenUrl
+            onOpenUrl = { url, _ -> openInRasBrowser(url) }
         )
 
         // ── Tomorrow's Tasks ────────────────────────────────────────────
