@@ -19,6 +19,9 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.common.api.Scope
+import com.google.api.services.drive.DriveScopes
+import com.rasel.RasFocus.drivebackup.DriveBackupManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.database.DataSnapshot
@@ -994,11 +997,21 @@ fun TermsAndConditionsScreen(onAccept: () -> Unit) {
 @Composable
 fun RasFocusApp(viewModel: MainViewModel) {
     val navController = rememberNavController()
+    val context = LocalContext.current
 
     // FIX: previously this called startFirebaseDeviceSync() here AND again inside the
     // SPLASH LaunchedEffect below — every app resume/process-restart fired the device
     // sync network call twice. Removed here; the SPLASH block below is the single
     // source of truth for the initial sync.
+
+    // RasFocus+ Drive backup: on every app open, quietly re-sync the "RasFocus+"
+    // Drive folder + settings for returning users. Runs in parallel with the
+    // splash navigation logic below so it never delays getting into the app.
+    LaunchedEffect(Unit) {
+        if (FirebaseAuth.getInstance().currentUser != null && DriveBackupManager.isAvailable(context)) {
+            DriveBackupManager.syncNow(context)
+        }
+    }
 
     NavHost(navController = navController, startDestination = Routes.SPLASH) {
 
@@ -1295,7 +1308,12 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onSkip: () -> Unit) {
         isLoading = true; errorMsg = null; exactException = null
         val gso = GoogleSignInOptions.Builder(
             GoogleSignInOptions.DEFAULT_SIGN_IN
-        ).requestIdToken(webClientId).requestEmail().build()
+        ).requestIdToken(webClientId).requestEmail()
+            // RasFocus+ Drive backup: drive.file only lets the app see/manage
+            // files IT creates (the "RasFocus+" folder) — never the user's
+            // other Drive files.
+            .requestScopes(Scope(DriveScopes.DRIVE_FILE))
+            .build()
         val googleSignInClient = GoogleSignIn.getClient(activity, gso)
 
         // FIX: signOut().addOnCompleteListener এ launch করলে callback আসার আগেই
@@ -1317,6 +1335,9 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onSkip: () -> Unit) {
                         FirebaseAuth.getInstance().signInWithCredential(credential).await()
                         isLoading = false
                         onLoginSuccess()
+                        // RasFocus+ Drive backup: fire-and-forget — creates/finds the
+                        // "RasFocus+" Drive folder and syncs settings. Doesn't block login.
+                        coroutineScope.launch { DriveBackupManager.syncNow(activity) }
                     } catch (e: Exception) {
                         isLoading = false
                         errorMsg = "Google Sign-In Failed"

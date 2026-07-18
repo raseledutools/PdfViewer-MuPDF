@@ -269,6 +269,17 @@ dependencies {
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
     implementation("com.google.android.gms:play-services-auth:21.2.0")
 
+    // ✅ Google Drive backup ("RasFocus+" folder — settings JSON + diary PDF sync)
+    // Excludes org.apache.httpcomponents: Android already ships its own HTTP stack
+    // and the Apache HttpClient classes clash with it ("duplicate class") otherwise.
+    implementation("com.google.api-client:google-api-client-android:2.2.0") {
+        exclude(group = "org.apache.httpcomponents")
+    }
+    implementation("com.google.apis:google-api-services-drive:v3-rev20240914-2.0.0")
+    implementation("com.google.http-client:google-http-client-gson:1.44.2") {
+        exclude(group = "org.apache.httpcomponents")
+    }
+
     // Cloudinary
     implementation("com.cloudinary:cloudinary-android:2.5.0") {
         // FIX: Cloudinary transitively pulls in Facebook's Fresco

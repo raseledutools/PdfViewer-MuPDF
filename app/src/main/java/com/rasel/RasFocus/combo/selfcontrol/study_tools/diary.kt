@@ -5,6 +5,7 @@ import android.app.TimePickerDialog
 import android.content.Intent
 import android.os.Build
 import android.widget.Toast
+import com.rasel.RasFocus.drivebackup.DriveBackupManager
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.background
@@ -810,6 +811,14 @@ fun ProfessionalDiaryScreen(
                         if (file != null) {
                             val intent = DiaryPdfExporter.getShareIntent(context, file)
                             context.startActivity(Intent.createChooser(intent, "Share PDF"))
+                            // RasFocus+ Drive backup: quietly push this export into the
+                            // "RasFocus+" Drive folder, updating the same file each time.
+                            if (DriveBackupManager.isAvailable(context)) {
+                                scope.launch {
+                                    val ok = DriveBackupManager.uploadDiarySingleEntryPdf(context, file)
+                                    if (ok) Toast.makeText(context, "Drive-এ আপডেট হয়েছে", Toast.LENGTH_SHORT).show()
+                                }
+                            }
                         } else Toast.makeText(context, "Export Failed", Toast.LENGTH_SHORT).show()
                         showExportMenu = false
                     }) { Text("Export Current Entry") }
@@ -819,6 +828,14 @@ fun ProfessionalDiaryScreen(
                         if (file != null) {
                             val intent = DiaryPdfExporter.getShareIntent(context, file)
                             context.startActivity(Intent.createChooser(intent, "Share PDF"))
+                            // RasFocus+ Drive backup: quietly push this export into the
+                            // "RasFocus+" Drive folder, updating the same file each time.
+                            if (DriveBackupManager.isAvailable(context)) {
+                                scope.launch {
+                                    val ok = DriveBackupManager.uploadDiaryAllEntriesPdf(context, file)
+                                    if (ok) Toast.makeText(context, "Drive-এ আপডেট হয়েছে", Toast.LENGTH_SHORT).show()
+                                }
+                            }
                         } else Toast.makeText(context, "Export Failed", Toast.LENGTH_SHORT).show()
                         showExportMenu = false
                     }) { Text("Export All Entries") }
