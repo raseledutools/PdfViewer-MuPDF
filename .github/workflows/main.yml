@@ -54,7 +54,9 @@ jobs:
         if: failure()
         run: |
           # Extract only the actual compiler errors — no noise
-          grep -E "^e: |^error:|Unresolved reference|Cannot find|None of the following|Conflicting|Redeclaration|Unresolved|FAILED|BUILD FAILED" /tmp/build.log > /tmp/error_log.txt || true
+          grep -E "^e: |^error:|Unresolved reference|Cannot find|None of the following|Conflicting|Redeclaration|Unresolved|FAILED|BUILD FAILED|Could not load module|kaptGenerateStubs|kapt error" /tmp/build.log > /tmp/error_log.txt || true
+          # Also get full kapt output
+          grep -A5 -B2 "Could not load module" /tmp/build.log >> /tmp/error_log.txt || true
           echo "" >> /tmp/error_log.txt
           echo "=== Last 40 lines ===" >> /tmp/build.log
           tail -40 /tmp/build.log >> /tmp/error_log.txt
