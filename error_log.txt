@@ -1,32 +1,56 @@
-> Task :app:kaptGenerateStubsFullReleaseKotlin FAILED
+=== KOTLIN/KAPT ERRORS ===
 e: Could not load module <Error module>
+
+=== UNRESOLVED / TYPE ERRORS ===
+
+=== KAPT / MODULE ERRORS ===
+Tasks to be executed: [task ':app:buildKotlinToolingMetadata', task ':app:checkKotlinGradlePluginConfigurationErrors', task ':app:preBuild', task ':app:preFullReleaseBuild', task ':app:generateFullReleaseBuildConfig', task ':app:checkFullReleaseAarMetadata', task ':app:processFullReleaseGoogleServices', task ':app:mapFullReleaseSourceSetPaths', task ':app:generateFullReleaseResources', task ':app:mergeFullReleaseResources', task ':app:packageFullReleaseResources', task ':app:parseFullReleaseLocalResources', task ':app:createFullReleaseCompatibleScreenManifests', task ':app:extractDeepLinksFullRelease', task ':app:processFullReleaseMainManifest', task ':app:processFullReleaseManifest', task ':app:processFullReleaseManifestForPackage', task ':app:processFullReleaseResources', task ':app:kaptGenerateStubsFullReleaseKotlin', task ':app:kaptFullReleaseKotlin', task ':app:compileFullReleaseKotlin', task ':app:javaPreCompileFullRelease', task ':app:compileFullReleaseJavaWithJavac', task ':app:extractProguardFiles', task ':app:generateFullReleaseLintVitalReportModel', task ':app:lintVitalAnalyzeFullRelease', task ':app:lintVitalReportFullRelease', task ':app:lintVitalFullRelease', task ':app:mergeFullReleaseJniLibFolders', task ':app:mergeFullReleaseNativeLibs', task ':app:stripFullReleaseDebugSymbols', task ':app:extractFullReleaseNativeSymbolTables', task ':app:mergeFullReleaseNativeDebugMetadata', task ':app:checkFullReleaseDuplicateClasses', task ':app:mergeFullReleaseArtProfile', task ':app:expandFullReleaseArtProfileWildcards', task ':app:mergeFullReleaseGeneratedProguardFiles', task ':app:processFullReleaseJavaRes', task ':app:mergeFullReleaseJavaResource', task ':app:minifyFullReleaseWithR8', task ':app:compileFullReleaseArtProfile', task ':app:generateFullReleaseAssets', task ':app:mergeFullReleaseAssets', task ':app:compressFullReleaseAssets', task ':app:shrinkFullReleaseRes', task ':app:optimizeFullReleaseResources', task ':app:collectFullReleaseDependencies', task ':app:sdkFullReleaseDependencyData', task ':app:validateSigningFullRelease', task ':app:writeFullReleaseAppMetadata', task ':app:writeFullReleaseSigningConfigVersions', task ':app:packageFullRelease', task ':app:createFullReleaseApkListingFileRedirect', task ':app:assembleFullRelease']
+Resolve mutations for :app:kaptGenerateStubsFullReleaseKotlin (Thread[Execution worker Thread 6,5,main]) started.
+:app:kaptGenerateStubsFullReleaseKotlin (Thread[Execution worker Thread 6,5,main]) started.
+> Task :app:kaptGenerateStubsFullReleaseKotlin
+Build cache key for task ':app:kaptGenerateStubsFullReleaseKotlin' is 6e6ce5932395ad962a581190120efc78
+Task ':app:kaptGenerateStubsFullReleaseKotlin' is not up-to-date because:
+The input changes require a full rebuild for incremental task ':app:kaptGenerateStubsFullReleaseKotlin'.
+Options for KOTLIN DAEMON: IncrementalCompilationOptions(super=CompilationOptions(compilerMode=INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=[]), areFileChangesKnown=false, modifiedFiles=null, deletedFiles=null, classpathChanges=NotAvailableForNonIncrementalRun, workingDir=/home/runner/work/RasFocus-final/RasFocus-final/app/build/kotlin/kaptGenerateStubsFullReleaseKotlin/cacheable, multiModuleICSettings=MultiModuleICSettings(buildHistoryFile=/home/runner/work/RasFocus-final/RasFocus-final/app/build/kotlin/kaptGenerateStubsFullReleaseKotlin/local-state/build-history.bin, useModuleDetection=true), usePreciseJavaTracking=true, outputFiles=[/home/runner/work/RasFocus-final/RasFocus-final/app/build/tmp/kapt3/incrementalData/fullRelease, /home/runner/work/RasFocus-final/RasFocus-final/app/build/tmp/kapt3/stubs/fullRelease, /home/runner/work/RasFocus-final/RasFocus-final/app/build/kotlin/kaptGenerateStubsFullReleaseKotlin/cacheable, /home/runner/work/RasFocus-final/RasFocus-final/app/build/kotlin/kaptGenerateStubsFullReleaseKotlin/local-state])
+e: Could not load module <Error module>
+> Task :app:kaptGenerateStubsFullReleaseKotlin FAILED
 Execution failed for task ':app:kaptGenerateStubsFullReleaseKotlin'.
-BUILD FAILED in 41s
+   > Compilation error. See log for more details
 
+=== BUILD FAILURE ===
 > Task :app:kaptGenerateStubsFullReleaseKotlin FAILED
-e: Could not load module <Error module>
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784353679986.json
-
-FAILURE: Build failed with an exception.
-
 * What went wrong:
+Execution failed for task ':app:kaptGenerateStubsFullReleaseKotlin'.
+BUILD FAILED in 1m 13s
 
-Unable to strip the following libraries, packaging them as they are: libbarhopper_v3.so, libimage_processing_util_jni.so, libmupdf_java.so.
-
-> Task :app:extractFullReleaseNativeSymbolTables FROM-CACHE
-> Task :app:mergeFullReleaseNativeDebugMetadata NO-SOURCE
-> Task :app:processFullReleaseMainManifest
-> Task :app:processFullReleaseManifest
-> Task :app:processFullReleaseManifestForPackage
-note: generating mipmap/ic_launcher_round with config "anydpi-v33" for round icon compatibility.
-
-note: generating mipmap/ic_launcher_round with config "anydpi-v33" for round icon compatibility.
-
-> Task :app:processFullReleaseResources
+=== LAST 50 LINES ===
+file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/src/full/kotlin', not found
+file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/src/full/kotlin', not found
+file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/src/full/kotlin', not found
+file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/src/release/kotlin', not found
+file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/src/release/kotlin', not found
+file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/src/release/java', not found
+file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/src/release/kotlin', not found
+file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/src/release/java', not found
+file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/src/release/java', not found
+file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/src/fullRelease/java', not found
+Using Kotlin/JVM incremental compilation
+[KOTLIN] Kotlin compilation 'jdkHome' argument: null
+i: starting the daemon as: /usr/lib/jvm/temurin-17-jdk-amd64/bin/java -cp /home/runner/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-compiler-embeddable/1.9.24/78dab849090e6c5e2eadb6e59a11cdc28fb67a08/kotlin-compiler-embeddable-1.9.24.jar:/home/runner/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/1.9.24/9928532f12c66ad816a625b3f9984f8368ca6d2b/kotlin-stdlib-1.9.24.jar:/home/runner/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-script-runtime/1.9.24/96771497da90fbc5af1c90fce148db2595a62502/kotlin-script-runtime-1.9.24.jar:/home/runner/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-reflect/1.6.10/1cbe9c92c12a94eea200d23c2bbaedaf3daf5132/kotlin-reflect-1.6.10.jar:/home/runner/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-daemon-embeddable/1.9.24/86685b9c5e8d170925bd9ddbdc263374a6a73281/kotlin-daemon-embeddable-1.9.24.jar:/home/runner/.gradle/caches/modules-2/files-2.1/org.jetbrains.intellij.deps/trove4j/1.0.20200330/3afb14d5f9ceb459d724e907a21145e8ff394f02/trove4j-1.0.20200330.jar:/home/runner/.gradle/caches/modules-2/files-2.1/org.jetbrains/annotations/13.0/919f0dfe192fb4e063e7dacadee7f8bb9a2672a9/annotations-13.0.jar -Djava.awt.headless=true -D$java.rmi.server.hostname=127.0.0.1 -Xmx8192m -XX:MaxMetaspaceSize=1024m -Dkotlin.environment.keepalive -ea --add-exports java.base/sun.nio.ch=ALL-UNNAMED org.jetbrains.kotlin.daemon.KotlinCompileDaemon --daemon-runFilesPath /home/runner/.kotlin/daemon --daemon-autoshutdownIdleSeconds=7200 --daemon-compilerClasspath /home/runner/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-compiler-embeddable/1.9.24/78dab849090e6c5e2eadb6e59a11cdc28fb67a08/kotlin-compiler-embeddable-1.9.24.jar:/home/runner/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/1.9.24/9928532f12c66ad816a625b3f9984f8368ca6d2b/kotlin-stdlib-1.9.24.jar:/home/runner/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-script-runtime/1.9.24/96771497da90fbc5af1c90fce148db2595a62502/kotlin-script-runtime-1.9.24.jar:/home/runner/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-reflect/1.6.10/1cbe9c92c12a94eea200d23c2bbaedaf3daf5132/kotlin-reflect-1.6.10.jar:/home/runner/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-daemon-embeddable/1.9.24/86685b9c5e8d170925bd9ddbdc263374a6a73281/kotlin-daemon-embeddable-1.9.24.jar:/home/runner/.gradle/caches/modules-2/files-2.1/org.jetbrains.intellij.deps/trove4j/1.0.20200330/3afb14d5f9ceb459d724e907a21145e8ff394f02/trove4j-1.0.20200330.jar:/home/runner/.gradle/caches/modules-2/files-2.1/org.jetbrains/annotations/13.0/919f0dfe192fb4e063e7dacadee7f8bb9a2672a9/annotations-13.0.jar
+i: Received the message signalling that the daemon is ready
+i: new daemon started, trying to find it
+i: found daemon on port 17036 (30 ms old), trying to connect
+i: connected to the daemon
+Options for KOTLIN DAEMON: IncrementalCompilationOptions(super=CompilationOptions(compilerMode=INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=[]), areFileChangesKnown=false, modifiedFiles=null, deletedFiles=null, classpathChanges=NotAvailableForNonIncrementalRun, workingDir=/home/runner/work/RasFocus-final/RasFocus-final/app/build/kotlin/kaptGenerateStubsFullReleaseKotlin/cacheable, multiModuleICSettings=MultiModuleICSettings(buildHistoryFile=/home/runner/work/RasFocus-final/RasFocus-final/app/build/kotlin/kaptGenerateStubsFullReleaseKotlin/local-state/build-history.bin, useModuleDetection=true), usePreciseJavaTracking=true, outputFiles=[/home/runner/work/RasFocus-final/RasFocus-final/app/build/tmp/kapt3/incrementalData/fullRelease, /home/runner/work/RasFocus-final/RasFocus-final/app/build/tmp/kapt3/stubs/fullRelease, /home/runner/work/RasFocus-final/RasFocus-final/app/build/kotlin/kaptGenerateStubsFullReleaseKotlin/cacheable, /home/runner/work/RasFocus-final/RasFocus-final/app/build/kotlin/kaptGenerateStubsFullReleaseKotlin/local-state])
+e: Could not load module <Error module>
 
 > Task :app:kaptGenerateStubsFullReleaseKotlin FAILED
-e: Could not load module <Error module>
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784353679986.json
+AAPT2 aapt2-8.2.2-10154469-linux Daemon #0: shutdown
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784353763772.json
+
+0 problems were found storing the configuration cache.
+
+See the complete report at file:///home/runner/work/RasFocus-final/RasFocus-final/build/reports/configuration-cache/9yg1rd2zbg9rjjitzu37i63j4/6jm0vvm23t4vor14r6qpn2q53/configuration-cache-report.html
 
 FAILURE: Build failed with an exception.
 
@@ -37,7 +61,7 @@ Execution failed for task ':app:kaptGenerateStubsFullReleaseKotlin'.
 
 * Try:
 > Run with --stacktrace option to get the stack trace.
-> Run with --info or --debug option to get more log output.
+> Run with --debug option to get more log output.
 > Run with --scan to get full insights.
 > Get more help at https://help.gradle.org.
 
@@ -47,7 +71,6 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.9/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 41s
+BUILD FAILED in 1m 13s
 31 actionable tasks: 21 executed, 10 from cache
 Configuration cache entry stored.
-=== Last 40 lines ===
