@@ -229,6 +229,17 @@ class FacebookActivity : ComponentActivity() {
                     super.onPageFinished(view, url)
                     view.alpha = 1f
                     flushCookies()
+                    // inject সব — footer remove, open-in-app banner remove, settings
+                    injectFooterRemover(view)
+                    injectRemoveOpenInAppButton(view)
+                    injectSettingsRemover(view)
+                    // Adult search keyword block — onPageFinished এ আবার check করো
+                    // কারণ Facebook search redirect করে নতুন URL এ যায় এবং
+                    // shouldOverrideUrlLoading সব navigation এ fire করে না
+                    val adultHtml = checkAdultSearchKeyword(url)
+                    if (adultHtml != null) {
+                        view.loadDataWithBaseURL(null, adultHtml, "text/html", "UTF-8", null)
+                    }
                 }
 
                 override fun shouldInterceptRequest(
@@ -605,7 +616,24 @@ class FacebookActivity : ComponentActivity() {
             val uri = android.net.Uri.parse(url)
             val host = uri.host?.lowercase() ?: return null
             if (!host.contains("facebook.com")) return null
-            val query = (uri.getQueryParameter("q") ?: "").lowercase().trim()
+
+            // Facebook search URL formats:
+            // 1. m.facebook.com/search/top/?q=keyword
+            // 2. m.facebook.com/search/?q=keyword
+            // 3. www.facebook.com/search/top/?q=keyword
+            // 4. keyword may come as path segment: /search/keyword
+            val query = (
+                uri.getQueryParameter("q")
+                ?: uri.getQueryParameter("query")
+                ?: run {
+                    // path segment এ keyword: /search/top/keyword
+                    val pathParts = uri.pathSegments
+                    val searchIdx = pathParts.indexOfFirst { it == "search" }
+                    if (searchIdx >= 0 && searchIdx + 2 < pathParts.size) pathParts[searchIdx + 2]
+                    else null
+                }
+            )?.lowercase()?.trim() ?: return null
+
             if (query.isEmpty()) return null
             val matched = ADULT_SEARCH_KEYWORDS.any { query.contains(it.lowercase()) }
             if (matched) buildAdultBlockedPage() else null

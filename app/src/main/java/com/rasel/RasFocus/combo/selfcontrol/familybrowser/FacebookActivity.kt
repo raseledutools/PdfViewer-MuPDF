@@ -229,6 +229,13 @@ class FacebookActivity : ComponentActivity() {
                     super.onPageFinished(view, url)
                     view.alpha = 1f
                     flushCookies()
+                    injectFooterRemover(view)
+                    injectRemoveOpenInAppButton(view)
+                    injectSettingsRemover(view)
+                    val adultHtml = checkAdultSearchKeyword(url)
+                    if (adultHtml != null) {
+                        view.loadDataWithBaseURL(null, adultHtml, "text/html", "UTF-8", null)
+                    }
                 }
 
                 override fun shouldInterceptRequest(
@@ -584,7 +591,16 @@ class FacebookActivity : ComponentActivity() {
             val uri = android.net.Uri.parse(url)
             val host = uri.host?.lowercase() ?: return null
             if (!host.contains("facebook.com")) return null
-            val query = (uri.getQueryParameter("q") ?: "").lowercase().trim()
+            val query = (
+                uri.getQueryParameter("q")
+                ?: uri.getQueryParameter("query")
+                ?: run {
+                    val pathParts = uri.pathSegments
+                    val searchIdx = pathParts.indexOfFirst { it == "search" }
+                    if (searchIdx >= 0 && searchIdx + 2 < pathParts.size) pathParts[searchIdx + 2]
+                    else null
+                }
+            )?.lowercase()?.trim() ?: return null
             if (query.isEmpty()) return null
             val matched = ADULT_SEARCH_KEYWORDS.any { query.contains(it.lowercase()) }
             if (matched) buildAdultBlockedPage() else null
