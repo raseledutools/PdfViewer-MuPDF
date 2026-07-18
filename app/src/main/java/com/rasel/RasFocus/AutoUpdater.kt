@@ -65,7 +65,7 @@ object AutoUpdater {
     // APK flavors (used as substrings for matching)
     const val APK_UNIVERSAL = "universal"
     const val APK_LIGHT = "light"
-    const val APK_FULL_SPLIT = "full-armeabi-v7a"
+    const val APK_FULL_SPLIT = "universal"  // workflow releases *-universal.apk only
 
     fun setupBackgroundAutoUpdate(context: Context) {
         val constraints = Constraints.Builder()
