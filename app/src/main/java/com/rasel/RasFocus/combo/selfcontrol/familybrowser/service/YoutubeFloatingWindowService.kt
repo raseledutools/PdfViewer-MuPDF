@@ -1075,6 +1075,24 @@ class YoutubeFloatingWindowService : Service() {
                     }
 
                     view.postDelayed({ syncPlaybackState() }, 1000L)
+
+                    val sync = com.rasel.RasFocus.selfcontrol.FirebaseKeywordSync
+                    val urlBlocked   = sync.containsAdultKeyword(url)
+                    val titleBlocked = t.isNotBlank() && sync.containsAdultKeyword(t.lowercase())
+                    val searchQuery  = try {
+                        val uri = android.net.Uri.parse(url)
+                        (uri.getQueryParameter("search_query")
+                            ?: uri.getQueryParameter("q")
+                            ?: "").lowercase()
+                    } catch (_: Exception) { "" }
+                    val searchBlocked = searchQuery.isNotBlank() && sync.containsAdultKeyword(searchQuery)
+                    if (urlBlocked || titleBlocked || searchBlocked) {
+                        val blockedHtml = com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker
+                            .buildBlockedPage(url, com.rasel.RasFocus.selfcontrol.familybrowser.BlockReason.ADULT)
+                        view.loadDataWithBaseURL(
+                            "https://m.youtube.com/", blockedHtml, "text/html", "UTF-8", null
+                        )
+                    }
                 }
 
                 override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
