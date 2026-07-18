@@ -1,61 +1,145 @@
 === KOTLIN/KAPT ERRORS ===
-e: Could not load module <Error module>
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:66:20 Unresolved reference: Paint
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:66:34 Function invocation 'Paint()' expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:66:40 Unresolved reference: Align
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:319:39 Function invocation 'Paint()' expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:319:39 Too many arguments for public fun Paint(): Paint defined in androidx.compose.ui.graphics
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:319:45 Unresolved reference: ANTI_ALIAS_FLAG
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:320:37 Type mismatch: inferred type is Int but Color was expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:321:25 Unresolved reference: textSize
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:322:25 Unresolved reference: typeface
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:331:25 Unresolved reference: textAlign
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:336:39 Unresolved reference: textSize
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:339:29 Function invocation 'Paint()' expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:339:35 Unresolved reference: Align
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:340:29 Function invocation 'Paint()' expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:340:35 Unresolved reference: Align
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:343:52 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:344:73 Type mismatch: inferred type is androidx.compose.ui.graphics.Paint but android.graphics.Paint was expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:354:32 None of the following functions can be called with the arguments supplied: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:354:71 Type mismatch: inferred type is Int but Color was expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:356:28 None of the following functions can be called with the arguments supplied: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:357:37 Type mismatch: inferred type is Int but Color was expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:359:37 Function invocation 'Paint()' expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:359:43 Unresolved reference: Style
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:376:47 Unresolved reference: Paint
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:470:40 Function invocation 'Color(...)' expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:470:40 None of the following functions can be called with the arguments supplied: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:519:45 Function invocation 'Color(...)' expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:519:45 None of the following functions can be called with the arguments supplied: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:66:20 Unresolved reference: Paint
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:66:34 Function invocation 'Paint()' expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:66:40 Unresolved reference: Align
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:319:39 Function invocation 'Paint()' expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:319:39 Too many arguments for public fun Paint(): Paint defined in androidx.compose.ui.graphics
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:319:45 Unresolved reference: ANTI_ALIAS_FLAG
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:320:37 Type mismatch: inferred type is Int but Color was expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:321:25 Unresolved reference: textSize
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:322:25 Unresolved reference: typeface
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:331:25 Unresolved reference: textAlign
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:336:39 Unresolved reference: textSize
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:339:29 Function invocation 'Paint()' expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:339:35 Unresolved reference: Align
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:340:29 Function invocation 'Paint()' expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:340:35 Unresolved reference: Align
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:343:52 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:344:73 Type mismatch: inferred type is androidx.compose.ui.graphics.Paint but android.graphics.Paint was expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:354:32 None of the following functions can be called with the arguments supplied: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:354:71 Type mismatch: inferred type is Int but Color was expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:356:28 None of the following functions can be called with the arguments supplied: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:357:37 Type mismatch: inferred type is Int but Color was expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:359:37 Function invocation 'Paint()' expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:359:43 Unresolved reference: Style
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:376:47 Unresolved reference: Paint
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:470:40 Function invocation 'Color(...)' expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:470:40 None of the following functions can be called with the arguments supplied: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:519:45 Function invocation 'Color(...)' expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:519:45 None of the following functions can be called with the arguments supplied: 
 
 === UNRESOLVED / TYPE ERRORS ===
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:66:20 Unresolved reference: Paint
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:66:40 Unresolved reference: Align
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:319:45 Unresolved reference: ANTI_ALIAS_FLAG
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:320:37 Type mismatch: inferred type is Int but Color was expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:321:25 Unresolved reference: textSize
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:322:25 Unresolved reference: typeface
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:331:25 Unresolved reference: textAlign
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:336:39 Unresolved reference: textSize
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:339:35 Unresolved reference: Align
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:340:35 Unresolved reference: Align
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:343:52 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:344:73 Type mismatch: inferred type is androidx.compose.ui.graphics.Paint but android.graphics.Paint was expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:354:32 None of the following functions can be called with the arguments supplied: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:354:71 Type mismatch: inferred type is Int but Color was expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:356:28 None of the following functions can be called with the arguments supplied: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:357:37 Type mismatch: inferred type is Int but Color was expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:359:43 Unresolved reference: Style
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:376:47 Unresolved reference: Paint
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:470:40 None of the following functions can be called with the arguments supplied: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PptxViewerActivity.kt:519:45 None of the following functions can be called with the arguments supplied: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:66:20 Unresolved reference: Paint
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:66:40 Unresolved reference: Align
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:319:45 Unresolved reference: ANTI_ALIAS_FLAG
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:320:37 Type mismatch: inferred type is Int but Color was expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:321:25 Unresolved reference: textSize
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:322:25 Unresolved reference: typeface
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:331:25 Unresolved reference: textAlign
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:336:39 Unresolved reference: textSize
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:339:35 Unresolved reference: Align
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:340:35 Unresolved reference: Align
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:343:52 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:344:73 Type mismatch: inferred type is androidx.compose.ui.graphics.Paint but android.graphics.Paint was expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:354:32 None of the following functions can be called with the arguments supplied: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:354:71 Type mismatch: inferred type is Int but Color was expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:356:28 None of the following functions can be called with the arguments supplied: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:357:37 Type mismatch: inferred type is Int but Color was expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:359:43 Unresolved reference: Style
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:376:47 Unresolved reference: Paint
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:470:40 None of the following functions can be called with the arguments supplied: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:519:45 None of the following functions can be called with the arguments supplied: 
 
 === KAPT / MODULE ERRORS ===
-Tasks to be executed: [task ':app:buildKotlinToolingMetadata', task ':app:checkKotlinGradlePluginConfigurationErrors', task ':app:preBuild', task ':app:preFullReleaseBuild', task ':app:generateFullReleaseBuildConfig', task ':app:checkFullReleaseAarMetadata', task ':app:processFullReleaseGoogleServices', task ':app:mapFullReleaseSourceSetPaths', task ':app:generateFullReleaseResources', task ':app:mergeFullReleaseResources', task ':app:packageFullReleaseResources', task ':app:parseFullReleaseLocalResources', task ':app:createFullReleaseCompatibleScreenManifests', task ':app:extractDeepLinksFullRelease', task ':app:processFullReleaseMainManifest', task ':app:processFullReleaseManifest', task ':app:processFullReleaseManifestForPackage', task ':app:processFullReleaseResources', task ':app:kaptGenerateStubsFullReleaseKotlin', task ':app:kaptFullReleaseKotlin', task ':app:compileFullReleaseKotlin', task ':app:javaPreCompileFullRelease', task ':app:compileFullReleaseJavaWithJavac', task ':app:extractProguardFiles', task ':app:generateFullReleaseLintVitalReportModel', task ':app:lintVitalAnalyzeFullRelease', task ':app:lintVitalReportFullRelease', task ':app:lintVitalFullRelease', task ':app:mergeFullReleaseJniLibFolders', task ':app:mergeFullReleaseNativeLibs', task ':app:stripFullReleaseDebugSymbols', task ':app:extractFullReleaseNativeSymbolTables', task ':app:mergeFullReleaseNativeDebugMetadata', task ':app:checkFullReleaseDuplicateClasses', task ':app:mergeFullReleaseArtProfile', task ':app:expandFullReleaseArtProfileWildcards', task ':app:mergeFullReleaseGeneratedProguardFiles', task ':app:processFullReleaseJavaRes', task ':app:mergeFullReleaseJavaResource', task ':app:minifyFullReleaseWithR8', task ':app:compileFullReleaseArtProfile', task ':app:generateFullReleaseAssets', task ':app:mergeFullReleaseAssets', task ':app:compressFullReleaseAssets', task ':app:shrinkFullReleaseRes', task ':app:optimizeFullReleaseResources', task ':app:collectFullReleaseDependencies', task ':app:sdkFullReleaseDependencyData', task ':app:validateSigningFullRelease', task ':app:writeFullReleaseAppMetadata', task ':app:writeFullReleaseSigningConfigVersions', task ':app:packageFullRelease', task ':app:createFullReleaseApkListingFileRedirect', task ':app:assembleFullRelease']
-Resolve mutations for :app:kaptGenerateStubsFullReleaseKotlin (Thread[Execution worker Thread 6,5,main]) started.
-:app:kaptGenerateStubsFullReleaseKotlin (Thread[Execution worker Thread 6,5,main]) started.
-> Task :app:kaptGenerateStubsFullReleaseKotlin
-Build cache key for task ':app:kaptGenerateStubsFullReleaseKotlin' is 113a6a4f2037aa72b6384cf5b957c1ba
-Task ':app:kaptGenerateStubsFullReleaseKotlin' is not up-to-date because:
-The input changes require a full rebuild for incremental task ':app:kaptGenerateStubsFullReleaseKotlin'.
-Options for KOTLIN DAEMON: IncrementalCompilationOptions(super=CompilationOptions(compilerMode=INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=[]), areFileChangesKnown=false, modifiedFiles=null, deletedFiles=null, classpathChanges=NotAvailableForNonIncrementalRun, workingDir=/home/runner/work/RasFocus-final/RasFocus-final/app/build/kotlin/kaptGenerateStubsFullReleaseKotlin/cacheable, multiModuleICSettings=MultiModuleICSettings(buildHistoryFile=/home/runner/work/RasFocus-final/RasFocus-final/app/build/kotlin/kaptGenerateStubsFullReleaseKotlin/local-state/build-history.bin, useModuleDetection=true), usePreciseJavaTracking=true, outputFiles=[/home/runner/work/RasFocus-final/RasFocus-final/app/build/tmp/kapt3/incrementalData/fullRelease, /home/runner/work/RasFocus-final/RasFocus-final/app/build/tmp/kapt3/stubs/fullRelease, /home/runner/work/RasFocus-final/RasFocus-final/app/build/kotlin/kaptGenerateStubsFullReleaseKotlin/cacheable, /home/runner/work/RasFocus-final/RasFocus-final/app/build/kotlin/kaptGenerateStubsFullReleaseKotlin/local-state])
-e: Could not load module <Error module>
-> Task :app:kaptGenerateStubsFullReleaseKotlin FAILED
-Execution failed for task ':app:kaptGenerateStubsFullReleaseKotlin'.
    > Compilation error. See log for more details
 
 === BUILD FAILURE ===
-> Task :app:kaptGenerateStubsFullReleaseKotlin FAILED
+> Task :app:compileFullReleaseKotlin FAILED
 * What went wrong:
-Execution failed for task ':app:kaptGenerateStubsFullReleaseKotlin'.
-BUILD FAILED in 47s
+Execution failed for task ':app:compileFullReleaseKotlin'.
+BUILD FAILED in 3m 25s
 
 === LAST 50 LINES ===
-file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/src/main/kotlin', not found
-file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/src/main/kotlin', not found
-file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/src/main/kotlin', not found
-file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/src/main/kotlin', not found
-file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/src/main/kotlin', not found
-file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/src/main/kotlin', not found
-file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/src/main/kotlin', not found
-file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/src/main/kotlin', not found
-file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/src/main/kotlin', not found
-file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/src/main/kotlin', not found
-Using Kotlin/JVM incremental compilation
-[KOTLIN] Kotlin compilation 'jdkHome' argument: null
-i: starting the daemon as: /usr/lib/jvm/temurin-17-jdk-amd64/bin/java -cp /home/runner/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-compiler-embeddable/1.9.24/78dab849090e6c5e2eadb6e59a11cdc28fb67a08/kotlin-compiler-embeddable-1.9.24.jar:/home/runner/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/1.9.24/9928532f12c66ad816a625b3f9984f8368ca6d2b/kotlin-stdlib-1.9.24.jar:/home/runner/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-script-runtime/1.9.24/96771497da90fbc5af1c90fce148db2595a62502/kotlin-script-runtime-1.9.24.jar:/home/runner/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-reflect/1.6.10/1cbe9c92c12a94eea200d23c2bbaedaf3daf5132/kotlin-reflect-1.6.10.jar:/home/runner/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-daemon-embeddable/1.9.24/86685b9c5e8d170925bd9ddbdc263374a6a73281/kotlin-daemon-embeddable-1.9.24.jar:/home/runner/.gradle/caches/modules-2/files-2.1/org.jetbrains.intellij.deps/trove4j/1.0.20200330/3afb14d5f9ceb459d724e907a21145e8ff394f02/trove4j-1.0.20200330.jar:/home/runner/.gradle/caches/modules-2/files-2.1/org.jetbrains/annotations/13.0/919f0dfe192fb4e063e7dacadee7f8bb9a2672a9/annotations-13.0.jar -Djava.awt.headless=true -D$java.rmi.server.hostname=127.0.0.1 -Xmx8192m -XX:MaxMetaspaceSize=1024m -Dkotlin.environment.keepalive -ea --add-exports java.base/sun.nio.ch=ALL-UNNAMED org.jetbrains.kotlin.daemon.KotlinCompileDaemon --daemon-runFilesPath /home/runner/.kotlin/daemon --daemon-autoshutdownIdleSeconds=7200 --daemon-compilerClasspath /home/runner/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-compiler-embeddable/1.9.24/78dab849090e6c5e2eadb6e59a11cdc28fb67a08/kotlin-compiler-embeddable-1.9.24.jar:/home/runner/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/1.9.24/9928532f12c66ad816a625b3f9984f8368ca6d2b/kotlin-stdlib-1.9.24.jar:/home/runner/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-script-runtime/1.9.24/96771497da90fbc5af1c90fce148db2595a62502/kotlin-script-runtime-1.9.24.jar:/home/runner/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-reflect/1.6.10/1cbe9c92c12a94eea200d23c2bbaedaf3daf5132/kotlin-reflect-1.6.10.jar:/home/runner/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-daemon-embeddable/1.9.24/86685b9c5e8d170925bd9ddbdc263374a6a73281/kotlin-daemon-embeddable-1.9.24.jar:/home/runner/.gradle/caches/modules-2/files-2.1/org.jetbrains.intellij.deps/trove4j/1.0.20200330/3afb14d5f9ceb459d724e907a21145e8ff394f02/trove4j-1.0.20200330.jar:/home/runner/.gradle/caches/modules-2/files-2.1/org.jetbrains/annotations/13.0/919f0dfe192fb4e063e7dacadee7f8bb9a2672a9/annotations-13.0.jar
-i: Received the message signalling that the daemon is ready
-i: new daemon started, trying to find it
-i: found daemon on port 17899 (35 ms old), trying to connect
-i: connected to the daemon
-Options for KOTLIN DAEMON: IncrementalCompilationOptions(super=CompilationOptions(compilerMode=INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=[]), areFileChangesKnown=false, modifiedFiles=null, deletedFiles=null, classpathChanges=NotAvailableForNonIncrementalRun, workingDir=/home/runner/work/RasFocus-final/RasFocus-final/app/build/kotlin/kaptGenerateStubsFullReleaseKotlin/cacheable, multiModuleICSettings=MultiModuleICSettings(buildHistoryFile=/home/runner/work/RasFocus-final/RasFocus-final/app/build/kotlin/kaptGenerateStubsFullReleaseKotlin/local-state/build-history.bin, useModuleDetection=true), usePreciseJavaTracking=true, outputFiles=[/home/runner/work/RasFocus-final/RasFocus-final/app/build/tmp/kapt3/incrementalData/fullRelease, /home/runner/work/RasFocus-final/RasFocus-final/app/build/tmp/kapt3/stubs/fullRelease, /home/runner/work/RasFocus-final/RasFocus-final/app/build/kotlin/kaptGenerateStubsFullReleaseKotlin/cacheable, /home/runner/work/RasFocus-final/RasFocus-final/app/build/kotlin/kaptGenerateStubsFullReleaseKotlin/local-state])
-e: Could not load module <Error module>
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:356:28 None of the following functions can be called with the arguments supplied: 
+public open fun drawRect(p0: Rect, p1: Paint): Unit defined in android.graphics.Canvas
+public open fun drawRect(p0: RectF, p1: Paint): Unit defined in android.graphics.Canvas
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:357:37 Type mismatch: inferred type is Int but Color was expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:359:37 Function invocation 'Paint()' expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:359:43 Unresolved reference: Style
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:376:47 Unresolved reference: Paint
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:470:40 Function invocation 'Color(...)' expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:470:40 None of the following functions can be called with the arguments supplied: 
+public fun Color(red: Float, green: Float, blue: Float, alpha: Float = ..., colorSpace: ColorSpace = ...): Color defined in androidx.compose.ui.graphics
+public fun Color(color: Int): Color defined in androidx.compose.ui.graphics
+public fun Color(red: Int, green: Int, blue: Int, alpha: Int = ...): Color defined in androidx.compose.ui.graphics
+public fun Color(color: Long): Color defined in androidx.compose.ui.graphics
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:519:45 Function invocation 'Color(...)' expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PptxViewerActivity.kt:519:45 None of the following functions can be called with the arguments supplied: 
+public fun Color(red: Float, green: Float, blue: Float, alpha: Float = ..., colorSpace: ColorSpace = ...): Color defined in androidx.compose.ui.graphics
+public fun Color(color: Int): Color defined in androidx.compose.ui.graphics
+public fun Color(red: Int, green: Int, blue: Int, alpha: Int = ...): Color defined in androidx.compose.ui.graphics
+public fun Color(color: Long): Color defined in androidx.compose.ui.graphics
 
-> Task :app:kaptGenerateStubsFullReleaseKotlin FAILED
+> Task :app:compileFullReleaseKotlin FAILED
 AAPT2 aapt2-8.2.2-10154469-linux Daemon #0: shutdown
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784355419668.json
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784355705036.json
 
 0 problems were found storing the configuration cache.
 
-See the complete report at file:///home/runner/work/RasFocus-final/RasFocus-final/build/reports/configuration-cache/1tpajzofseqi6paze828uc3uh/6jm0vvm23t4vor14r6qpn2q53/configuration-cache-report.html
+See the complete report at file:///home/runner/work/RasFocus-final/RasFocus-final/build/reports/configuration-cache/ab02rgfo7y27vp4ob2h40pebr/6jm0vvm23t4vor14r6qpn2q53/configuration-cache-report.html
 
 FAILURE: Build failed with an exception.
 
 * What went wrong:
-Execution failed for task ':app:kaptGenerateStubsFullReleaseKotlin'.
+Execution failed for task ':app:compileFullReleaseKotlin'.
 > A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
    > Compilation error. See log for more details
 
@@ -71,6 +155,6 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.9/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 47s
-31 actionable tasks: 21 executed, 10 from cache
+BUILD FAILED in 3m 25s
+32 actionable tasks: 23 executed, 9 from cache
 Configuration cache entry stored.
