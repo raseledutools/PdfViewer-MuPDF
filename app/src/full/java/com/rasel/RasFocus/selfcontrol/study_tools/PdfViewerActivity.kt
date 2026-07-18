@@ -172,16 +172,33 @@ class PdfViewerActivity : ComponentActivity() {
     }
 
     private fun getFileNameFromUri(uri: Uri): String {
-        var name: String? = null
+        // FIX: Some file managers (e.g. com.alphainventor.filemanager) use a
+        // ContentProvider that Android blocks with "association not allowed" —
+        // contentResolver.query() throws SecurityException and crashes the app.
+        // Wrap in try-catch and fall back to extracting name from the URI path.
         if (uri.scheme == "content") {
-            contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-                if (cursor.moveToFirst()) {
-                    val idx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
-                    if (idx >= 0) name = cursor.getString(idx)
+            try {
+                contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val idx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                        if (idx >= 0) {
+                            val name = cursor.getString(idx)
+                            if (!name.isNullOrBlank()) return name
+                        }
+                    }
                 }
+            } catch (_: SecurityException) {
+                // Provider blocked — fall through to path-based extraction
+            } catch (_: Exception) {
+                // Any other error — fall through
             }
         }
-        return name ?: uri.lastPathSegment?.substringAfterLast('/') ?: "PDF"
+        // Fallback: extract filename from URI path
+        return uri.lastPathSegment
+            ?.substringAfterLast('/')
+            ?.substringAfterLast('%') // handle URL-encoded paths
+            ?.let { if (it.endsWith(".pdf", ignoreCase = true)) it else "$it.pdf" }
+            ?: "Document.pdf"
     }
 }
 
