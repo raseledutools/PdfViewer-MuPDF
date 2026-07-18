@@ -81,6 +81,9 @@ fun ScanToPdfScreen(onBack: () -> Unit) {
     var generatingText by remember { mutableStateOf("0 / 0") }
     
     var showPdfImportModal by remember { mutableStateOf<Uri?>(null) }
+    // Telegram-style bottom sheet — import button এ click করলে
+    // file manager-এর বদলে এই sheet উঠবে
+    var showImagePickerSheet by remember { mutableStateOf(false) }
 
     // --- Permissions ---
     val permissions = if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
@@ -245,10 +248,10 @@ fun ScanToPdfScreen(onBack: () -> Unit) {
                             Text("Gallery", color = Color(0xFF4F46E5), fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         }
                     }
-                    // Import PDF
+                    // Import Image — Telegram-style bottom sheet
                     Card(
                         modifier = Modifier.weight(1f).height(90.dp).clickable {
-                            pdfPickerLauncher.launch("application/pdf")
+                            showImagePickerSheet = true
                         },
                         colors = CardDefaults.cardColors(containerColor = Color.White),
                         shape = RoundedCornerShape(16.dp),
@@ -256,9 +259,9 @@ fun ScanToPdfScreen(onBack: () -> Unit) {
                         elevation = CardDefaults.cardElevation(2.dp)
                     ) {
                         Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                            Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = Color(0xFF059669), modifier = Modifier.size(24.dp))
+                            Icon(Icons.Default.AddPhotoAlternate, contentDescription = null, tint = Color(0xFF059669), modifier = Modifier.size(24.dp))
                             Spacer(Modifier.height(4.dp))
-                            Text("Import PDF", color = Color(0xFF059669), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            Text("Import", color = Color(0xFF059669), fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         }
                     }
                 }
@@ -495,6 +498,100 @@ fun ScanToPdfScreen(onBack: () -> Unit) {
                 }
             }
             
+            // ── Telegram-style Image Picker Bottom Sheet ──────────────────────
+            // Import button click করলে file manager-এর বদলে এই sheet উঠবে।
+            // Gallery (multi-select), Camera, PDF import — তিনটাই এখানে।
+            if (showImagePickerSheet) {
+                ModalBottomSheet(
+                    onDismissRequest = { showImagePickerSheet = false },
+                    containerColor = Color.White,
+                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+                ) {
+                    Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
+                        Text(
+                            "Add Images",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = Color(0xFF111827),
+                            modifier = Modifier.padding(bottom = 20.dp)
+                        )
+                        // Gallery — multi-select
+                        Row(
+                            modifier = Modifier.fillMaxWidth().clickable {
+                                showImagePickerSheet = false
+                                galleryLauncher.launch(
+                                    androidx.activity.result.PickVisualMediaRequest(
+                                        androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly
+                                    )
+                                )
+                            }.padding(vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier.size(44.dp).background(Color(0xFFEDE9FE), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) { Icon(Icons.Default.PhotoLibrary, null, tint = Color(0xFF4F46E5), modifier = Modifier.size(22.dp)) }
+                            Spacer(Modifier.width(16.dp))
+                            Column {
+                                Text("Choose from Gallery", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF111827))
+                                Text("Multiple images supported", fontSize = 12.sp, color = Color(0xFF9CA3AF))
+                            }
+                        }
+                        HorizontalDivider(color = Color(0xFFF3F4F6))
+                        // Camera scan
+                        Row(
+                            modifier = Modifier.fillMaxWidth().clickable {
+                                showImagePickerSheet = false
+                                val options = GmsDocumentScannerOptions.Builder()
+                                    .setGalleryImportAllowed(false)
+                                    .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG)
+                                    .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_FULL)
+                                    .build()
+                                GmsDocumentScanning.getClient(options)
+                                    .getStartScanIntent(context as Activity)
+                                    .addOnSuccessListener { intentSender ->
+                                        cameraLauncher.launch(IntentSenderRequest.Builder(intentSender).build())
+                                    }
+                                    .addOnFailureListener { e ->
+                                        Toast.makeText(context, "Scanner failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                                    }
+                            }.padding(vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier.size(44.dp).background(Color(0xFFD1FAE5), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) { Icon(Icons.Default.CameraAlt, null, tint = Color(0xFF059669), modifier = Modifier.size(22.dp)) }
+                            Spacer(Modifier.width(16.dp))
+                            Column {
+                                Text("Scan with Camera", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF111827))
+                                Text("Auto edge detection", fontSize = 12.sp, color = Color(0xFF9CA3AF))
+                            }
+                        }
+                        HorizontalDivider(color = Color(0xFFF3F4F6))
+                        // PDF import
+                        Row(
+                            modifier = Modifier.fillMaxWidth().clickable {
+                                showImagePickerSheet = false
+                                pdfPickerLauncher.launch("application/pdf")
+                            }.padding(vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier.size(44.dp).background(Color(0xFFFEF3C7), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) { Icon(Icons.Default.PictureAsPdf, null, tint = Color(0xFFD97706), modifier = Modifier.size(22.dp)) }
+                            Spacer(Modifier.width(16.dp))
+                            Column {
+                                Text("Import PDF", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF111827))
+                                Text("Merge into your scan", fontSize = 12.sp, color = Color(0xFF9CA3AF))
+                            }
+                        }
+                        Spacer(Modifier.height(24.dp))
+                    }
+                }
+            }
+
             // --- PDF Import Modal ---
             if (showPdfImportModal != null) {
                 Dialog(onDismissRequest = { showPdfImportModal = null }) {
@@ -701,7 +798,7 @@ private suspend fun buildPdfFromImages(
     val file = File(dir, "$name.pdf")
     val doc = PdfDocument()
     
-    val paint = Paint()
+    val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
     paint.colorFilter = ColorMatrixColorFilter(getFilterMatrix(filterType))
 
     for (i in uris.indices) {
@@ -723,11 +820,15 @@ private suspend fun buildPdfFromImages(
         val pageH: Int
         
         if (pageSize == "a4") {
-            pageW = 595
-            pageH = 842
+            // A4 at 300 DPI — CamScanner-level quality
+            // 210mm × 297mm at 300 DPI = 2480 × 3508 pixels
+            pageW = 2480
+            pageH = 3508
         } else {
-            pageW = (croppedBitmap.width * 0.5f).toInt()
-            pageH = (croppedBitmap.height * 0.5f).toInt()
+            // "fit" — use original image resolution, no downscale
+            // (আগে 0.5f করে half করা হতো — এখন full resolution)
+            pageW = croppedBitmap.width
+            pageH = croppedBitmap.height
         }
 
         val pageInfo = PdfDocument.PageInfo.Builder(pageW, pageH, doc.pages.size + 1).create()
