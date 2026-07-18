@@ -229,9 +229,8 @@ class FacebookActivity : ComponentActivity() {
                     super.onPageFinished(view, url)
                     view.alpha = 1f
                     flushCookies()
-                    injectFooterRemover(view)
-                    injectRemoveOpenInAppButton(view)
-                    injectSettingsRemover(view)
+
+
                     val adultHtml = checkAdultSearchKeyword(url)
                     if (adultHtml != null) {
                         view.loadDataWithBaseURL(null, adultHtml, "text/html", "UTF-8", null)
@@ -437,155 +436,6 @@ class FacebookActivity : ComponentActivity() {
         } catch (_: Exception) {}
     }
 
-    private fun injectFooterRemover(view: WebView) {
-        view.evaluateJavascript("""
-            (function() {
-                if (window.__rasFbFooterRemoved__) return;
-                window.__rasFbFooterRemoved__ = true;
-                function removeFooter() {
-                    try {
-                        var selectors = [
-                            '[role="navigation"]',
-                            '[data-sigil="MBackPlaceholder"]',
-                            '[data-testid="tab-bar"]',
-                            '._56be','._56bf',
-                            'footer','[role="contentinfo"]',
-                            '[data-sigil="marea"]'
-                        ];
-                        selectors.forEach(function(sel) {
-                            document.querySelectorAll(sel).forEach(function(el) {
-                                var rect = el.getBoundingClientRect();
-                                if (rect.bottom >= window.innerHeight - 100 && rect.height < 150) {
-                                    el.style.display = 'none';
-                                }
-                            });
-                        });
-                        document.querySelectorAll('*').forEach(function(el) {
-                            var s = window.getComputedStyle(el);
-                            if ((s.position === 'fixed' || s.position === 'sticky') && s.bottom === '0px') {
-                                var rect = el.getBoundingClientRect();
-                                // FIX: Do not hide large overlays like search that cover the screen (height > 150)
-                                if (rect.height < 150) el.style.display = 'none';
-                            }
-                        });
-                    } catch(e) {}
-                }
-                removeFooter();
-                try { new MutationObserver(removeFooter).observe(document.body||document.documentElement,{childList:true,subtree:true}); } catch(e){}
-            })();
-        """.trimIndent(), null)
-    }
-
-    private fun injectSettingsRemover(view: WebView) {
-        val prefs = getSharedPreferences("browser_settings", Context.MODE_PRIVATE)
-        val hideVideo = prefs.getBoolean("fb_hide_videos", false)
-        val hideReels = prefs.getBoolean("fb_hide_reels", false)
-        val hideNewsfeed = prefs.getBoolean("fb_hide_newsfeed", false)
-        val grayscale = prefs.getBoolean("fb_grayscale", false)
-        val textOnly = prefs.getBoolean("fb_text_only", false)
-        
-        if (!hideVideo && !hideReels && !hideNewsfeed && !grayscale && !textOnly) return
-        
-        val js = """
-            (function() {
-                if (window.__rasFbSettingsRemover__) return;
-                window.__rasFbSettingsRemover__ = true;
-                
-                if ($grayscale) {
-                    document.documentElement.style.filter = 'grayscale(100%)';
-                }
-                
-                if ($textOnly) {
-                    var style = document.createElement('style');
-                    style.innerHTML = 'img, video, svg, i { display: none !important; }';
-                    document.head.appendChild(style);
-                }
-                
-                function applySettings() {
-                    try {
-                        var hideVideo = $hideVideo;
-                        var hideReels = $hideReels;
-                        var hideNewsfeed = $hideNewsfeed;
-                        
-                        if (hideVideo || hideReels) {
-                            var tabBars = document.querySelectorAll('[role="tablist"] [role="tab"]');
-                            tabBars.forEach(function(tab) {
-                                var href = tab.getAttribute('href') || '';
-                                if (hideVideo && href.indexOf('/watch') !== -1) tab.style.display = 'none';
-                                if (hideReels && href.indexOf('/reels') !== -1) tab.style.display = 'none';
-                            });
-                        }
-                        
-                        if (hideReels) {
-                            // Hide Reels section in feed by finding the text "Reels"
-                            document.querySelectorAll('span, div').forEach(function(el) {
-                                var txt = (el.innerText || '').toLowerCase();
-                                if (txt.trim() === 'reels' && el.childElementCount === 0) {
-                                    var parent = el.closest('[data-mcomponent]') || el.closest('div[style*="background"]');
-                                    if (parent) parent.style.display = 'none';
-                                }
-                            });
-                        }
-                        
-                        if (hideNewsfeed) {
-                            // Hide main feed articles
-                            document.querySelectorAll('div[data-mcomponent="MContainer"], article, [role="article"]').forEach(function(el) {
-                                // Exclude header/nav elements
-                                if (!el.closest('header') && !el.closest('[role="banner"]')) {
-                                    el.style.display = 'none';
-                                }
-                            });
-                        }
-                    } catch(e) {}
-                }
-                applySettings();
-                setInterval(applySettings, 1000);
-            })();
-        """.trimIndent()
-        view.evaluateJavascript(js, null)
-    }
-
-    private fun injectRemoveOpenInAppButton(view: WebView) {
-        view.evaluateJavascript("""
-            (function() {
-                if (window.__rasFbOpenAppRemoverActive__) return;
-                window.__rasFbOpenAppRemoverActive__ = true;
-
-                function removeOpenAppElements() {
-                    try {
-                        document.querySelectorAll('a[href^="fb://"], a[href^="intent://"], a[href^="market://"]')
-                            .forEach(function(el) {
-                                var parent = el.closest('[class*="banner"], [id*="banner"], [data-testid*="app"], [role="banner"]');
-                                if (parent) parent.style.display = 'none'; else el.style.display = 'none';
-                            });
-                        var bannerPhrases = [
-                            'open in app', 'use app', 'get the app', 'open the facebook app',
-                            'open app', 'get app', 'get apps for', 'faster experience',
-                            'for a faster experience', 'download the app', 'try the app',
-                            'switch to the app', 'view in app', 'continue in app',
-                            'get the best experience', 'best experience on the app'
-                        ];
-                        document.querySelectorAll('div, a, button, span').forEach(function(el) {
-                            var txt = (el.innerText || '').toLowerCase().trim();
-                            if (!txt || txt.length > 80) return;
-                            var hit = bannerPhrases.some(function(p) { return txt.indexOf(p) !== -1; });
-                            if (hit) {
-                                var parent = el.closest('[class*="banner"], [id*="banner"], [data-testid*="app"]') || el;
-                                parent.style.display = 'none';
-                            }
-                        });
-                    } catch(e) {}
-                }
-                removeOpenAppElements();
-                try {
-                    new MutationObserver(function() { removeOpenAppElements(); })
-                        .observe(document.body || document.documentElement, { childList: true, subtree: true });
-                } catch(e) {}
-                setInterval(removeOpenAppElements, 1000);
-            })();
-        """.trimIndent(), null)
-    }
-
     private fun checkAdultSearchKeyword(url: String): String? {
         return try {
             val uri = android.net.Uri.parse(url)
@@ -623,8 +473,7 @@ class FacebookActivity : ComponentActivity() {
             <p>RasFocus Safe Mode এ এই কনটেন্ট দেখানো যাবে না।</p>
             <button onclick="if(window.RasFbBlockBridge){RasFbBlockBridge.onGoHome();}">🏠 Facebook হোমে ফিরে যান</button>
             </div></body></html>
-        """.trimIndent()
-    }
+        """}
 
     /**
      * Adult-blocked page দেখানোর পর WebView এর URL "about:blank"-এর মতো stuck হয়ে
