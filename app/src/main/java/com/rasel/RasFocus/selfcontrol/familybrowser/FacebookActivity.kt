@@ -462,22 +462,25 @@ class FacebookActivity : ComponentActivity() {
         } catch (_: Exception) {}
     }
 
-    // FIX: this used to be THREE separate functions, each calling
-    // evaluateJavascript() and each setting up its OWN MutationObserver on
-    // document.body with {childList:true, subtree:true}. On a page as
-    // dynamically-updating as Facebook's feed (constant DOM mutations from
-    // lazy-loaded images/content), that meant 3 independent callbacks all
-    // re-scanning parts of the DOM on EVERY single mutation — the exact
-    // "full DOM traverse blocks main thread → white page" pattern already
-    // diagnosed once before in this file (see the old comment that used to
-    // be here about removing a querySelectorAll('*') scan). Merged into one
-    // function with ONE observer, and — the actual fix for the repeat —
-    // DEBOUNCED: instead of running cleanup on every mutation event, it
-    // waits for ~150ms of DOM quiet before running once. Also broadened the
-    // "open app" banner detection with a geometry+text heuristic (bottom-of-
-    // viewport + short height + "open"/"app" wording), similar in spirit to
-    // the footer-removal's rect check below, so it doesn't only rely on
-    // exact class/data-attribute names Facebook can change without notice.
+    // FIX (white page): user confirmed by testing — removing ALL JS
+    // injection made the white page stop happening. That means the JS
+    // itself is the cause, not just how often it ran. Re-reading the old
+    // code found "layout thrashing": every cleanup loop called
+    // el.getBoundingClientRect() (a layout READ) immediately followed by
+    // el.style.display = 'none' (a layout-invalidating WRITE), inside the
+    // same forEach. Interleaving reads and writes like that forces the
+    // browser into a SYNCHRONOUS reflow on every single iteration, because
+    // the next read can't trust cached layout after the prior write
+    // invalidated it. On a page as complex as Facebook's feed, that's
+    // expensive enough to stall the main thread and show a blank/white
+    // frame from a SINGLE cleanup pass — independent of how often the pass
+    // ran, which is why the earlier fix (merging 3 observers into 1,
+    // debouncing) reduced frequency but may not have removed the white page
+    // entirely. Rewritten below so every function only READS (collects
+    // candidate elements into a shared array) — no writes happen until
+    // runCleanup()'s single WRITE phase at the end, after all reads are
+    // done. Kept the observer-consolidation + debounce from the earlier fix
+    // too, since reducing frequency is still worth doing on top of this.
     private fun injectPageCleanup(view: WebView) {
         val prefs = getSharedPreferences("browser_settings", Context.MODE_PRIVATE)
         val hideVideo = prefs.getBoolean("fb_hide_videos", false)
@@ -500,7 +503,7 @@ class FacebookActivity : ComponentActivity() {
                     document.head.appendChild(st);
                 }
 
-                function removeFooter() {
+                function collectFooterHides(toHide) {
                     try {
                         var selectors = [
                             '[role="navigation"]','[data-sigil="MBackPlaceholder"]',
@@ -510,73 +513,92 @@ class FacebookActivity : ComponentActivity() {
                         ];
                         selectors.forEach(function(sel) {
                             document.querySelectorAll(sel).forEach(function(el) {
+                                // READ only — no style writes in this loop, so
+                                // getBoundingClientRect() never has to force a
+                                // synchronous reflow because of a PRIOR write.
                                 var rect = el.getBoundingClientRect();
                                 if (rect.bottom >= window.innerHeight - 100 && rect.height < 150)
-                                    el.style.display = 'none';
+                                    toHide.push(el);
                             });
                         });
                     } catch(e) {}
                 }
 
-                function removeOpenAppBanner() {
+                function collectOpenAppHides(toHide) {
                     try {
-                        // Pass 1 — known markers (href scheme, data attrs)
                         document.querySelectorAll('a[href^="fb://"], a[href^="intent://"], a[href^="market://"]')
                             .forEach(function(el) {
                                 var parent = el.closest('[class*="banner"],[id*="banner"],[data-testid*="app"],[role="banner"]');
-                                if (parent) parent.style.display = 'none'; else el.style.display = 'none';
+                                toHide.push(parent || el);
                             });
                         document.querySelectorAll('[data-sigil*="appbanner"],[id*="MAppBanner"],[class*="appBanner"]')
-                            .forEach(function(el) { el.style.display = 'none'; });
+                            .forEach(function(el) { toHide.push(el); });
 
-                        // Pass 2 — geometry+text heuristic fallback, in case
-                        // Facebook's exact markup no longer matches Pass 1.
-                        // Only checks direct children of body/main containers
-                        // near the bottom of the viewport — bounded scope,
-                        // not a full-page scan.
-                        var candidates = document.querySelectorAll('body > div, [role="banner"], [id*="banner"], [class*="banner"]');
-                        candidates.forEach(function(el) {
-                            var rect = el.getBoundingClientRect();
-                            if (rect.height === 0 || rect.height > 160) return;
-                            if (rect.bottom < window.innerHeight - 120) return;
-                            var txt = (el.textContent || '').toLowerCase();
-                            if (txt.indexOf('open') !== -1 && (txt.indexOf('app') !== -1 || txt.indexOf('facebook') !== -1)) {
-                                el.style.display = 'none';
-                            }
-                        });
+                        // Geometry+text heuristic fallback — bounded to direct
+                        // body children / banner-like containers, not a
+                        // full-page scan. READ only, same as above.
+                        document.querySelectorAll('body > div, [role="banner"], [id*="banner"], [class*="banner"]')
+                            .forEach(function(el) {
+                                var rect = el.getBoundingClientRect();
+                                if (rect.height === 0 || rect.height > 160) return;
+                                if (rect.bottom < window.innerHeight - 120) return;
+                                var txt = (el.textContent || '').toLowerCase();
+                                if (txt.indexOf('open') !== -1 && (txt.indexOf('app') !== -1 || txt.indexOf('facebook') !== -1))
+                                    toHide.push(el);
+                            });
                     } catch(e) {}
                 }
 
-                function applySettings() {
+                function collectSettingsHides(toHide) {
                     try {
                         if ($hideVideo || $hideReels) {
                             document.querySelectorAll('[role="tablist"] [role="tab"]').forEach(function(tab) {
                                 var href = tab.getAttribute('href') || '';
-                                if ($hideVideo && href.indexOf('/watch') !== -1) tab.style.display = 'none';
-                                if ($hideReels && href.indexOf('/reels') !== -1) tab.style.display = 'none';
+                                if ($hideVideo && href.indexOf('/watch') !== -1) toHide.push(tab);
+                                if ($hideReels && href.indexOf('/reels') !== -1) toHide.push(tab);
                             });
                         }
                         if ($hideReels) {
+                            // .textContent/.closest() don't force layout the
+                            // way getBoundingClientRect() does, but collecting
+                            // first keeps this pass consistent with the rest.
                             document.querySelectorAll('span, div').forEach(function(el) {
                                 var txt = (el.textContent || '').toLowerCase();
                                 if (txt.trim() === 'reels' && el.childElementCount === 0) {
                                     var parent = el.closest('[data-mcomponent]') || el.closest('div[style*="background"]');
-                                    if (parent) parent.style.display = 'none';
+                                    if (parent) toHide.push(parent);
                                 }
                             });
                         }
                         if ($hideNewsfeed) {
                             document.querySelectorAll('div[data-mcomponent="MContainer"], article, [role="article"]').forEach(function(el) {
-                                if (!el.closest('header') && !el.closest('[role="banner"]')) el.style.display = 'none';
+                                if (!el.closest('header') && !el.closest('[role="banner"]')) toHide.push(el);
                             });
                         }
                     } catch(e) {}
                 }
 
                 function runCleanup() {
-                    removeFooter();
-                    removeOpenAppBanner();
-                    applySettings();
+                    // ── READ phase — every function above only reads geometry/
+                    // text and pushes candidate elements into one shared array.
+                    // No style.display writes happen until ALL reads are done.
+                    var toHide = [];
+                    collectFooterHides(toHide);
+                    collectOpenAppHides(toHide);
+                    collectSettingsHides(toHide);
+
+                    // ── WRITE phase — all style changes happen together, after
+                    // every read. This is what actually fixes the white page:
+                    // the old code interleaved getBoundingClientRect() (a
+                    // layout READ) with style.display = 'none' (a layout-
+                    // invalidating WRITE) inside the same loop, forcing the
+                    // browser into a synchronous reflow on every single
+                    // iteration — expensive enough on Facebook's page to stall
+                    // the main thread and show a blank/white frame, even from
+                    // a single cleanup pass (not just from running frequently).
+                    try {
+                        toHide.forEach(function(el) { el.style.display = 'none'; });
+                    } catch(e) {}
                 }
                 runCleanup();
 
