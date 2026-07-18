@@ -1479,117 +1479,126 @@ private fun BrowserStatChip(icon: ImageVector, label: String) {
 fun BrowserChooserDialog(context: Context, onDismiss: () -> Unit) {
     var showSettingsFor by remember { mutableStateOf<String?>(null) }
 
-    // পুরো screen জুড়ে — dialog/overlay কিছু না, independent full page
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF0D1117))
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnBackPress      = true,
+            dismissOnClickOutside   = false
+        )
     ) {
-        Column(
+        // পুরো screen জুড়ে — dialog/overlay কিছু না, independent full page
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .systemBarsPadding()
+                .background(Color(0xFF0D1117))
         ) {
-            // Top bar — back button + title
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onDismiss) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color(0xFFF1F5F9)
-                    )
-                }
-                Spacer(Modifier.width(4.dp))
-                Text(
-                    "Choose App",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFFF1F5F9)
-                )
-                Spacer(Modifier.weight(1f))
-                Text(
-                    "3 available",
-                    fontSize = 12.sp,
-                    color = Color(0xFF475569),
-                    modifier = Modifier.padding(end = 16.dp)
-                )
-            }
-
-            HorizontalDivider(color = Color.White.copy(alpha = 0.07f))
-
-            // App rows
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .fillMaxSize()
+                    .systemBarsPadding()
             ) {
-                BrowserAppRow(
-                    context      = context,
-                    iconVector   = Icons.Default.Security,
-                    iconBgStart  = Color(0xFF1D4ED8),
-                    iconBgEnd    = Color(0xFF3B82F6),
-                    title        = "RasBrowser",
-                    description  = "Safe · Ad-free · Full control",
-                    onLaunch     = {
-                        onDismiss()
-                        val intent = Intent(context, FamilyBrowserActivity::class.java)
-                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        context.startActivity(intent)
-                    },
-                    onSettings   = { showSettingsFor = "RasBrowser" },
-                    onAddHome    = { pinSingleHomeShortcut(context, "RasBrowser") }
-                )
+                // Top bar — back button + title
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onDismiss) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color(0xFFF1F5F9)
+                        )
+                    }
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        "Choose App",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFFF1F5F9)
+                    )
+                    Spacer(Modifier.weight(1f))
+                    Text(
+                        "3 available",
+                        fontSize = 12.sp,
+                        color = Color(0xFF475569),
+                        modifier = Modifier.padding(end = 16.dp)
+                    )
+                }
 
-                BrowserAppRow(
-                    context      = context,
-                    iconVector   = Icons.Default.PlayCircle,
-                    iconBgStart  = Color(0xFFB91C1C),
-                    iconBgEnd    = Color(0xFFEF4444),
-                    title        = "YouTube Premium",
-                    description  = "No ads · Shorts blocked",
-                    onLaunch     = {
-                        onDismiss()
-                        val intent = Intent(
-                            context,
-                            com.rasel.RasFocus.selfcontrol.familybrowser.YoutubeActivity::class.java
-                        ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
-                        context.startActivity(intent)
-                    },
-                    onSettings   = { showSettingsFor = "YouTube" },
-                    onAddHome    = { pinSingleHomeShortcut(context, "YouTube") }
-                )
+                HorizontalDivider(color = Color.White.copy(alpha = 0.07f))
 
-                BrowserAppRow(
-                    context      = context,
-                    iconVector   = Icons.Default.Groups,
-                    iconBgStart  = Color(0xFF1D4ED8),
-                    iconBgEnd    = Color(0xFF2563EB),
-                    title        = "Facebook",
-                    description  = "Reels blocked · Filtered",
-                    onLaunch     = {
-                        onDismiss()
-                        val intent = Intent(
-                            context,
-                            com.rasel.RasFocus.selfcontrol.familybrowser.FacebookActivity::class.java
-                        ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
-                        context.startActivity(intent)
-                    },
-                    onSettings   = { showSettingsFor = "Facebook" },
-                    onAddHome    = { pinSingleHomeShortcut(context, "Facebook") }
-                )
+                // App rows
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    BrowserAppRow(
+                        context      = context,
+                        iconVector   = Icons.Default.Security,
+                        iconBgStart  = Color(0xFF1D4ED8),
+                        iconBgEnd    = Color(0xFF3B82F6),
+                        title        = "RasBrowser",
+                        description  = "Safe · Ad-free · Full control",
+                        onLaunch     = {
+                            onDismiss()
+                            val intent = Intent(context, FamilyBrowserActivity::class.java)
+                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            context.startActivity(intent)
+                        },
+                        onSettings   = { showSettingsFor = "RasBrowser" },
+                        onAddHome    = { pinSingleHomeShortcut(context, "RasBrowser") }
+                    )
+
+                    BrowserAppRow(
+                        context      = context,
+                        iconVector   = Icons.Default.PlayCircle,
+                        iconBgStart  = Color(0xFFB91C1C),
+                        iconBgEnd    = Color(0xFFEF4444),
+                        title        = "YouTube Premium",
+                        description  = "No ads · Shorts blocked",
+                        onLaunch     = {
+                            onDismiss()
+                            val intent = Intent(
+                                context,
+                                com.rasel.RasFocus.selfcontrol.familybrowser.YoutubeActivity::class.java
+                            ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+                            context.startActivity(intent)
+                        },
+                        onSettings   = { showSettingsFor = "YouTube" },
+                        onAddHome    = { pinSingleHomeShortcut(context, "YouTube") }
+                    )
+
+                    BrowserAppRow(
+                        context      = context,
+                        iconVector   = Icons.Default.Groups,
+                        iconBgStart  = Color(0xFF1D4ED8),
+                        iconBgEnd    = Color(0xFF2563EB),
+                        title        = "Facebook",
+                        description  = "Reels blocked · Filtered",
+                        onLaunch     = {
+                            onDismiss()
+                            val intent = Intent(
+                                context,
+                                com.rasel.RasFocus.selfcontrol.familybrowser.FacebookActivity::class.java
+                            ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+                            context.startActivity(intent)
+                        },
+                        onSettings   = { showSettingsFor = "Facebook" },
+                        onAddHome    = { pinSingleHomeShortcut(context, "Facebook") }
+                    )
+                }
             }
         }
-    }
 
-    if (showSettingsFor != null) {
-        BrowserSettingsDialog(context, appType = showSettingsFor!!) { showSettingsFor = null }
+        if (showSettingsFor != null) {
+            BrowserSettingsDialog(context, appType = showSettingsFor!!) { showSettingsFor = null }
+        }
     }
 }
 

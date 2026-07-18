@@ -1302,111 +1302,120 @@ fun pinHomeScreenShortcuts(context: Context) {
 fun BrowserChooserDialog(context: Context, onDismiss: () -> Unit) {
     var showSettingsFor by remember { mutableStateOf<String?>(null) }
 
-    // পুরো screen জুড়ে independent full page
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF0A0A1A))
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnBackPress      = true,
+            dismissOnClickOutside   = false
+        )
     ) {
-        Column(
+        // পুরো screen জুড়ে independent full page
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .systemBarsPadding()
+                .background(Color(0xFF0A0A1A))
         ) {
-            // Top bar
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onDismiss) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint = SoftWhite
-                    )
-                }
-                Spacer(Modifier.width(4.dp))
-                Text(
-                    "Choose App",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = SoftWhite
-                )
-                Spacer(Modifier.weight(1f))
-                Text(
-                    "3 available",
-                    fontSize = 12.sp,
-                    color = Color(0xFF475569),
-                    modifier = Modifier.padding(end = 16.dp)
-                )
-            }
-
-            HorizontalDivider(color = Color.White.copy(alpha = 0.07f))
-
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .fillMaxSize()
+                    .systemBarsPadding()
             ) {
-                BrowserAppRow(
-                    context = context,
-                    icon = Icons.Default.Security,
-                    iconTint = Color(0xFF4FACFE),
-                    title = "RasBrowser",
-                    onLaunch = {
-                        onDismiss()
-                        val intent = Intent(context, FamilyBrowserActivity::class.java)
-                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        context.startActivity(intent)
-                    },
-                    onSettings = { showSettingsFor = "RasBrowser" },
-                    onAddHome = { pinSingleHomeShortcut(context, "RasBrowser") }
-                )
+                // Top bar
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onDismiss) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = SoftWhite
+                        )
+                    }
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        "Choose App",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = SoftWhite
+                    )
+                    Spacer(Modifier.weight(1f))
+                    Text(
+                        "3 available",
+                        fontSize = 12.sp,
+                        color = Color(0xFF475569),
+                        modifier = Modifier.padding(end = 16.dp)
+                    )
+                }
 
-                BrowserAppRow(
-                    context = context,
-                    icon = Icons.Default.PlayCircle,
-                    iconTint = Color(0xFFE53935),
-                    title = "YouTube Premium",
-                    onLaunch = {
-                        onDismiss()
-                        val intent = Intent(
-                            context,
-                            com.rasel.RasFocus.selfcontrol.familybrowser.YoutubeActivity::class.java
-                        ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
-                        context.startActivity(intent)
-                    },
-                    onSettings = { showSettingsFor = "YouTube" },
-                    onAddHome = { pinSingleHomeShortcut(context, "YouTube") }
-                )
+                HorizontalDivider(color = Color.White.copy(alpha = 0.07f))
 
-                BrowserAppRow(
-                    context = context,
-                    icon = Icons.Default.Groups,
-                    iconTint = Color(0xFF1877F2),
-                    title = "Facebook",
-                    onLaunch = {
-                        onDismiss()
-                        val intent = Intent(
-                            context,
-                            com.rasel.RasFocus.selfcontrol.familybrowser.FacebookActivity::class.java
-                        ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
-                        context.startActivity(intent)
-                    },
-                    onSettings = { showSettingsFor = "Facebook" },
-                    onAddHome = { pinSingleHomeShortcut(context, "Facebook") }
-                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    BrowserAppRow(
+                        context = context,
+                        icon = Icons.Default.Security,
+                        iconTint = Color(0xFF4FACFE),
+                        title = "RasBrowser",
+                        onLaunch = {
+                            onDismiss()
+                            val intent = Intent(context, FamilyBrowserActivity::class.java)
+                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            context.startActivity(intent)
+                        },
+                        onSettings = { showSettingsFor = "RasBrowser" },
+                        onAddHome = { pinSingleHomeShortcut(context, "RasBrowser") }
+                    )
+
+                    BrowserAppRow(
+                        context = context,
+                        icon = Icons.Default.PlayCircle,
+                        iconTint = Color(0xFFE53935),
+                        title = "YouTube Premium",
+                        onLaunch = {
+                            onDismiss()
+                            val intent = Intent(
+                                context,
+                                com.rasel.RasFocus.selfcontrol.familybrowser.YoutubeActivity::class.java
+                            ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+                            context.startActivity(intent)
+                        },
+                        onSettings = { showSettingsFor = "YouTube" },
+                        onAddHome = { pinSingleHomeShortcut(context, "YouTube") }
+                    )
+
+                    BrowserAppRow(
+                        context = context,
+                        icon = Icons.Default.Groups,
+                        iconTint = Color(0xFF1877F2),
+                        title = "Facebook",
+                        onLaunch = {
+                            onDismiss()
+                            val intent = Intent(
+                                context,
+                                com.rasel.RasFocus.selfcontrol.familybrowser.FacebookActivity::class.java
+                            ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+                            context.startActivity(intent)
+                        },
+                        onSettings = { showSettingsFor = "Facebook" },
+                        onAddHome = { pinSingleHomeShortcut(context, "Facebook") }
+                    )
+                }
             }
         }
-    }
 
-    if (showSettingsFor != null) {
-        BrowserSettingsDialog(context, appType = showSettingsFor!!) {
-            showSettingsFor = null
+        if (showSettingsFor != null) {
+            BrowserSettingsDialog(context, appType = showSettingsFor!!) {
+                showSettingsFor = null
+            }
         }
     }
 }
