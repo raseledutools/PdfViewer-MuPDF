@@ -28,3 +28,23 @@ local.properties
 # Kotlin
 **/*.kotlin_module
 app/src/main/res/raw/service_account.json  
+
+# Root-level dev artifacts — never track these
+error_log.txt
+git_log*.txt
+git_status*.txt
+gitlog*.txt
+gitshow.diff
+gitstatus.txt
+commit_out.txt
+status*.txt
+dir
+photo.jpg
+patch.ps1
+patch.py
+old_pdf.kt
+push*.bat
+agent.bat
+error.bat
+setup.bat
+scratch/
