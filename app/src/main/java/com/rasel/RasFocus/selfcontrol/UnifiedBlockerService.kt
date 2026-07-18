@@ -29,6 +29,7 @@ import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.TextView
 import androidx.core.app.NotificationCompat
 import com.rasel.RasFocus.DataManager
+import com.rasel.RasFocus.R
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -244,7 +245,17 @@ class UnifiedBlockerService : AccessibilityService() {
         }
         serviceInfo = info
 
-        startForeground(NOTIFICATION_ID, buildNotification("RasFocus Protection Active", "Monitoring for distractions..."))
+        // FIX: আলাদা "RasFocus Protection Active" notification সরিয়ে ফেলা হলো।
+        // AccessibilityService স্বাভাবিক Service এর মতো না — এটা system-managed,
+        // startForeground() ছাড়াই চলে যতক্ষণ accessibility permission on থাকে।
+        // Lock/unlock status এখন MainActivity-এর UsageNotificationService
+        // (Screen Time notification) এর icon হিসেবে দেখানো হয় — এখানে আলাদা
+        // কোনো notification আর দরকার নেই।
+        // ⚠️ সতর্কতা: কিছু aggressive battery-optimization OEM (Xiaomi/MIUI,
+        // Oppo/ColorOS) কোনো foreground notification না থাকলে background
+        // service বেশি agressively kill করতে পারে। যদি ভবিষ্যতে দেখা যায়
+        // service মাঝেমধ্যে নিজে থেকে বন্ধ হয়ে যাচ্ছে, সেক্ষেত্রে আবার
+        // startForeground() ফিরিয়ে আনা প্রয়োজন হতে পারে।
         startPeriodicPopupChecker()
 
         // Deep Study resume
@@ -1311,6 +1322,9 @@ class UnifiedBlockerService : AccessibilityService() {
             .putInt("sessionType", 0).putBoolean("playSound", playSound).putInt("soundType", soundType).apply()
         if (playSound) playAmbientSound(soundType)
         showFloatingTimer()
+        // Deep Study active থাকাকালীন notification persistent (swipe করে সরানো
+        // যাবে না) — session শেষ হলে stopForeground() এ ফিরে যাবে।
+        startForeground(NOTIFICATION_ID, buildNotification("Deep Study Active", "Focus session running...", R.drawable.ic_notif_lock_locked))
         dsTimer?.cancel()
         dsTimer = object : android.os.CountDownTimer(timeMillis, 30) {
             override fun onTick(ms: Long) {
@@ -1322,7 +1336,7 @@ class UnifiedBlockerService : AccessibilityService() {
                 isDeepStudyActive = false; DataManager.isDeepStudyStrict = false
                 recoveryPrefs.edit().clear().apply()
                 sendBroadcast(Intent("POMODORO_SESSION_UPDATE"))
-                updateNotification("Protection is Active", "Monitoring your focus...")
+                stopForeground(STOP_FOREGROUND_REMOVE)
                 showSessionCompletePopup()
             }
         }.start()
@@ -1333,13 +1347,16 @@ class UnifiedBlockerService : AccessibilityService() {
         showBreakScreenOverlay()
         recoveryPrefs.edit().putBoolean("isTimerActive", true)
             .putLong("targetEndTime", System.currentTimeMillis() + timeMillis).putInt("sessionType", 1).apply()
+        // Break active থাকাকালীন notification persistent — break শেষ হলে
+        // stopForeground() এ ফিরে যাবে।
+        startForeground(NOTIFICATION_ID, buildNotification("Break Time!", "Enjoy your break", R.drawable.ic_notif_lock_locked))
         dsTimer?.cancel()
         dsTimer = object : android.os.CountDownTimer(timeMillis, 1000) {
             override fun onTick(ms: Long) { updateNotification("Break Time!", "Enjoy your break. ${ms / 60000} mins left.") }
             override fun onFinish() {
                 removeBreakScreenOverlay(); isDeepStudyActive = false; DataManager.isDeepStudyStrict = false
                 recoveryPrefs.edit().clear().apply()
-                updateNotification("Protection is Active", "Monitoring your focus...")
+                stopForeground(STOP_FOREGROUND_REMOVE)
                 BlockPage.show(this@UnifiedBlockerService, BlockPage.Type.FOCUS, "TIME'S UP!", "🎉 Break Completed! Ready to focus?")
                 sendBroadcast(Intent("POMODORO_SESSION_UPDATE"))
             }
@@ -1394,13 +1411,26 @@ class UnifiedBlockerService : AccessibilityService() {
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                NOTIFICATION_CHANNEL_ID, "RasFocus Unified Protection", NotificationManager.IMPORTANCE_LOW
-            )
+                NOTIFICATION_CHANNEL_ID, "RasFocus Unified Protection",
+                // FIX: IMPORTANCE_LOW থেকে IMPORTANCE_MIN — এটা status bar icon
+                // দেখায় কিন্তু notification shade-এ pull করলেও সবচেয়ে নিচে চাপা
+                // থাকে, silent, কোনো heads-up/badge নেই। "সবসময় চোখে পড়া fixed
+                // notification" এর সমাধান — user চাইলেও এটা প্রায় নজরে পড়বে না।
+                NotificationManager.IMPORTANCE_MIN
+            ).apply {
+                setShowBadge(false)
+                lockscreenVisibility = Notification.VISIBILITY_SECRET
+            }
             getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
     }
 
-    private fun buildNotification(title: String, content: String): Notification {
+    private fun buildNotification(
+        title: String,
+        content: String,
+        iconRes: Int = R.drawable.ic_notif_lock_locked,
+        minimal: Boolean = false
+    ): Notification {
         // ── Main tap → RasFocus MainActivity ──────────────────────────────────
         val mainIntent = PendingIntent.getActivity(
             this, 0,
@@ -1420,25 +1450,38 @@ class UnifiedBlockerService : AccessibilityService() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+        val builder = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(content)
-            .setSmallIcon(android.R.drawable.ic_secure)
+            .setSmallIcon(iconRes)
             .setContentIntent(mainIntent)
             .setOngoing(true)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            // Notification action centre এ RasBrowser shortcut
-            .addAction(
+            .setSilent(true)
+            .setPriority(NotificationCompat.PRIORITY_MIN)
+
+        // FIX: idle/base state (Deep Study বা Break active না থাকলে) এ এখন
+        // একদম minimal — কোনো action button, কোনো verbose text নেই। শুধু
+        // status bar এ lock/unlock icon-ই মূল উদ্দেশ্য। Deep Study/Break
+        // timer চললে (minimal=false) আগের মতোই RasBrowser shortcut থাকে।
+        if (!minimal) {
+            builder.addAction(
                 android.R.drawable.ic_menu_view,
                 "🌐 RasBrowser",
                 browserIntent
             )
-            .build()
+        }
+
+        return builder.build()
     }
 
-    private fun updateNotification(title: String, content: String) {
+    private fun updateNotification(
+        title: String,
+        content: String,
+        iconRes: Int = R.drawable.ic_notif_lock_locked,
+        minimal: Boolean = false
+    ) {
         (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
-            .notify(NOTIFICATION_ID, buildNotification(title, content))
+            .notify(NOTIFICATION_ID, buildNotification(title, content, iconRes, minimal))
     }
 
     // ══════════════════════════════════════════════════════════════════

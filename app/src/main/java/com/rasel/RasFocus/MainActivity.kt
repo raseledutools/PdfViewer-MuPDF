@@ -2192,6 +2192,10 @@ class UsageNotificationService : Service() {
         return enabled.contains(packageName)
     }
 
+    private fun isProtectionActuallyWorking(): Boolean {
+        return com.rasel.RasFocus.selfcontrol.UnifiedBlockerService.instance != null
+    }
+
     private fun getUsageStats(): Pair<String, Int> {
         return try {
             val usm = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
@@ -2214,22 +2218,25 @@ class UsageNotificationService : Service() {
         }
 
         val (timeText, totalMins) = getUsageStats()
+        val isWorking = isProtectionActuallyWorking()
+        val lockStatus = if (isWorking) "Locked" else "Unlocked"
         val status = when { 
-            totalMins > 300 -> "⚠️ High usage today | Shield Active" 
-            totalMins > 120 -> "📊 Moderate usage | Shield Active" 
-            else -> "✅ Good focus today | Shield Active" 
+            totalMins > 300 -> "High usage today | $lockStatus" 
+            totalMins > 120 -> "Moderate usage | $lockStatus" 
+            else -> "Good focus today | $lockStatus" 
         }
+        val iconRes = if (isWorking) R.drawable.ic_notif_lock_locked else R.drawable.ic_notif_lock_unlocked
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        nm.notify(NOTIF_ID, buildNotification("Screen Time: $timeText", status))
+        nm.notify(NOTIF_ID, buildNotification("Screen Time: $timeText", status, iconRes))
         FirebaseRepository.updateSelfDeviceStatus("self_device", 75)
     }
 
-    private fun buildNotification(title: String, content: String): android.app.Notification {
+    private fun buildNotification(title: String, content: String, iconRes: Int = android.R.drawable.ic_secure): android.app.Notification {
         val pi = PendingIntent.getActivity(this, 0, packageManager.getLaunchIntentForPackage(packageName), PendingIntent.FLAG_IMMUTABLE)
         return androidx.core.app.NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(content)
-            .setSmallIcon(android.R.drawable.ic_secure) // better icon
+            .setSmallIcon(iconRes)
             .setOngoing(true)
             .setContentIntent(pi)
             .setSilent(true)
