@@ -62,10 +62,9 @@ object AutoUpdater {
     const val NOTIFICATION_ID = 554433
     const val CHANNEL_ID = "update_channel"
 
-    // APK flavors (used as substrings for matching)
-    const val APK_UNIVERSAL = "universal"
-    const val APK_LIGHT = "light"
-    const val APK_FULL_SPLIT = "universal"  // workflow releases *-universal.apk only
+    // APK asset name substring — workflow releases "RasFocus_vX.X.X_universal.apk"
+    // এই substring দিয়ে assets array থেকে match করা হয়
+    const val APK_FULL_SPLIT = "universal"
 
     fun setupBackgroundAutoUpdate(context: Context) {
         val constraints = Constraints.Builder()
@@ -172,21 +171,25 @@ object AutoUpdater {
                 return true
             }
 
-            val downloadUrl = fetchDownloadUrl(targetApkName) ?: return false
+            // asset URL + actual filename দুটোই fetch করি
+            val (downloadUrl, assetFileName) = fetchDownloadUrlAndName(targetApkName)
+                ?: return false
 
-            // Public Downloads/RasFocus/ folder — user দেখতে পাবে, file manager থেকে install করা যাবে
+            // Public Downloads/RasFocus/ folder
             val rasDir = java.io.File(
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
                 "RasFocus"
             )
             rasDir.mkdirs()
 
-            // পুরনো version-এর APK মুছে দাও
-            rasDir.listFiles()?.filter { it.name.startsWith("RasFocus_") && it.name.endsWith(".apk") }
+            // পুরনো APK মুছে দাও
+            rasDir.listFiles()
+                ?.filter { it.name.startsWith("RasFocus_") && it.name.endsWith(".apk") }
                 ?.forEach { it.delete() }
 
-            val apkFile = java.io.File(rasDir, "RasFocus_$newTag.apk")
-            
+            // Release asset এর actual নামে save করো
+            val apkFile = java.io.File(rasDir, assetFileName)
+
             val url = URL(downloadUrl)
             val connection = url.openConnection() as HttpURLConnection
             connection.connect()
@@ -198,87 +201,83 @@ object AutoUpdater {
 
             val input = connection.inputStream
             val output = FileOutputStream(apkFile)
-
-            val data = ByteArray(4096)
+            val data = ByteArray(8192)
             var count: Int
             while (input.read(data).also { count = it } != -1) {
                 output.write(data, 0, count)
             }
-
             output.flush()
             output.close()
             input.close()
 
             showInstallNotification(context, apkFile, newTag)
-            Log.d(TAG, "Silent download complete: $newTag")
+            Log.d(TAG, "Download complete: ${apkFile.absolutePath}")
             true
         } catch (e: Exception) {
-            Log.e(TAG, "Silent download failed", e)
+            Log.e(TAG, "Download failed", e)
             false
         }
     }
 
-    private suspend fun fetchDownloadUrl(targetApkName: String): String? {
+    private suspend fun fetchDownloadUrlAndName(targetApkName: String): Pair<String, String>? {
         return try {
             val apiUrl = "https://api.github.com/repos/$GITHUB_OWNER/$GITHUB_REPO/releases/latest"
-            val url = URL(apiUrl)
-            val connection = url.openConnection() as HttpURLConnection
+            val connection = URL(apiUrl).openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
             connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
 
             if (connection.responseCode == HttpURLConnection.HTTP_OK) {
-                val response = connection.inputStream.bufferedReader().readText()
-                val json = JSONObject(response)
+                val json = JSONObject(connection.inputStream.bufferedReader().readText())
                 val assets = json.getJSONArray("assets")
-                
                 for (i in 0 until assets.length()) {
                     val asset = assets.getJSONObject(i)
-                    if (asset.getString("name").contains(targetApkName, ignoreCase = true)) {
-                        return asset.getString("browser_download_url")
+                    val name = asset.getString("name")
+                    if (name.contains(targetApkName, ignoreCase = true)) {
+                        return Pair(
+                            asset.getString("browser_download_url"),
+                            name  // actual release asset filename
+                        )
                     }
                 }
             }
             null
         } catch (e: Exception) {
+            Log.e(TAG, "fetchDownloadUrlAndName failed", e)
             null
         }
     }
+
+    // Legacy helper — still used by downloadAndInstallUpdate (browser fallback)
+    private suspend fun fetchDownloadUrl(targetApkName: String): String? =
+        fetchDownloadUrlAndName(targetApkName)?.first
 
     private fun showInstallNotification(context: Context, apkFile: File, newTag: String) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                CHANNEL_ID,
-                "App Updates",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "Notifications for new app updates"
-            }
+                CHANNEL_ID, "App Updates", NotificationManager.IMPORTANCE_HIGH
+            ).apply { description = "Notifications for new app updates" }
             notificationManager.createNotificationChannel(channel)
         }
 
-        // MainActivity খুলুক — সেখান থেকে user নিজে install করবে।
-        // সরাসরি installer launch করলে MIUI/One UI তে hang হয়।
-        val openAppIntent = context.packageManager
-            .getLaunchIntentForPackage(context.packageName)
-            ?.apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP) }
-            ?: Intent().apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
-
+        // Notification tap → direct install (not open app)
+        val installIntent = getInstallIntent(context, apkFile)
         val pendingIntent = PendingIntent.getActivity(
-            context, 0, openAppIntent,
+            context, 0, installIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
-            .setContentTitle("RasFocus Update Ready")
-            .setContentText("Version $newTag downloaded. Open the app to install.")
+            .setContentTitle("RasFocus Update Ready — $newTag")
+            .setContentText("Tap to install now")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
+            .build()
 
-        notificationManager.notify(NOTIFICATION_ID, builder.build())
+        notificationManager.notify(NOTIFICATION_ID, notification)
     }
 
     fun getDownloadedUpdateFile(context: Context, tag: String): File? {
@@ -286,8 +285,10 @@ object AutoUpdater {
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
             "RasFocus"
         )
-        val file = File(rasDir, "RasFocus_$tag.apk")
-        return if (file.exists() && file.length() > 0) file else null
+        if (!rasDir.exists()) return null
+        // tag দিয়ে match — asset filename "RasFocus_v1.0.123_universal.apk" format
+        return rasDir.listFiles()
+            ?.firstOrNull { it.name.contains(tag) && it.name.endsWith(".apk") && it.length() > 1_000_000L }
     }
 
     fun installDownloadedUpdate(context: Context, file: File) {

@@ -1,4 +1,4 @@
-name: Build PdfViewer APK
+name: Build & Release RasFocus APK
 
 on:
   push:
@@ -31,47 +31,32 @@ jobs:
         with:
           cache-read-only: false
 
-      # FIX: app/build.gradle.kts declares light/full product flavors
-      # (mirroring RasFocus-final) — MuPDF itself is scoped to
-      # "fullImplementation" only. Plain `assembleRelease` with flavors
-      # declared becomes a lifecycle task that tries to build EVERY flavor's
-      # release variant, and the output path below (apk/release/*.apk)
-      # never matches the real flavor-qualified paths
-      # (apk/full/release/*.apk, apk/light/release/*.apk) either way.
-      # Building assembleFullRelease specifically — matching RasFocus-final's
-      # own working CI job — is what actually contains MuPDF.
-      - name: Build Full Release APK (with MuPDF)
+      - name: Build Full Release APK (universal + split)
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          # stdout + stderr দুইটাই capture — kapt error stderr-এ যায়
           ./gradlew assembleFullRelease --build-cache --parallel --info 2>&1 | tee /tmp/build.log; BUILD_EXIT=${PIPESTATUS[0]}
           exit $BUILD_EXIT
 
-      - name: On failure — commit error_log.txt to repo (readable by Claude)
+      - name: On failure — commit error_log.txt to repo
         if: failure()
         run: |
           {
             echo "=== KOTLIN/KAPT ERRORS ==="
-            # Kotlin compiler errors (e: prefix)
             grep -E "^e: " /tmp/build.log || true
             echo ""
-
             echo "=== UNRESOLVED / TYPE ERRORS ==="
             grep -E "Unresolved reference|Cannot find|None of the following|Type mismatch|Overload resolution|Not enough information|Property delegate" /tmp/build.log || true
             echo ""
-
             echo "=== KAPT / MODULE ERRORS ==="
             grep -E "Could not load module|kaptGenerateStubs|kapt error|annotation processing|Compilation error" /tmp/build.log || true
             echo ""
-
             echo "=== BUILD FAILURE ==="
             grep -E "FAILED|BUILD FAILED|What went wrong|Execution failed" /tmp/build.log || true
             echo ""
-
             echo "=== LAST 50 LINES ==="
             tail -50 /tmp/build.log
           } > /tmp/error_log.txt 2>&1 || true
@@ -88,29 +73,37 @@ jobs:
       - name: Debug — list generated APKs
         run: find app/build/outputs/apk -name "*.apk" -print
 
-      - name: Upload APK as artifact
+      - name: Rename APKs for clarity
+        run: |
+          TAG="v1.0.${{ github.run_number }}"
+          APK_DIR="app/build/outputs/apk/full/release"
+          # universal APK rename
+          UNIVERSAL=$(find "$APK_DIR" -name "*universal*.apk" | head -1)
+          if [ -n "$UNIVERSAL" ]; then
+            cp "$UNIVERSAL" "$APK_DIR/RasFocus_${TAG}_universal.apk"
+          fi
+          # split APK rename (armeabi-v7a)
+          SPLIT=$(find "$APK_DIR" -name "*.apk" ! -name "*universal*" | head -1)
+          if [ -n "$SPLIT" ]; then
+            cp "$SPLIT" "$APK_DIR/RasFocus_${TAG}_armeabi-v7a.apk"
+          fi
+
+      - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: PdfViewer-full-release
-          path: app/build/outputs/apk/full/release/*.apk
+          name: RasFocus-full-release-${{ github.run_number }}
+          path: |
+            app/build/outputs/apk/full/release/RasFocus_*.apk
           retention-days: 30
 
-      # FIX: this used to glob *.apk here too, which published BOTH the
-      # universal APK AND the armeabi-v7a-only split (see app/build.gradle.kts
-      # — that split exists only for the developer's own 32-bit test device,
-      # never meant for public distribution). A user grabbing the
-      # armeabi-v7a-only build on a modern 64-bit-only phone gets an APK
-      # missing the matching MuPDF native library for their device — any
-      # attempt to open a PDF (e.g. "Open with RasFocus" from a file
-      # manager) throws UnsatisfiedLinkError and hard-crashes. Publishing
-      # only the *-universal.apk (bundles every ABI) removes that whole
-      # failure mode for anyone downloading from GitHub Releases.
       - name: Publish to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
           name: RasFocus v1.0.${{ github.run_number }}
-          files: app/build/outputs/apk/full/release/*universal*.apk
+          files: |
+            app/build/outputs/apk/full/release/RasFocus_*_universal.apk
+            app/build/outputs/apk/full/release/RasFocus_*_armeabi-v7a.apk
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
