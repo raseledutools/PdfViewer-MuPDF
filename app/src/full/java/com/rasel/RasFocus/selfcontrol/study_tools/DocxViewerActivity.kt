@@ -255,7 +255,11 @@ object DocxParser {
     }
 
     private fun newParser(stream: InputStream): XmlPullParser {
-        val factory = XmlPullParserFactory.newInstance().apply { isNamespaceAware = true }
+        // FIX (blank Word doc): isNamespaceAware = true strips the "w:" prefix
+        // from every tag name, so xpp.name returned "pStyle"/"r"/"t" instead of
+        // "w:pStyle"/"w:r"/"w:t" — none of the `when (xpp.name)` checks below
+        // ever matched, so no runs/paragraphs were ever captured.
+        val factory = XmlPullParserFactory.newInstance().apply { isNamespaceAware = false }
         return factory.newPullParser().apply { setInput(stream, "UTF-8") }
     }
 }

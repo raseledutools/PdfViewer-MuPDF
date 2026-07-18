@@ -292,7 +292,13 @@ object PptxParser {
     }
 
     private fun newParser(stream: InputStream): XmlPullParser {
-        val factory = XmlPullParserFactory.newInstance().apply { isNamespaceAware = true }
+        // FIX (blank/white slides): isNamespaceAware = true strips the "p:"/"a:"
+        // prefix from every tag name, so xpp.name returned "txBody"/"t"/"sp"
+        // instead of "a:txBody"/"a:t"/"p:sp" — none of the `when (xpp.name)`
+        // checks below ever matched, so no text/shapes were ever captured.
+        // Keeping namespace-awareness OFF makes xpp.name return the raw
+        // qualified name, matching the prefixed strings used throughout.
+        val factory = XmlPullParserFactory.newInstance().apply { isNamespaceAware = false }
         return factory.newPullParser().apply { setInput(stream, "UTF-8") }
     }
 }
