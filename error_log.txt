@@ -109,9 +109,11 @@ e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/
 > Task :app:compileFullReleaseKotlin FAILED
 * What went wrong:
 Execution failed for task ':app:compileFullReleaseKotlin'.
-BUILD FAILED in 1m 44s
+BUILD FAILED in 1m 14s
 
 === LAST 50 LINES ===
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/study_tools.kt:1678:30 Unresolved reference 'isEmpty'.
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/study_tools.kt:1681:30 Unresolved reference 'forEachIndexed'.
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/study_tools.kt:1681:45 Cannot infer type for this parameter. Please specify it explicitly.
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/study_tools.kt:1681:47 Cannot infer type for this parameter. Please specify it explicitly.
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/study_tools.kt:1681:54 Cannot infer type for this parameter. Please specify it explicitly.
@@ -132,13 +134,11 @@ Finished executing kotlin compiler using DAEMON strategy
 
 > Task :app:compileFullReleaseKotlin FAILED
 AAPT2 aapt2-8.2.2-10154469-linux Daemon #0: shutdown
-AAPT2 aapt2-8.2.2-10154469-linux Daemon #1: shutdown
-AAPT2 aapt2-8.2.2-10154469-linux Daemon #2: shutdown
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784383786742.json
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784384168125.json
 
 0 problems were found storing the configuration cache.
 
-See the complete report at file:///home/runner/work/RasFocus-final/RasFocus-final/build/reports/configuration-cache/27huuiam0gmo143qlg71rp15t/4y418utqrhq7dmpmmvab4u9ap/configuration-cache-report.html
+See the complete report at file:///home/runner/work/RasFocus-final/RasFocus-final/build/reports/configuration-cache/841j4loktltxlcu7kyrurkr96/4y418utqrhq7dmpmmvab4u9ap/configuration-cache-report.html
 
 FAILURE: Build failed with an exception.
 
@@ -159,6 +159,6 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.9/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 1m 44s
-31 actionable tasks: 31 executed
+BUILD FAILED in 1m 14s
+31 actionable tasks: 21 executed, 10 from cache
 Configuration cache entry stored.
