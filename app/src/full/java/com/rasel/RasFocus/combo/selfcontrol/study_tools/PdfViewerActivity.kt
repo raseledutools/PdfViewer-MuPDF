@@ -236,9 +236,13 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
     var showToolbar     by remember { mutableStateOf(false) }
     var selectedColor   by remember { mutableStateOf(HL_YELLOW) }
 
-    // MuPDF Document — loaded from bytes so it works on all devices.
-    // /proc/self/fd/ trick was device-specific and crashed on many ROMs.
+    // MuPDF Document + the ParcelFileDescriptor that backs it.
+    // Both must stay open together: pfd keeps the kernel fd alive so MuPDF
+    // can keep reading page data.  Closing pfd while pdfDoc is still in use
+    // caused the fd to be recycled by the OS and MuPDF would then read garbage
+    // — the root cause of the folder-open crash.
     var pdfDoc   by remember { mutableStateOf<Document?>(null) }
+    var pdfPfd   by remember { mutableStateOf<android.os.ParcelFileDescriptor?>(null) }
 
     val listState = rememberLazyListState()
     val screenW   = context.resources.displayMetrics.widthPixels
@@ -247,34 +251,36 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
     LaunchedEffect(uri) {
         if (uri == null) { isLoading = false; errorMsg = "PDF পাওয়া যায়নি"; return@LaunchedEffect }
         isLoading = true
-        errorMsg  = ""
-
-        // Close previous document
+        // Close any previously-open document before loading the new one.
         withContext(Dispatchers.IO) {
             try { pdfDoc?.destroy() } catch (_: Exception) {}
+            try { pdfPfd?.close()  } catch (_: Exception) {}
         }
-        pdfDoc = null
-        pages.clear()
-
+        pdfDoc = null; pdfPfd = null
         withContext(Dispatchers.IO) {
             try {
-                // Read all bytes first — most reliable across all Android
-                // versions and file managers (avoids /proc/self/fd tricks
-                // that crash on many custom ROMs).
-                val bytes: ByteArray = when (uri.scheme) {
+                val doc: Document
+                val pfd: android.os.ParcelFileDescriptor?
+
+                when (uri.scheme) {
                     "file" -> {
-                        java.io.File(uri.path!!).readBytes()
+                        // file:// — read directly by path (no content resolver needed)
+                        val path = uri.path ?: throw IllegalStateException("Invalid file URI")
+                        pfd = null
+                        doc = Document.openDocument(path)
                     }
                     else -> {
-                        context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                            ?: throw IllegalStateException("Cannot open: $uri")
+                        // content:// — open via ContentResolver, keep pfd alive
+                        val openedPfd = context.contentResolver.openFileDescriptor(uri, "r")
+                            ?: throw IllegalStateException("ContentResolver returned null for $uri")
+                        pfd = openedPfd
+                        doc = Document.openDocument("/proc/self/fd/${openedPfd.fd}")
                     }
                 }
 
-                val doc = Document.openDocument(bytes, "pdf", null, null)
-
                 withContext(Dispatchers.Main) {
                     pdfDoc = doc
+                    pdfPfd = pfd
                 }
                 val count = doc.countPages()
 
@@ -418,6 +424,7 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
         onDispose {
             bitmapCache.evictAll()
             try { pdfDoc?.destroy() } catch (_: Exception) {}
+            try { pdfPfd?.close()  } catch (_: Exception) {}
         }
     }
 
