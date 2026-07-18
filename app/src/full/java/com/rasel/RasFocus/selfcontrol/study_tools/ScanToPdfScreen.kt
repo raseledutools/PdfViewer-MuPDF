@@ -777,7 +777,17 @@ fun loadDocs(context: Context): List<ScannedDoc> {
 private fun sharePdf(context: Context, doc: ScannedDoc) {
     val file = File(doc.path)
     if (!file.exists()) { Toast.makeText(context, "File not found", Toast.LENGTH_SHORT).show(); return }
-    val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
+    // FIX: authority string was "${context.packageName}.provider" but the
+    // AndroidManifest.xml <provider> declares
+    // android:authorities="${applicationId}.fileprovider" — a mismatch.
+    // getUriForFile() itself doesn't validate this at call time, it just
+    // builds a content:// Uri with whatever authority string it's given —
+    // the failure happens later, when Android tries to resolve/grant
+    // permission on that Uri (via FLAG_GRANT_READ_URI_PERMISSION below) and
+    // can't find ANY <provider> registered under ".provider". That's the
+    // likely source of the "PathProvider"-looking error. Matches the
+    // correct authority already used in DiaryPdfExporter.kt.
+    val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
     context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
         type = "application/pdf"
         putExtra(Intent.EXTRA_STREAM, uri)
