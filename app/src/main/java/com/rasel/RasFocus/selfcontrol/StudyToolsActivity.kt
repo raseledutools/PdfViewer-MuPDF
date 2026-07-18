@@ -20,7 +20,7 @@ import com.rasel.RasFocus.selfcontrol.study_tools.StudyToolsScreen
  * ProfessionalDiaryScreen (diary.kt) এর মধ্যে টগল করে — আলাদা কোনো Activity
  * লাগে না।
  */
-class StudyToolsActivity : ComponentActivity() {
+class StudyToolsActivity : androidx.fragment.app.FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
