@@ -13,6 +13,7 @@ import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.content.FileProvider
 import androidx.work.*
+import androidx.work.OneTimeWorkRequestBuilder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -96,15 +97,24 @@ object AutoUpdater {
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
 
-        val request = PeriodicWorkRequestBuilder<AutoUpdateWorker>(15, TimeUnit.MINUTES)
+        // Periodic check every 15 min
+        val periodicRequest = PeriodicWorkRequestBuilder<AutoUpdateWorker>(15, TimeUnit.MINUTES)
             .setConstraints(constraints)
             .build()
 
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
             "AutoUpdateCheck",
-            ExistingPeriodicWorkPolicy.KEEP,
-            request
+            ExistingPeriodicWorkPolicy.UPDATE,  // নতুন version এ replace করো
+            periodicRequest
         )
+
+        // App open হলে সাথে সাথে একবার check — 15 min wait করে না
+        val immediateRequest = OneTimeWorkRequestBuilder<AutoUpdateWorker>()
+            .setConstraints(constraints)
+            .build()
+        WorkManager.getInstance(context).enqueue(immediateRequest)
+
+        Log.d(TAG, "AutoUpdate scheduled (periodic + immediate)")
     }
 
     // ── Check + trigger download if new version ──────────────────────────────

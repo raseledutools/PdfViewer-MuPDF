@@ -2008,7 +2008,20 @@ fun PermissionSetupScreen(persona: UserPersona?, onAllGranted: () -> Unit) {
             isRequired = true,
             onClick = {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    context.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply { putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName); addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
+                    if (!notifOk) {
+                        // Runtime permission request — system dialog দেখাবে
+                        androidx.core.app.ActivityCompat.requestPermissions(
+                            context as androidx.activity.ComponentActivity,
+                            arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                            1001
+                        )
+                    } else {
+                        // Already granted — settings-এ যাও
+                        context.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        })
+                    }
                 }
             }
         )
