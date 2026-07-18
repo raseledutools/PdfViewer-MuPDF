@@ -124,25 +124,39 @@ object DriveBackupManager {
     }
 
     // ── Drive service builder (uses the already-signed-in Google account) ─
+    // NOTE: GoogleAccountCredential internally calls AccountManager which
+    // can block — always call this from a background thread (Dispatchers.IO).
     private fun buildDriveService(context: Context): Drive? {
-        val account: GoogleSignInAccount =
-            GoogleSignIn.getLastSignedInAccount(context) ?: return null
+        return try {
+            val account: GoogleSignInAccount =
+                GoogleSignIn.getLastSignedInAccount(context) ?: return null
 
-        if (!GoogleSignIn.hasPermissions(account, Scope(DriveScopes.DRIVE_FILE))) {
-            Log.w(TAG, "Drive scope not granted for ${account.email}")
-            return null
+            if (!GoogleSignIn.hasPermissions(account, Scope(DriveScopes.DRIVE_FILE))) {
+                Log.w(TAG, "Drive scope not granted for \${account.email}")
+                return null
+            }
+
+            // account.account can be null if the device account isn't yet
+            // synced — guard against it to prevent NPE crash
+            val androidAccount = account.account ?: run {
+                Log.w(TAG, "account.account is null — skipping Drive init")
+                return null
+            }
+
+            val credential = GoogleAccountCredential.usingOAuth2(
+                context, listOf(DriveScopes.DRIVE_FILE)
+            )
+            credential.selectedAccount = androidAccount
+
+            Drive.Builder(
+                NetHttpTransport(),
+                GsonFactory.getDefaultInstance(),
+                credential
+            ).setApplicationName("RasFocus+").build()
+        } catch (e: Exception) {
+            Log.e(TAG, "buildDriveService failed", e)
+            null
         }
-
-        val credential = GoogleAccountCredential.usingOAuth2(
-            context, listOf(DriveScopes.DRIVE_FILE)
-        )
-        credential.selectedAccount = account.account
-
-        return Drive.Builder(
-            NetHttpTransport(),
-            GsonFactory.getDefaultInstance(),
-            credential
-        ).setApplicationName("RasFocus+").build()
     }
 
     // ── Find (or create) the "RasFocus+" app folder, cached by ID ─────────

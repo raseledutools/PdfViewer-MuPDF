@@ -1008,8 +1008,14 @@ fun RasFocusApp(viewModel: MainViewModel) {
     // Drive folder + settings for returning users. Runs in parallel with the
     // splash navigation logic below so it never delays getting into the app.
     LaunchedEffect(Unit) {
-        if (FirebaseAuth.getInstance().currentUser != null && DriveBackupManager.isAvailable(context)) {
-            DriveBackupManager.syncNow(context)
+        // Drive sync: run on IO thread with full error isolation.
+        // google-api-client-android can throw on main thread during
+        // credential init — explicit IO dispatch prevents that.
+        if (FirebaseAuth.getInstance().currentUser != null &&
+            DriveBackupManager.isAvailable(context)) {
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                try { DriveBackupManager.syncNow(context) } catch (_: Exception) {}
+            }
         }
     }
 
