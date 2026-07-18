@@ -228,10 +228,6 @@ class FacebookActivity : ComponentActivity() {
                 override fun onPageFinished(view: WebView, url: String) {
                     super.onPageFinished(view, url)
                     view.alpha = 1f
-                    injectRemoveOpenInAppButton(view)
-                    injectFooterRemover(view)
-                    injectSettingsRemover(view)
-                    adBlocker.injectContentScanner(view)
                     flushCookies()
                 }
 
