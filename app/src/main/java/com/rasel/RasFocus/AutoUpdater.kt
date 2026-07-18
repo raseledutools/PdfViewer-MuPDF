@@ -91,30 +91,44 @@ object AutoUpdater {
     const val APK_FULL_SPLIT = APK_SPLIT
     const val APK_LIGHT      = "light"
 
+    // ── Developer / Testing mode ──────────────────────────────────────────────
+    // true  → app open/boot এ সাথে সাথে check+download (WorkManager bypass)
+    //         same version হলেও notification দেখাবে — testing এ কাজে লাগে
+    // false → production: tag compare, periodic 15min background worker
+    private const val DEV_MODE = true
+
     // ── Setup ────────────────────────────────────────────────────────────────
     fun setupBackgroundAutoUpdate(context: Context) {
+        if (DEV_MODE) {
+            // WorkManager periodic minimum 15 min — Android enforce করে, কমানো যায় না
+            // Dev mode এ সরাসরি coroutine এ run করি
+            Log.d(TAG, "DEV_MODE: skipping periodic WorkManager — direct coroutine check")
+            checkForUpdates(context)
+            return
+        }
+
+        // Production: periodic 15 min background worker
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
 
-        // Periodic check every 15 min
         val periodicRequest = PeriodicWorkRequestBuilder<AutoUpdateWorker>(15, TimeUnit.MINUTES)
             .setConstraints(constraints)
             .build()
 
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
             "AutoUpdateCheck",
-            ExistingPeriodicWorkPolicy.UPDATE,  // নতুন version এ replace করো
+            ExistingPeriodicWorkPolicy.UPDATE,
             periodicRequest
         )
 
-        // App open হলে সাথে সাথে একবার check — 15 min wait করে না
+        // App open হলে immediate একটা check
         val immediateRequest = OneTimeWorkRequestBuilder<AutoUpdateWorker>()
             .setConstraints(constraints)
             .build()
         WorkManager.getInstance(context).enqueue(immediateRequest)
 
-        Log.d(TAG, "AutoUpdate scheduled (periodic + immediate)")
+        Log.d(TAG, "AutoUpdate scheduled (periodic 15min + immediate)")
     }
 
     // ── Check + trigger download if new version ──────────────────────────────
@@ -123,9 +137,17 @@ object AutoUpdater {
         val lastTag = prefs.getString(LAST_TAG_KEY, "") ?: ""
 
         fetchLatestReleaseInfo { info ->
-            if (info != null && info.tagName != lastTag) {
-                // New release found — start download immediately
+            if (info == null) {
+                Log.w(TAG, "checkForUpdates: could not fetch release info")
+                return@fetchLatestReleaseInfo
+            }
+
+            if (DEV_MODE || info.tagName != lastTag) {
+                // DEV_MODE: same tag হলেও download — testing এ notification দেখা যাবে
+                Log.d(TAG, "checkForUpdates: new=${info.tagName} last=$lastTag DEV=$DEV_MODE → downloading")
                 silentDownloadUpdate(context, APK_SPLIT, info.tagName)
+            } else {
+                Log.d(TAG, "checkForUpdates: already on latest $lastTag — skip")
             }
         }
     }
