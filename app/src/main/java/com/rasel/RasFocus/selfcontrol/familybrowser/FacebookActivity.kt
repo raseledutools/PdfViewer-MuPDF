@@ -269,12 +269,12 @@ class FacebookActivity : ComponentActivity() {
                     if (!url.startsWith("http://") && !url.startsWith("https://")) return true
 
                     if (AdBlocker.isAdultSite(url)) {
-                        view.loadDataWithBaseURL(null, buildAdultBlockedPage(), "text/html", "UTF-8", null)
+                        view.loadDataWithBaseURL("https://m.facebook.com/", buildAdultBlockedPage(), "text/html", "UTF-8", null)
                         return true
                     }
                     val adultBlockHtml = checkAdultSearchKeyword(url)
                     if (adultBlockHtml != null) {
-                        view.loadDataWithBaseURL(null, adultBlockHtml, "text/html", "UTF-8", null)
+                        view.loadDataWithBaseURL("https://m.facebook.com/", adultBlockHtml, "text/html", "UTF-8", null)
                         return true
                     }
                     return false
