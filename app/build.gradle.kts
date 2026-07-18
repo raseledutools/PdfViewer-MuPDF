@@ -3,12 +3,7 @@ import java.util.Base64
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    // FIX: Kotlin 2.0+ decoupled the Compose compiler from the Kotlin
-    // compiler itself — this project uses Kotlin 2.1.10 (RasFocus-final
-    // uses 1.9.24, which is why it never needed this plugin; not something
-    // to copy from there, this is specific to this project's newer Kotlin
-    // version). Version already declared with apply false at the root
-    // build.gradle.kts, just needed to actually be applied here.
+    id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.gms.google-services")
     id("com.google.devtools.ksp")
 }
@@ -164,10 +159,6 @@ android {
         freeCompilerArgs += listOf(
             "-Xjvm-default=all"
         )
-    }
-
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"
     }
 
     buildFeatures {
