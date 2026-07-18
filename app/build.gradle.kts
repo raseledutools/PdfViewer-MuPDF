@@ -10,7 +10,7 @@ plugins {
     // version). Version already declared with apply false at the root
     // build.gradle.kts, just needed to actually be applied here.
     id("com.google.gms.google-services")
-    id("kotlin-kapt")
+    id("com.google.devtools.ksp")
 }
 
 android {
@@ -253,7 +253,7 @@ dependencies {
     // Room
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
-    kapt("androidx.room:room-compiler:2.6.1")
+    ksp("androidx.room:room-compiler:2.6.1")
 
     // Firebase & Play Services
     implementation(platform("com.google.firebase:firebase-bom:32.7.3"))
