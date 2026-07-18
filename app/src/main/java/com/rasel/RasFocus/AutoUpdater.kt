@@ -40,7 +40,7 @@ class AutoUpdateWorker(appContext: Context, workerParams: WorkerParameters) : Co
             
             val info = AutoUpdater.fetchLatestReleaseInfoSync()
             if (info != null && info.tagName != lastTag) {
-                val success = AutoUpdater.downloadUpdateSync(applicationContext, AutoUpdater.APK_UNIVERSAL, info.tagName)
+                val success = AutoUpdater.downloadUpdateSync(applicationContext, AutoUpdater.APK_FULL_SPLIT, info.tagName)
                 if (success) {
                     AutoUpdater.saveTag(applicationContext, info.tagName)
                     return@withContext Result.success()
@@ -126,7 +126,7 @@ object AutoUpdater {
         val lastTag = prefs.getString(LAST_TAG_KEY, "") ?: ""
         fetchLatestReleaseInfo { info ->
             if (info != null && info.tagName != lastTag) {
-                silentDownloadUpdate(context, APK_UNIVERSAL, info.tagName)
+                silentDownloadUpdate(context, APK_FULL_SPLIT, info.tagName)
             }
         }
     }
