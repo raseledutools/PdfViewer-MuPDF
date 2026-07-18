@@ -236,11 +236,10 @@ class FacebookActivity : ComponentActivity() {
                         view.loadDataWithBaseURL("https://m.facebook.com/", adultHtml, "text/html", "UTF-8", null)
                         return
                     }
-                    // JS injection — শুধু একবার inject হবে (guard flag দিয়ে)
-                    // onPageFinished এ inject করা safe কারণ DOM ready থাকে
-                    injectFooterRemover(view)
-                    injectRemoveOpenInAppButton(view)
-                    injectSettingsRemover(view)
+                    // JS injection — গার্ড ফ্ল্যাগ দিয়ে ensure করা যে একবারই
+                    // মূল cleanup চলবে। onPageFinished এ inject করা safe
+                    // কারণ DOM ready থাকে।
+                    injectPageCleanup(view)
                 }
 
                 override fun shouldInterceptRequest(
@@ -463,11 +462,44 @@ class FacebookActivity : ComponentActivity() {
         } catch (_: Exception) {}
     }
 
-    private fun injectFooterRemover(view: WebView) {
+    // FIX: this used to be THREE separate functions, each calling
+    // evaluateJavascript() and each setting up its OWN MutationObserver on
+    // document.body with {childList:true, subtree:true}. On a page as
+    // dynamically-updating as Facebook's feed (constant DOM mutations from
+    // lazy-loaded images/content), that meant 3 independent callbacks all
+    // re-scanning parts of the DOM on EVERY single mutation — the exact
+    // "full DOM traverse blocks main thread → white page" pattern already
+    // diagnosed once before in this file (see the old comment that used to
+    // be here about removing a querySelectorAll('*') scan). Merged into one
+    // function with ONE observer, and — the actual fix for the repeat —
+    // DEBOUNCED: instead of running cleanup on every mutation event, it
+    // waits for ~150ms of DOM quiet before running once. Also broadened the
+    // "open app" banner detection with a geometry+text heuristic (bottom-of-
+    // viewport + short height + "open"/"app" wording), similar in spirit to
+    // the footer-removal's rect check below, so it doesn't only rely on
+    // exact class/data-attribute names Facebook can change without notice.
+    private fun injectPageCleanup(view: WebView) {
+        val prefs = getSharedPreferences("browser_settings", Context.MODE_PRIVATE)
+        val hideVideo = prefs.getBoolean("fb_hide_videos", false)
+        val hideReels = prefs.getBoolean("fb_hide_reels", false)
+        val hideNewsfeed = prefs.getBoolean("fb_hide_newsfeed", false)
+        val grayscale = prefs.getBoolean("fb_grayscale", false)
+        val textOnly = prefs.getBoolean("fb_text_only", false)
+
         view.evaluateJavascript("""
             (function() {
-                if (window.__rasFbFooterRemoved__) return;
-                window.__rasFbFooterRemoved__ = true;
+                if (window.__rasFbCleanupActive__) return;
+                window.__rasFbCleanupActive__ = true;
+
+                // One-time styles — CSS rules apply to future elements too,
+                // no need to re-run these on every mutation.
+                if ($grayscale) { document.documentElement.style.filter = 'grayscale(100%)'; }
+                if ($textOnly) {
+                    var st = document.createElement('style');
+                    st.innerHTML = 'img, video, svg, i { display: none !important; }';
+                    document.head.appendChild(st);
+                }
+
                 function removeFooter() {
                     try {
                         var selectors = [
@@ -483,62 +515,48 @@ class FacebookActivity : ComponentActivity() {
                                     el.style.display = 'none';
                             });
                         });
-                        // querySelectorAll('*') + getComputedStyle সরানো হয়েছে —
-                        // এটা পুরো DOM traverse করে main thread block করত → white page
                     } catch(e) {}
                 }
-                removeFooter();
-                try {
-                    new MutationObserver(function(mutations) {
-                        if (mutations.some(function(m) { return m.addedNodes.length > 0; }))
-                            removeFooter();
-                    }).observe(document.body||document.documentElement,{childList:true,subtree:true});
-                } catch(e) {}
-            })();
-        """.trimIndent(), null)
-    }
 
-    private fun injectSettingsRemover(view: WebView) {
-        val prefs = getSharedPreferences("browser_settings", Context.MODE_PRIVATE)
-        val hideVideo = prefs.getBoolean("fb_hide_videos", false)
-        val hideReels = prefs.getBoolean("fb_hide_reels", false)
-        val hideNewsfeed = prefs.getBoolean("fb_hide_newsfeed", false)
-        val grayscale = prefs.getBoolean("fb_grayscale", false)
-        val textOnly = prefs.getBoolean("fb_text_only", false)
-        
-        if (!hideVideo && !hideReels && !hideNewsfeed && !grayscale && !textOnly) return
-        
-        val js = """
-            (function() {
-                if (window.__rasFbSettingsRemover__) return;
-                window.__rasFbSettingsRemover__ = true;
-                
-                if ($grayscale) {
-                    document.documentElement.style.filter = 'grayscale(100%)';
+                function removeOpenAppBanner() {
+                    try {
+                        // Pass 1 — known markers (href scheme, data attrs)
+                        document.querySelectorAll('a[href^="fb://"], a[href^="intent://"], a[href^="market://"]')
+                            .forEach(function(el) {
+                                var parent = el.closest('[class*="banner"],[id*="banner"],[data-testid*="app"],[role="banner"]');
+                                if (parent) parent.style.display = 'none'; else el.style.display = 'none';
+                            });
+                        document.querySelectorAll('[data-sigil*="appbanner"],[id*="MAppBanner"],[class*="appBanner"]')
+                            .forEach(function(el) { el.style.display = 'none'; });
+
+                        // Pass 2 — geometry+text heuristic fallback, in case
+                        // Facebook's exact markup no longer matches Pass 1.
+                        // Only checks direct children of body/main containers
+                        // near the bottom of the viewport — bounded scope,
+                        // not a full-page scan.
+                        var candidates = document.querySelectorAll('body > div, [role="banner"], [id*="banner"], [class*="banner"]');
+                        candidates.forEach(function(el) {
+                            var rect = el.getBoundingClientRect();
+                            if (rect.height === 0 || rect.height > 160) return;
+                            if (rect.bottom < window.innerHeight - 120) return;
+                            var txt = (el.textContent || '').toLowerCase();
+                            if (txt.indexOf('open') !== -1 && (txt.indexOf('app') !== -1 || txt.indexOf('facebook') !== -1)) {
+                                el.style.display = 'none';
+                            }
+                        });
+                    } catch(e) {}
                 }
-                
-                if ($textOnly) {
-                    var style = document.createElement('style');
-                    style.innerHTML = 'img, video, svg, i { display: none !important; }';
-                    document.head.appendChild(style);
-                }
-                
+
                 function applySettings() {
                     try {
-                        var hideVideo = $hideVideo;
-                        var hideReels = $hideReels;
-                        var hideNewsfeed = $hideNewsfeed;
-                        
-                        if (hideVideo || hideReels) {
-                            var tabBars = document.querySelectorAll('[role="tablist"] [role="tab"]');
-                            tabBars.forEach(function(tab) {
+                        if ($hideVideo || $hideReels) {
+                            document.querySelectorAll('[role="tablist"] [role="tab"]').forEach(function(tab) {
                                 var href = tab.getAttribute('href') || '';
-                                if (hideVideo && href.indexOf('/watch') !== -1) tab.style.display = 'none';
-                                if (hideReels && href.indexOf('/reels') !== -1) tab.style.display = 'none';
+                                if ($hideVideo && href.indexOf('/watch') !== -1) tab.style.display = 'none';
+                                if ($hideReels && href.indexOf('/reels') !== -1) tab.style.display = 'none';
                             });
                         }
-                        
-                        if (hideReels) {
+                        if ($hideReels) {
                             document.querySelectorAll('span, div').forEach(function(el) {
                                 var txt = (el.textContent || '').toLowerCase();
                                 if (txt.trim() === 'reels' && el.childElementCount === 0) {
@@ -547,53 +565,32 @@ class FacebookActivity : ComponentActivity() {
                                 }
                             });
                         }
-                        
-                        if (hideNewsfeed) {
-                            // Hide main feed articles
+                        if ($hideNewsfeed) {
                             document.querySelectorAll('div[data-mcomponent="MContainer"], article, [role="article"]').forEach(function(el) {
-                                // Exclude header/nav elements
-                                if (!el.closest('header') && !el.closest('[role="banner"]')) {
-                                    el.style.display = 'none';
-                                }
+                                if (!el.closest('header') && !el.closest('[role="banner"]')) el.style.display = 'none';
                             });
                         }
                     } catch(e) {}
                 }
-                applySettings();
-                try {
-                    new MutationObserver(function(mutations) {
-                        if (mutations.some(function(m) { return m.addedNodes.length > 0; }))
-                            applySettings();
-                    }).observe(document.body||document.documentElement,{childList:true,subtree:true});
-                } catch(e) {}
-            })();
-        """.trimIndent()
-        view.evaluateJavascript(js, null)
-    }
 
-    private fun injectRemoveOpenInAppButton(view: WebView) {
-        view.evaluateJavascript("""
-            (function() {
-                if (window.__rasFbOpenAppRemoverActive__) return;
-                window.__rasFbOpenAppRemoverActive__ = true;
-                function removeOpenAppElements() {
-                    try {
-                        // Targeted selectors only — no innerText/full DOM scan
-                        document.querySelectorAll('a[href^="fb://"], a[href^="intent://"], a[href^="market://"]')
-                            .forEach(function(el) {
-                                var parent = el.closest('[class*="banner"],[id*="banner"],[data-testid*="app"],[role="banner"]');
-                                if (parent) parent.style.display = 'none'; else el.style.display = 'none';
-                            });
-                        document.querySelectorAll('[data-sigil*="appbanner"],[id*="MAppBanner"],[class*="appBanner"]')
-                            .forEach(function(el) { el.style.display = 'none'; });
-                    } catch(e) {}
+                function runCleanup() {
+                    removeFooter();
+                    removeOpenAppBanner();
+                    applySettings();
                 }
-                removeOpenAppElements();
+                runCleanup();
+
                 try {
+                    // Debounced — waits for DOM mutations to settle for
+                    // ~150ms before running cleanup once, instead of once
+                    // PER mutation event. This is the actual fix for pages
+                    // that mutate the DOM frequently (image/content lazy-load).
+                    var pending = null;
                     new MutationObserver(function(mutations) {
-                        if (mutations.some(function(m) { return m.addedNodes.length > 0; }))
-                            removeOpenAppElements();
-                    }).observe(document.body||document.documentElement,{childList:true,subtree:true});
+                        if (!mutations.some(function(m) { return m.addedNodes.length > 0; })) return;
+                        if (pending) clearTimeout(pending);
+                        pending = setTimeout(runCleanup, 150);
+                    }).observe(document.body || document.documentElement, {childList:true, subtree:true});
                 } catch(e) {}
             })();
         """.trimIndent(), null)
