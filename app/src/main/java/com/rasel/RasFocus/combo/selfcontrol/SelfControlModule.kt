@@ -1730,7 +1730,7 @@ fun DomainListSheet(context: Context, mode: String, onDismiss: () -> Unit) {
     val prefs = context.getSharedPreferences("browser_settings", Context.MODE_PRIVATE)
     
     var domains by remember { 
-        mutableStateOf(prefs.getStringSet(prefsKey, emptySet())?.toList()?.sorted() ?: emptyList())
+        mutableStateOf<List<String>>(prefs.getStringSet(prefsKey, emptySet())?.toList()?.sorted() ?: emptyList())
     }
     var newDomain by remember { mutableStateOf("") }
 

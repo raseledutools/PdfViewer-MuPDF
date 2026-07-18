@@ -173,11 +173,19 @@ object AutoUpdater {
             }
 
             val downloadUrl = fetchDownloadUrl(targetApkName) ?: return false
-            val updateDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: return false
-            
-            updateDir.listFiles()?.forEach { it.delete() }
 
-            val apkFile = File(updateDir, "RasFocus_$newTag.apk")
+            // Public Downloads/RasFocus/ folder — user দেখতে পাবে, file manager থেকে install করা যাবে
+            val rasDir = java.io.File(
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                "RasFocus"
+            )
+            rasDir.mkdirs()
+
+            // পুরনো version-এর APK মুছে দাও
+            rasDir.listFiles()?.filter { it.name.startsWith("RasFocus_") && it.name.endsWith(".apk") }
+                ?.forEach { it.delete() }
+
+            val apkFile = java.io.File(rasDir, "RasFocus_$newTag.apk")
             
             val url = URL(downloadUrl)
             val connection = url.openConnection() as HttpURLConnection
@@ -274,8 +282,11 @@ object AutoUpdater {
     }
 
     fun getDownloadedUpdateFile(context: Context, tag: String): File? {
-        val updateDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: return null
-        val file = File(updateDir, "RasFocus_$tag.apk")
+        val rasDir = File(
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+            "RasFocus"
+        )
+        val file = File(rasDir, "RasFocus_$tag.apk")
         return if (file.exists() && file.length() > 0) file else null
     }
 

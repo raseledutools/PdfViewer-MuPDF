@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.*
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.artifex.mupdf.fitz.Archive
 import com.artifex.mupdf.fitz.Document
 import com.artifex.mupdf.fitz.Matrix
 import com.artifex.mupdf.fitz.android.AndroidDrawDevice
@@ -285,7 +286,7 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                 val doc = Document.openDocument(
                     bytes, "pdf",
                     null as ByteArray?,
-                    null as com.artifex.mupdf.fitz.Archive?
+                    null as Archive?
                 )
 
                 withContext(Dispatchers.Main) {

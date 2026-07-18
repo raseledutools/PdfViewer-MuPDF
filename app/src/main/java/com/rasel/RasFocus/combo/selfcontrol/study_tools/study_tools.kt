@@ -1656,7 +1656,7 @@ private fun PersonalDiaryCard(onClick: () -> Unit) {
 private fun TaskSection() {
     val context  = LocalContext.current
     val prefs    = remember { context.getSharedPreferences("study_tools_prefs", Context.MODE_PRIVATE) }
-    var taskList by remember { mutableStateOf(prefs.getStringSet("tasks", emptySet())?.toMutableList() ?: mutableListOf()) }
+    var taskList by remember { mutableStateOf<MutableList<String>>(prefs.getStringSet("tasks", emptySet())?.toMutableList() ?: mutableListOf()) }
     var newTask  by remember { mutableStateOf("") }
 
     fun saveTasks(list: MutableList<String>) { prefs.edit().putStringSet("tasks", list.toSet()).apply(); taskList = list.toMutableList() }
