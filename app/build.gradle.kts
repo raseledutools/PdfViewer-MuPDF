@@ -195,6 +195,13 @@ android {
                 "/META-INF/LICENSE*",
                 "/META-INF/NOTICE*",
                 "/META-INF/*.kotlin_module",
+                // FIX: mergeFullReleaseJavaResource ছিল "2 files found with path
+                // 'META-INF/INDEX.LIST'" — google-auth-library-oauth2-http এবং
+                // google-auth-library-credentials দুটোই একই path এ INDEX.LIST
+                // প্যাক করে, Gradle কোনটা রাখবে বুঝতে পারছিল না। এই ফাইলটা শুধু
+                // JAR-এর ভিতরের class index (runtime-এ প্রয়োজন হয় না), তাই
+                // exclude করা নিরাপদ।
+                "/META-INF/INDEX.LIST",
                 "*.proto",
                 "androidsupportmultidexversion.txt",
                 "kotlin/**",
