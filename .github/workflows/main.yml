@@ -46,7 +46,7 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew assembleFullRelease --build-cache --parallel --stacktrace 2>&1 | head -200
+        run: ./gradlew assembleFullRelease --build-cache --parallel --info 2>&1 | grep -E "error:|e:|\.kt:|Could not load|Unresolved reference|None of the following|No value passed" | head -50
 
       - name: Debug — list generated APKs
         run: find app/build/outputs/apk -name "*.apk" -print
