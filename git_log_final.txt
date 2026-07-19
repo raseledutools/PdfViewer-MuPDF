@@ -1,5 +1,0 @@
-commit e0c4b35cf9e0bdfeac83d74192f3a06012b36dce
-Author: raseledutools <bhmrasel60@gmail.com>
-Date:   Thu Jul 9 09:29:55 2026 +0600
-
-    feat: complete UI and stats improvements

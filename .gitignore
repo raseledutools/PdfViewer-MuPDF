@@ -27,4 +27,31 @@ local.properties
 
 # Kotlin
 **/*.kotlin_module
-app/src/main/res/raw/service_account.json  
+app/src/main/res/raw/service_account.json
+
+# Temp / junk files — root এ রাখার দরকার নেই
+error_log.txt
+error.bat
+commit_out.txt
+git_log.txt
+git_log_after_push.txt
+git_log_final.txt
+git_status.txt
+gitlog.txt
+gitlog_check.txt
+gitshow.diff
+gitstatus.txt
+status.txt
+status_test.txt
+push.bat
+push2.bat
+push3.bat
+push4.bat
+agent.bat
+setup.bat
+patch.bat
+patch.py
+patch.ps1
+photo.jpg
+old_pdf.kt
+dir

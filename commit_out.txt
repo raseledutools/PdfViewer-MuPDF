@@ -1,6 +1,0 @@
-error: pathspec 'feat:' did not match any file(s) known to git
-error: pathspec 'complete' did not match any file(s) known to git
-error: pathspec 'UI' did not match any file(s) known to git
-error: pathspec 'and' did not match any file(s) known to git
-error: pathspec 'stats' did not match any file(s) known to git
-error: pathspec 'improvements\ ' did not match any file(s) known to git
