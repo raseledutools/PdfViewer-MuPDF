@@ -142,27 +142,50 @@ object AutoUpdater {
         }
     }
 
-    // Manual Download (opens browser)
+    // Manual Download — in-app, no browser needed
+    // Download শেষে automatically install prompt দেখাবে
     fun downloadAndInstallUpdate(context: Context, targetApkName: String, newTag: String) {
         CoroutineScope(Dispatchers.IO).launch {
-            val downloadUrl = fetchDownloadUrl(targetApkName)
-            if (downloadUrl != null) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Opening update in browser...", Toast.LENGTH_SHORT).show()
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl))
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    try {
-                        context.startActivity(intent)
-                        saveTag(context, newTag)
-                    } catch (e: Exception) {
-                        Toast.makeText(context, "Failed to open browser.", Toast.LENGTH_SHORT).show()
-                    }
+            // Already downloaded? সরাসরি install করো
+            val existing = getDownloadedUpdateFile(context, newTag)
+            if (existing != null) {
+                withContext(Dispatchers.Main) { triggerInstall(context, existing) }
+                return@launch
+            }
+            // In-app download with progress notification
+            val success = downloadUpdateSync(context, targetApkName, newTag)
+            if (success) {
+                saveTag(context, newTag)
+                val apkFile = getDownloadedUpdateFile(context, newTag)
+                if (apkFile != null) {
+                    withContext(Dispatchers.Main) { triggerInstall(context, apkFile) }
                 }
             } else {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "APK not found in release assets.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Download failed. Check internet.", Toast.LENGTH_LONG).show()
                 }
             }
+        }
+    }
+
+    // Install prompt — system installer, no browser
+    fun triggerInstall(context: Context, apkFile: java.io.File) {
+        try {
+            val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                androidx.core.content.FileProvider.getUriForFile(
+                    context, "${context.packageName}.provider", apkFile
+                )
+            } else {
+                Uri.fromFile(apkFile)
+            }
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, "application/vnd.android.package-archive")
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(context, "Install failed: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -316,22 +339,29 @@ object AutoUpdater {
             notificationManager.createNotificationChannel(channel)
         }
 
-        // MainActivity খুলুক — সেখান থেকে user নিজে install করবে।
-        // সরাসরি installer launch করলে MIUI/One UI তে hang হয়।
-        val openAppIntent = context.packageManager
-            .getLaunchIntentForPackage(context.packageName)
-            ?.apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP) }
-            ?: Intent().apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+        // Notification tap → সরাসরি system installer খোলে
+        val installIntent = Intent(Intent.ACTION_VIEW).apply {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                val uri = androidx.core.content.FileProvider.getUriForFile(
+                    context, "${context.packageName}.provider", apkFile
+                )
+                setDataAndType(uri, "application/vnd.android.package-archive")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            } else {
+                setDataAndType(Uri.fromFile(apkFile), "application/vnd.android.package-archive")
+            }
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
 
         val pendingIntent = PendingIntent.getActivity(
-            context, 0, openAppIntent,
+            context, 0, installIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
-            .setContentTitle("RasFocus Update Ready")
-            .setContentText("Version $newTag downloaded. Open the app to install.")
+            .setContentTitle("✅ RasFocus আপডেট প্রস্তুত!")
+            .setContentText("$newTag ডাউনলোড সম্পন্ন — install করতে tap করুন")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)

@@ -2335,43 +2335,52 @@ fun UpdateCenterSection(context: Context) {
                     Spacer(Modifier.height(16.dp))
                     
                     val downloadedFile = com.rasel.RasFocus.AutoUpdater.getDownloadedUpdateFile(context, releaseInfo!!.tagName)
-                    
+                    var downloading by remember { mutableStateOf("") }
+
                     if (downloadedFile != null) {
                         Button(
-                            onClick = { com.rasel.RasFocus.AutoUpdater.downloadAndInstallUpdate(context, com.rasel.RasFocus.AutoUpdater.APK_UNIVERSAL, releaseInfo!!.tagName) },
+                            onClick = { com.rasel.RasFocus.AutoUpdater.triggerInstall(context, downloadedFile) },
                             modifier = Modifier.fillMaxWidth().height(50.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
                             shape = RoundedCornerShape(12.dp)
                         ) {
-                            Icon(Icons.Default.DownloadDone, contentDescription = null, tint = SoftWhite)
+                            Icon(Icons.Default.DownloadDone, null, tint = SoftWhite)
                             Spacer(Modifier.width(8.dp))
                             Text("Install Update Now", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = SoftWhite)
                         }
                     } else {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                            Button(
-                                onClick = { com.rasel.RasFocus.AutoUpdater.downloadAndInstallUpdate(context, com.rasel.RasFocus.AutoUpdater.APK_UNIVERSAL, releaseInfo!!.tagName) },
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE)),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text("Universal", fontSize = 12.sp, maxLines = 1)
-                            }
-                            Button(
-                                onClick = { com.rasel.RasFocus.AutoUpdater.downloadAndInstallUpdate(context, com.rasel.RasFocus.AutoUpdater.APK_LIGHT, releaseInfo!!.tagName) },
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE)),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text("Light", fontSize = 12.sp, maxLines = 1)
-                            }
-                            Button(
-                                onClick = { com.rasel.RasFocus.AutoUpdater.downloadAndInstallUpdate(context, com.rasel.RasFocus.AutoUpdater.APK_FULL_SPLIT, releaseInfo!!.tagName) },
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE)),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text("Split", fontSize = 12.sp, maxLines = 1)
+                        val tag = releaseInfo!!.tagName
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                            listOf(
+                                Triple(com.rasel.RasFocus.AutoUpdater.APK_UNIVERSAL, "Universal APK", "সব device"),
+                                Triple(com.rasel.RasFocus.AutoUpdater.APK_FULL_SPLIT, "Split APK (32-bit)", "armeabi-v7a"),
+                                Triple(com.rasel.RasFocus.AutoUpdater.APK_LIGHT, "Light APK", "কম storage")
+                            ).forEach { (variant, label, desc) ->
+                                OutlinedButton(
+                                    onClick = {
+                                        if (downloading.isEmpty()) {
+                                            downloading = variant
+                                            com.rasel.RasFocus.AutoUpdater.downloadAndInstallUpdate(context, variant, tag)
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                                    shape = RoundedCornerShape(12.dp),
+                                    border = BorderStroke(1.dp, Color(0xFF4FACFE).copy(alpha = if (downloading == variant) 1f else 0.5f)),
+                                    colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFF4FACFE).copy(alpha = if (downloading == variant) 0.15f else 0.05f))
+                                ) {
+                                    if (downloading == variant) {
+                                        CircularProgressIndicator(color = Color(0xFF4FACFE), modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                                        Spacer(Modifier.width(8.dp))
+                                        Text("ডাউনলোড হচ্ছে...", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4FACFE))
+                                    } else {
+                                        Icon(Icons.Default.Download, null, tint = if (downloading.isEmpty()) Color(0xFF4FACFE) else Color.Gray, modifier = Modifier.size(16.dp))
+                                        Spacer(Modifier.width(8.dp))
+                                        Column(horizontalAlignment = Alignment.Start) {
+                                            Text(label, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = if (downloading.isEmpty()) Color(0xFF4FACFE) else Color.Gray)
+                                            Text(desc, fontSize = 10.sp, color = Color.Gray)
+                                        }
+                                    }
+                                }
                             }
                         }
                     }

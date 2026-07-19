@@ -1735,56 +1735,54 @@ fun UpdateCenterSection(context: Context) {
                     Spacer(Modifier.height(16.dp))
                     
                     val downloadedFile = com.rasel.RasFocus.AutoUpdater.getDownloadedUpdateFile(context, releaseInfo!!.tagName)
-                    
+                    var downloading by remember { mutableStateOf("") } // which variant is downloading
+
                     if (downloadedFile != null) {
+                        // Already downloaded — install করো
                         Button(
-                            onClick = { com.rasel.RasFocus.AutoUpdater.downloadAndInstallUpdate(context, com.rasel.RasFocus.AutoUpdater.APK_UNIVERSAL, releaseInfo!!.tagName) },
+                            onClick = { com.rasel.RasFocus.AutoUpdater.triggerInstall(context, downloadedFile) },
                             modifier = Modifier.fillMaxWidth().height(52.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B5E20)),
-                            shape = RoundedCornerShape(14.dp),
-                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                            shape = RoundedCornerShape(14.dp)
                         ) {
-                            Icon(Icons.Default.DownloadDone, contentDescription = null, tint = Color(0xFF69F0AE), modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.DownloadDone, null, tint = Color(0xFF69F0AE), modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text("Install Update Now", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF69F0AE), letterSpacing = 0.3.sp)
+                            Text("Install Update Now", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF69F0AE))
                         }
                     } else {
+                        // তিনটা APK option
+                        val tag = releaseInfo!!.tagName
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                            // Universal
-                            OutlinedButton(
-                                onClick = { com.rasel.RasFocus.AutoUpdater.downloadAndInstallUpdate(context, com.rasel.RasFocus.AutoUpdater.APK_UNIVERSAL, releaseInfo!!.tagName) },
-                                modifier = Modifier.fillMaxWidth().height(48.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF4FACFE).copy(alpha = 0.6f)),
-                                colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFF4FACFE).copy(alpha = 0.08f))
-                            ) {
-                                Icon(Icons.Default.Download, contentDescription = null, tint = Color(0xFF4FACFE), modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Universal APK", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4FACFE))
-                            }
-                            // Light
-                            OutlinedButton(
-                                onClick = { com.rasel.RasFocus.AutoUpdater.downloadAndInstallUpdate(context, com.rasel.RasFocus.AutoUpdater.APK_LIGHT, releaseInfo!!.tagName) },
-                                modifier = Modifier.fillMaxWidth().height(48.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF4FACFE).copy(alpha = 0.6f)),
-                                colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFF4FACFE).copy(alpha = 0.08f))
-                            ) {
-                                Icon(Icons.Default.Download, contentDescription = null, tint = Color(0xFF4FACFE), modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Light APK", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4FACFE))
-                            }
-                            // Split
-                            OutlinedButton(
-                                onClick = { com.rasel.RasFocus.AutoUpdater.downloadAndInstallUpdate(context, com.rasel.RasFocus.AutoUpdater.APK_FULL_SPLIT, releaseInfo!!.tagName) },
-                                modifier = Modifier.fillMaxWidth().height(48.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF4FACFE).copy(alpha = 0.6f)),
-                                colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFF4FACFE).copy(alpha = 0.08f))
-                            ) {
-                                Icon(Icons.Default.Download, contentDescription = null, tint = Color(0xFF4FACFE), modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Split APK", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4FACFE))
+                            listOf(
+                                Triple(com.rasel.RasFocus.AutoUpdater.APK_UNIVERSAL, "Universal APK", "সব device-এ কাজ করে"),
+                                Triple(com.rasel.RasFocus.AutoUpdater.APK_FULL_SPLIT, "Split APK (32-bit)", "শুধু armeabi-v7a device"),
+                                Triple(com.rasel.RasFocus.AutoUpdater.APK_LIGHT, "Light APK", "কম storage, basic feature")
+                            ).forEach { (variant, label, desc) ->
+                                OutlinedButton(
+                                    onClick = {
+                                        if (downloading.isEmpty()) {
+                                            downloading = variant
+                                            com.rasel.RasFocus.AutoUpdater.downloadAndInstallUpdate(context, variant, tag)
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                                    shape = RoundedCornerShape(12.dp),
+                                    border = BorderStroke(1.dp, Color(0xFF4FACFE).copy(alpha = if (downloading == variant) 1f else 0.5f)),
+                                    colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFF4FACFE).copy(alpha = if (downloading == variant) 0.15f else 0.05f))
+                                ) {
+                                    if (downloading == variant) {
+                                        CircularProgressIndicator(color = Color(0xFF4FACFE), modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                                        Spacer(Modifier.width(8.dp))
+                                        Text("ডাউনলোড হচ্ছে...", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4FACFE))
+                                    } else {
+                                        Icon(Icons.Default.Download, null, tint = if (downloading.isEmpty()) Color(0xFF4FACFE) else Color.Gray, modifier = Modifier.size(16.dp))
+                                        Spacer(Modifier.width(8.dp))
+                                        Column(horizontalAlignment = Alignment.Start) {
+                                            Text(label, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = if (downloading.isEmpty()) Color(0xFF4FACFE) else Color.Gray)
+                                            Text(desc, fontSize = 10.sp, color = Color.Gray)
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
