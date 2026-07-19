@@ -65,13 +65,12 @@ object AutoUpdater {
     // APK flavors (used as substrings for matching)
     const val APK_UNIVERSAL   = "universal"
     const val APK_LIGHT       = "light"
-    const val APK_FULL_SPLIT  = "armeabi-v7a"   // 32-bit split APK filename fragment
+    const val APK_FULL_SPLIT  = "full-armeabi-v7a"
 
     /**
      * Device ABI দেখে সঠিক APK বেছে নেয়:
-     *  - armeabi-v7a (32-bit) → split APK (armeabi-v7a)
-     *  - arm64-v8a / x86_64 / অন্য  → universal APK
-     * Workflow এখন দুটোই release করে।
+     *  - armeabi-v7a (32-bit) → armeabi-v7a split APK
+     *  - arm64-v8a / x86_64 / অন্য  → universal APK (সব ABI সাপোর্ট করে)
      */
     fun getBestApkVariant(): String {
         val abi = android.os.Build.SUPPORTED_ABIS.firstOrNull() ?: ""
@@ -142,50 +141,27 @@ object AutoUpdater {
         }
     }
 
-    // Manual Download — in-app, no browser needed
-    // Download শেষে automatically install prompt দেখাবে
+    // Manual Download (opens browser)
     fun downloadAndInstallUpdate(context: Context, targetApkName: String, newTag: String) {
         CoroutineScope(Dispatchers.IO).launch {
-            // Already downloaded? সরাসরি install করো
-            val existing = getDownloadedUpdateFile(context, newTag)
-            if (existing != null) {
-                withContext(Dispatchers.Main) { triggerInstall(context, existing) }
-                return@launch
-            }
-            // In-app download with progress notification
-            val success = downloadUpdateSync(context, targetApkName, newTag)
-            if (success) {
-                saveTag(context, newTag)
-                val apkFile = getDownloadedUpdateFile(context, newTag)
-                if (apkFile != null) {
-                    withContext(Dispatchers.Main) { triggerInstall(context, apkFile) }
+            val downloadUrl = fetchDownloadUrl(targetApkName)
+            if (downloadUrl != null) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Opening update in browser...", Toast.LENGTH_SHORT).show()
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl))
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    try {
+                        context.startActivity(intent)
+                        saveTag(context, newTag)
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "Failed to open browser.", Toast.LENGTH_SHORT).show()
+                    }
                 }
             } else {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Download failed. Check internet.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, "APK not found in release assets.", Toast.LENGTH_SHORT).show()
                 }
             }
-        }
-    }
-
-    // Install prompt — system installer, no browser
-    fun triggerInstall(context: Context, apkFile: java.io.File) {
-        try {
-            val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                androidx.core.content.FileProvider.getUriForFile(
-                    context, "${context.packageName}.fileprovider", apkFile
-                )
-            } else {
-                Uri.fromFile(apkFile)
-            }
-            val intent = Intent(Intent.ACTION_VIEW).apply {
-                setDataAndType(uri, "application/vnd.android.package-archive")
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-            context.startActivity(intent)
-        } catch (e: Exception) {
-            Toast.makeText(context, "Install failed: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -207,22 +183,12 @@ object AutoUpdater {
             }
 
             val downloadUrl = fetchDownloadUrl(targetApkName) ?: return false
+            val updateDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: return false
+            
+            updateDir.listFiles()?.forEach { it.delete() }
 
-            // NOTE: app-private external files dir — this needs NO storage permission
-            // on any Android version. The public Downloads folder was tried here before
-            // but requires WRITE_EXTERNAL_STORAGE, which is capped at maxSdkVersion=28
-            // in the manifest — on Android 10+ (targetSdk 35 here) writes there fail
-            // silently with Permission denied, which is why downloads stopped working.
-            val rasDir = java.io.File(
-                context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS),
-                "RasFocus"
-            )
-            rasDir.mkdirs()
-            rasDir.listFiles()?.filter { it.name.startsWith("RasFocus_") && it.name.endsWith(".apk") }
-                ?.forEach { it.delete() }
-
-            val apkFile = java.io.File(rasDir, "RasFocus_$newTag.apk")
-
+            val apkFile = File(updateDir, "RasFocus_$newTag.apk")
+            
             val url = URL(downloadUrl)
             val connection = url.openConnection() as HttpURLConnection
             connection.connect()
@@ -232,62 +198,24 @@ object AutoUpdater {
                 return false
             }
 
-            // ── Progress notification setup ────────────────────────────────────
-            val notifManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val ch = NotificationChannel(CHANNEL_ID, "App Updates", NotificationManager.IMPORTANCE_LOW)
-                notifManager.createNotificationChannel(ch)
-            }
-            val progressBuilder = NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.stat_sys_download)
-                .setContentTitle("RasFocus আপডেট ডাউনলোড হচ্ছে")
-                .setOngoing(true)
-                .setOnlyAlertOnce(true)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
-
-            val totalBytes = connection.contentLengthLong   // -1 if unknown
-            val input  = connection.inputStream
+            val input = connection.inputStream
             val output = FileOutputStream(apkFile)
-            val buf    = ByteArray(8192)
-            var downloaded = 0L
-            var lastNotifPct = -1
+
+            val data = ByteArray(4096)
             var count: Int
-
-            while (input.read(buf).also { count = it } != -1) {
-                output.write(buf, 0, count)
-                downloaded += count
-
-                if (totalBytes > 0) {
-                    val pct = (downloaded * 100 / totalBytes).toInt()
-                    // notification প্রতি 5% এ update করো — বেশি frequent হলে system slow হয়
-                    if (pct >= lastNotifPct + 5) {
-                        lastNotifPct = pct
-                        val mb = "%.1f".format(downloaded / 1_048_576f)
-                        val total = "%.1f".format(totalBytes / 1_048_576f)
-                        progressBuilder
-                            .setContentText("$mb MB / $total MB")
-                            .setProgress(100, pct, false)
-                        notifManager.notify(NOTIFICATION_ID, progressBuilder.build())
-                    }
-                } else {
-                    // size অজানা হলে indeterminate bar দেখাও
-                    val mb = "%.1f".format(downloaded / 1_048_576f)
-                    progressBuilder
-                        .setContentText("$mb MB ডাউনলোড হয়েছে...")
-                        .setProgress(0, 0, true)
-                    notifManager.notify(NOTIFICATION_ID, progressBuilder.build())
-                }
+            while (input.read(data).also { count = it } != -1) {
+                output.write(data, 0, count)
             }
 
-            output.flush(); output.close(); input.close()
+            output.flush()
+            output.close()
+            input.close()
 
-            // Progress notification সরিয়ে install notification দেখাও
-            notifManager.cancel(NOTIFICATION_ID)
             showInstallNotification(context, apkFile, newTag)
-            Log.d(TAG, "Download complete: $newTag")
+            Log.d(TAG, "Silent download complete: $newTag")
             true
         } catch (e: Exception) {
-            Log.e(TAG, "Download failed", e)
+            Log.e(TAG, "Silent download failed", e)
             false
         }
     }
@@ -295,98 +223,68 @@ object AutoUpdater {
     private suspend fun fetchDownloadUrl(targetApkName: String): String? {
         return try {
             val apiUrl = "https://api.github.com/repos/$GITHUB_OWNER/$GITHUB_REPO/releases/latest"
-            val connection = (URL(apiUrl).openConnection() as HttpURLConnection).apply {
-                requestMethod = "GET"
-                setRequestProperty("Accept", "application/vnd.github.v3+json")
-            }
-            if (connection.responseCode != HttpURLConnection.HTTP_OK) return null
+            val url = URL(apiUrl)
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+            connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
 
-            val assets = JSONObject(connection.inputStream.bufferedReader().readText())
-                .getJSONArray("assets")
-
-            // ── Split APK request (armeabi-v7a): prefer exact split, reject universal ──
-            // Universal APK নামেও "armeabi" থাকে না, কিন্তু নিশ্চিত হতে
-            // universal শব্দ থাকলে skip করছি।
-            if (targetApkName == APK_FULL_SPLIT) {
+            if (connection.responseCode == HttpURLConnection.HTTP_OK) {
+                val response = connection.inputStream.bufferedReader().readText()
+                val json = JSONObject(response)
+                val assets = json.getJSONArray("assets")
+                
                 for (i in 0 until assets.length()) {
                     val asset = assets.getJSONObject(i)
-                    val name  = asset.getString("name")
-                    if (name.contains("armeabi-v7a", ignoreCase = true) &&
-                        !name.contains("universal", ignoreCase = true)) {
+                    if (asset.getString("name").contains(targetApkName, ignoreCase = true)) {
                         return asset.getString("browser_download_url")
                     }
                 }
             }
-
-            // ── Universal / light request: prefer universal, avoid split ──
-            for (i in 0 until assets.length()) {
-                val asset = assets.getJSONObject(i)
-                val name  = asset.getString("name")
-                if (name.contains(targetApkName, ignoreCase = true)) {
-                    return asset.getString("browser_download_url")
-                }
-            }
             null
-        } catch (e: Exception) { null }
+        } catch (e: Exception) {
+            null
+        }
     }
 
     private fun showInstallNotification(context: Context, apkFile: File, newTag: String) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(CHANNEL_ID, "App Updates", NotificationManager.IMPORTANCE_HIGH).apply {
-                description = "RasFocus update notifications"
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                "App Updates",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Notifications for new app updates"
             }
             notificationManager.createNotificationChannel(channel)
         }
 
-        // Notification tap → MainActivity খোলে, APK path extra দিয়ে।
-        // MainActivity সেটা দেখে install dialog দেখাবে।
-        // সরাসরি installer intent background থেকে fire করলে
-        // MIUI / One UI / ColorOS-এ phone hang করে।
-        val openIntent = context.packageManager
-            .getLaunchIntentForPackage(context.packageName)
-            ?.apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                putExtra(EXTRA_APK_PATH, apkFile.absolutePath)
-                putExtra(EXTRA_APK_TAG, newTag)
-            } ?: return
-
+        val installIntent = getInstallIntent(context, apkFile)
         val pendingIntent = PendingIntent.getActivity(
-            context, 0, openIntent,
+            context, 0, installIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.stat_sys_download_done)
-            .setContentTitle("✅ RasFocus আপডেট প্রস্তুত!")
-            .setContentText("$newTag ডাউনলোড সম্পন্ন — tap করে install করুন")
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.stat_sys_download_done) // built-in icon
+            .setContentTitle("RasFocus Update Ready")
+            .setContentText("Version $newTag is downloaded. Tap to install.")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
-            .also { notificationManager.notify(NOTIFICATION_ID, it.build()) }
+
+        notificationManager.notify(NOTIFICATION_ID, builder.build())
     }
 
-    const val EXTRA_APK_PATH = "rasfocus_apk_path"
-    const val EXTRA_APK_TAG  = "rasfocus_apk_tag"
-
     fun getDownloadedUpdateFile(context: Context, tag: String): File? {
-        val rasDir = File(
-            context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS),
-            "RasFocus"
-        )
-        val file = File(rasDir, "RasFocus_$tag.apk")
+        val updateDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: return null
+        val file = File(updateDir, "RasFocus_$tag.apk")
         return if (file.exists() && file.length() > 0) file else null
     }
 
     fun installDownloadedUpdate(context: Context, file: File) {
         try {
-            // File exist করে এবং valid APK size (কমপক্ষে 1MB) কিনা check
-            if (!file.exists() || file.length() < 1_000_000L) {
-                Toast.makeText(context, "APK file is missing or corrupted. Please try again.", Toast.LENGTH_LONG).show()
-                file.delete() // corrupt file মুছে দাও যাতে পরের check-এ re-download হয়
-                return
-            }
             val intent = getInstallIntent(context, file)
             context.startActivity(intent)
         } catch (e: Exception) {
