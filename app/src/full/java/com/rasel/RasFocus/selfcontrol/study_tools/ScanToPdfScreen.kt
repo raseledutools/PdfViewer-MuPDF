@@ -33,6 +33,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -53,104 +54,75 @@ import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 
-// ─── Data Models ──────────────────────────────────────────────────────────────
+// ─── Colors ───────────────────────────────────────────────────────────────────
+private val ScanBg         = Color(0xFF0A0A0F)
+private val ScanSurface    = Color(0xFF141420)
+private val ScanCard       = Color(0xFF1C1C2E)
+private val ScanAccent     = Color(0xFF6C63FF)
+private val ScanAccent2    = Color(0xFF00D4AA)
+private val ScanText       = Color(0xFFF0F0FF)
+private val ScanSubText    = Color(0xFF8888AA)
+private val ScanDivider    = Color(0xFF2A2A40)
 
-data class ScannedDoc(
-    val name : String,
-    val path : String,
-    val date : String,
-    val size : String
-)
+// ─── Data Model ───────────────────────────────────────────────────────────────
+data class ScannedDoc(val name: String, val path: String, val date: String, val size: String)
 
-// ─── Entry Point ─────────────────────────────────────────────────────────────
-
+// ─── Main Screen ──────────────────────────────────────────────────────────────
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScanToPdfScreen(onBack: () -> Unit) {
     val context = LocalContext.current
-    var docs by remember { mutableStateOf(loadDocs(context)) }
-    var imagesArray by remember { mutableStateOf<List<Uri>>(emptyList()) }
-    
-    // Settings state
-    var autoCrop by remember { mutableStateOf(true) }
+    var docs          by remember { mutableStateOf(loadDocs(context)) }
+    var imagesArray   by remember { mutableStateOf<List<Uri>>(emptyList()) }
+    var autoCrop      by remember { mutableStateOf(true) }
     var currentFilter by remember { mutableStateOf("magic-pro") }
-    var pageSize by remember { mutableStateOf("fit") }
-    
-    var isGenerating by remember { mutableStateOf(false) }
-    var generatingProgress by remember { mutableStateOf(0f) }
-    var generatingText by remember { mutableStateOf("0 / 0") }
-    
-    var showPdfImportModal by remember { mutableStateOf<Uri?>(null) }
+    var pageSize      by remember { mutableStateOf("fit") }
+    var isGenerating  by remember { mutableStateOf(false) }
+    var genProgress   by remember { mutableStateOf(0f) }
+    var genText       by remember { mutableStateOf("0 / 0") }
+    var showPdfImportModal  by remember { mutableStateOf<Uri?>(null) }
+    var showPickerSheet     by remember { mutableStateOf(false) }
+    var showFilterSheet     by remember { mutableStateOf(false) }
 
-    // --- Permissions ---
-    val permissions = if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
+    // ── Permissions ───────────────────────────────────────────────────────────
+    val permissions = if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q)
         arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE)
-    } else {
-        emptyArray() 
+    else emptyArray()
+    val permLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        if (it.values.all { v -> v }) docs = loadDocs(context)
     }
-
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { results ->
-        if (results.values.all { it }) docs = loadDocs(context)
-    }
-
     LaunchedEffect(Unit) {
-        if (permissions.isNotEmpty()) {
-            if (permissions.any { ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED }) {
-                permissionLauncher.launch(permissions)
-            }
-        }
+        if (permissions.any { ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED })
+            permLauncher.launch(permissions)
     }
 
-    // --- Launchers ---
-    val cameraLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartIntentSenderForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val res = GmsDocumentScanningResult.fromActivityResultIntent(result.data)
-            res?.pages?.let { pages ->
+    // ── Launchers ─────────────────────────────────────────────────────────────
+    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK)
+            GmsDocumentScanningResult.fromActivityResultIntent(result.data)?.pages?.let { pages ->
                 imagesArray = imagesArray + pages.map { it.imageUri }
             }
-        }
+    }
+    val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) { uris ->
+        if (uris.isNotEmpty()) imagesArray = imagesArray + uris
+    }
+    val pdfPickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) showPdfImportModal = uri
     }
 
-    val galleryLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickMultipleVisualMedia()
-    ) { uris ->
-        if (uris.isNotEmpty()) {
-            imagesArray = imagesArray + uris
-        }
-    }
-
-    val pdfPickerLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetContent()
-    ) { uri ->
-        if (uri != null) {
-            showPdfImportModal = uri
-        }
-    }
-
-    // --- PDF Generate Action ---
+    // ── Generate Action ───────────────────────────────────────────────────────
     val scope = rememberCoroutineScope()
-    val generatePdfAction = {
+    val onGenerate = {
         if (imagesArray.isNotEmpty()) {
             isGenerating = true
             scope.launch(Dispatchers.IO) {
                 try {
-                    val file = buildPdfFromImages(
-                        context = context,
-                        uris = imagesArray,
-                        filterType = currentFilter,
-                        autoCrop = autoCrop,
-                        pageSize = pageSize,
-                        onProgress = { current, total ->
-                            generatingProgress = current.toFloat() / total
-                            generatingText = "$current / $total"
-                        }
-                    )
+                    buildPdfFromImages(context, imagesArray, currentFilter, autoCrop, pageSize) { done, total ->
+                        genProgress = done.toFloat() / total
+                        genText = "$done / $total"
+                    }
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "PDF Saved Successfully!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "PDF Saved!", Toast.LENGTH_SHORT).show()
                         imagesArray = emptyList()
                         docs = loadDocs(context)
                     }
@@ -163,421 +135,464 @@ fun ScanToPdfScreen(onBack: () -> Unit) {
                 }
             }
         }
+        Unit
     }
 
-    // --- Layout ---
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.DocumentScanner, contentDescription = null, tint = Color(0xFFE0E7FF), modifier = Modifier.size(28.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Ras", fontWeight = FontWeight.Black, color = Color.White, fontSize = 24.sp)
-                        Text("Scanner", fontWeight = FontWeight.Black, color = Color(0xFFC7D2FE), fontSize = 24.sp)
+    // ── fun to launch camera scan ─────────────────────────────────────────────
+    val launchCameraScan = {
+        val opts = GmsDocumentScannerOptions.Builder()
+            .setGalleryImportAllowed(false)
+            .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG)
+            .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_FULL)
+            .build()
+        GmsDocumentScanning.getClient(opts)
+            .getStartScanIntent(context as Activity)
+            .addOnSuccessListener { cameraLauncher.launch(IntentSenderRequest.Builder(it).build()) }
+            .addOnFailureListener { Toast.makeText(context, "Scanner error: ${it.message}", Toast.LENGTH_SHORT).show() }
+        Unit
+    }
+
+    // ── Layout ────────────────────────────────────────────────────────────────
+    Box(modifier = Modifier.fillMaxSize().background(ScanBg)) {
+        Column(modifier = Modifier.fillMaxSize()) {
+
+            // ── Header ────────────────────────────────────────────────────────
+            Box(
+                modifier = Modifier.fillMaxWidth()
+                    .background(Brush.verticalGradient(listOf(Color(0xFF1A1A2E), ScanBg)))
+                    .statusBarsPadding()
+                    .padding(horizontal = 20.dp, vertical = 16.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier.size(40.dp).background(ScanSurface, CircleShape)
+                    ) { Icon(Icons.Default.ArrowBack, null, tint = ScanText, modifier = Modifier.size(20.dp)) }
+                    Spacer(Modifier.width(14.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "RasScanner",
+                            color = ScanText, fontSize = 22.sp, fontWeight = FontWeight.Black
+                        )
+                        Text("300 DPI • Premium Quality", color = ScanAccent2, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                     }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
-                    }
-                },
-                actions = {
                     if (imagesArray.isNotEmpty()) {
                         TextButton(
                             onClick = { imagesArray = emptyList() },
-                            colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF4F46E5)),
-                            modifier = Modifier.padding(end = 8.dp).background(Color.White, RoundedCornerShape(50))
-                        ) {
-                            Text("Clear Grid", fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                        }
+                            colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFFF6B6B))
+                        ) { Text("Clear", fontWeight = FontWeight.Bold, fontSize = 13.sp) }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF4F46E5))
-            )
-        }
-    ) { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize().background(Color(0xFFF9FAFB)).padding(paddingValues)) {
-            Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
-                
-                // --- Top Actions ---
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    // Camera
-                    Card(
-                        modifier = Modifier.weight(1f).height(90.dp).clickable {
-                            val options = GmsDocumentScannerOptions.Builder()
-                                .setGalleryImportAllowed(false)
-                                .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG)
-                                .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_FULL)
-                                .build()
-                            GmsDocumentScanning.getClient(options)
-                                .getStartScanIntent(context as Activity)
-                                .addOnSuccessListener { intentSender ->
-                                    cameraLauncher.launch(IntentSenderRequest.Builder(intentSender).build())
-                                }
-                                .addOnFailureListener { e ->
-                                    Toast.makeText(context, "Scanner failed: ${e.message}", Toast.LENGTH_SHORT).show()
-                                }
-                        },
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF4F46E5)),
-                        shape = RoundedCornerShape(16.dp),
-                        elevation = CardDefaults.cardElevation(4.dp)
-                    ) {
-                        Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                            Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
-                            Spacer(Modifier.height(4.dp))
-                            Text("Camera", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                        }
-                    }
+                }
+            }
+
+            Column(
+                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)
+            ) {
+                Spacer(Modifier.height(8.dp))
+
+                // ── Quick Action Row ──────────────────────────────────────────
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    // Scan
+                    ScanActionButton(
+                        icon = Icons.Default.CameraAlt,
+                        label = "Scan",
+                        sub = "Camera",
+                        gradient = Brush.verticalGradient(listOf(Color(0xFF6C63FF), Color(0xFF4F46E5))),
+                        modifier = Modifier.weight(1f)
+                    ) { launchCameraScan() }
                     // Gallery
-                    Card(
-                        modifier = Modifier.weight(1f).height(90.dp).clickable {
-                            galleryLauncher.launch(androidx.activity.result.PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly))
-                        },
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        shape = RoundedCornerShape(16.dp),
-                        border = BorderStroke(1.dp, Color(0xFFE0E7FF)),
-                        elevation = CardDefaults.cardElevation(2.dp)
+                    ScanActionButton(
+                        icon = Icons.Default.PhotoLibrary,
+                        label = "Gallery",
+                        sub = "Multi-select",
+                        gradient = Brush.verticalGradient(listOf(Color(0xFF00D4AA), Color(0xFF00A888))),
+                        modifier = Modifier.weight(1f)
                     ) {
-                        Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                            Icon(Icons.Default.PhotoLibrary, contentDescription = null, tint = Color(0xFF4F46E5), modifier = Modifier.size(24.dp))
-                            Spacer(Modifier.height(4.dp))
-                            Text("Gallery", color = Color(0xFF4F46E5), fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                        }
-                    }
-                    // Import PDF
-                    Card(
-                        modifier = Modifier.weight(1f).height(90.dp).clickable {
-                            pdfPickerLauncher.launch("application/pdf")
-                        },
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        shape = RoundedCornerShape(16.dp),
-                        border = BorderStroke(1.dp, Color(0xFFA7F3D0)),
-                        elevation = CardDefaults.cardElevation(2.dp)
-                    ) {
-                        Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                            Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = Color(0xFF059669), modifier = Modifier.size(24.dp))
-                            Spacer(Modifier.height(4.dp))
-                            Text("Import PDF", color = Color(0xFF059669), fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                        }
-                    }
-                }
-                
-                Spacer(Modifier.height(24.dp))
-                
-                // --- Settings Card ---
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    shape = RoundedCornerShape(24.dp),
-                    elevation = CardDefaults.cardElevation(4.dp)
-                ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
-                        // Auto Crop Toggle
-                        Row(
-                            modifier = Modifier.fillMaxWidth().background(Color(0xFFEEF2FF), RoundedCornerShape(16.dp)).padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Crop, contentDescription = null, tint = Color(0xFF4F46E5), modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Smart Auto Crop", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1F2937))
-                            }
-                            Switch(
-                                checked = autoCrop,
-                                onCheckedChange = { autoCrop = it },
-                                colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = Color(0xFF4F46E5))
+                        galleryLauncher.launch(
+                            androidx.activity.result.PickVisualMediaRequest(
+                                androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly
                             )
-                        }
-                        Spacer(Modifier.height(16.dp))
-                        
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            // Filter Selection
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("Pro Image Filter", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6B7280), modifier = Modifier.padding(start = 4.dp, bottom = 6.dp))
-                                var filterExpanded by remember { mutableStateOf(false) }
-                                val filters = mapOf(
-                                    "none" to "Original",
-                                    "magic-pro" to "Magic Pro",
-                                    "print-pro" to "Print Pro",
-                                    "clear-pro" to "Clear Pro",
-                                    "super-bw" to "Super B&W"
-                                )
-                                Box {
-                                    OutlinedButton(
-                                        onClick = { filterExpanded = true },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(16.dp),
-                                        colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFFF9FAFB))
-                                    ) {
-                                        Text(filters[currentFilter] ?: "Select", color = Color(0xFF111827), fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    }
-                                    DropdownMenu(expanded = filterExpanded, onDismissRequest = { filterExpanded = false }) {
-                                        filters.forEach { (key, name) ->
-                                            DropdownMenuItem(
-                                                text = { Text(name, fontWeight = if (key == currentFilter) FontWeight.Bold else FontWeight.Normal) },
-                                                onClick = { currentFilter = key; filterExpanded = false }
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                            // Page Size Selection
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("Page Size", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6B7280), modifier = Modifier.padding(start = 4.dp, bottom = 6.dp))
-                                var sizeExpanded by remember { mutableStateOf(false) }
-                                val sizes = mapOf("fit" to "Fit to Image", "a4" to "A4 Size")
-                                Box {
-                                    OutlinedButton(
-                                        onClick = { sizeExpanded = true },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(16.dp),
-                                        colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFFF9FAFB))
-                                    ) {
-                                        Text(sizes[pageSize] ?: "Select", color = Color(0xFF111827), fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    }
-                                    DropdownMenu(expanded = sizeExpanded, onDismissRequest = { sizeExpanded = false }) {
-                                        sizes.forEach { (key, name) ->
-                                            DropdownMenuItem(
-                                                text = { Text(name, fontWeight = if (key == pageSize) FontWeight.Bold else FontWeight.Normal) },
-                                                onClick = { pageSize = key; sizeExpanded = false }
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        )
                     }
+                    // Import
+                    ScanActionButton(
+                        icon = Icons.Default.AddPhotoAlternate,
+                        label = "Import",
+                        sub = "PDF / Image",
+                        gradient = Brush.verticalGradient(listOf(Color(0xFFFF8C42), Color(0xFFFF6B1A))),
+                        modifier = Modifier.weight(1f)
+                    ) { showPickerSheet = true }
                 }
-                
-                Spacer(Modifier.height(24.dp))
-                
-                // --- Image Grid ---
+
+                Spacer(Modifier.height(16.dp))
+
+                // ── Settings Row ──────────────────────────────────────────────
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    // Filter chip
+                    val filterLabels = mapOf(
+                        "none" to "Original", "magic-pro" to "✨ Magic", "print-pro" to "🖨 Print",
+                        "clear-pro" to "💎 Clear", "super-bw" to "◐ B&W"
+                    )
+                    ScanChip(
+                        icon = Icons.Default.AutoFixHigh,
+                        label = filterLabels[currentFilter] ?: "Filter",
+                        modifier = Modifier.weight(1f)
+                    ) { showFilterSheet = true }
+                    // Page size chip
+                    ScanChip(
+                        icon = Icons.Default.Article,
+                        label = if (pageSize == "a4") "A4 (300dpi)" else "Fit Image",
+                        modifier = Modifier.weight(1f)
+                    ) { pageSize = if (pageSize == "a4") "fit" else "a4" }
+                    // Auto-crop chip
+                    ScanChip(
+                        icon = if (autoCrop) Icons.Default.Crop else Icons.Default.CropFree,
+                        label = if (autoCrop) "Auto Crop" else "No Crop",
+                        active = autoCrop,
+                        modifier = Modifier.weight(1f)
+                    ) { autoCrop = !autoCrop }
+                }
+
+                Spacer(Modifier.height(20.dp))
+
+                // ── Image Grid ────────────────────────────────────────────────
                 if (imagesArray.isEmpty()) {
                     Box(
-                        modifier = Modifier.fillMaxWidth().height(200.dp).background(Color.White.copy(alpha=0.7f), RoundedCornerShape(24.dp)).border(2.dp, Color(0xFFD1D5DB), RoundedCornerShape(24.dp)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(220.dp)
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(ScanSurface)
+                            .border(1.dp, ScanDivider, RoundedCornerShape(20.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Box(modifier = Modifier.size(80.dp).background(Color(0xFFF3F4F6), CircleShape).border(1.dp, Color(0xFFE5E7EB), CircleShape), contentAlignment = Alignment.Center) {
-                                Icon(Icons.Default.PhotoLibrary, contentDescription = null, tint = Color(0xFF818CF8), modifier = Modifier.size(40.dp))
+                            Box(
+                                modifier = Modifier.size(72.dp)
+                                    .background(Brush.radialGradient(listOf(ScanAccent.copy(.2f), Color.Transparent)), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.DocumentScanner, null, tint = ScanAccent, modifier = Modifier.size(36.dp))
                             }
                             Spacer(Modifier.height(16.dp))
-                            Text("No Images Selected", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF1F2937))
-                            Text("Capture, upload or import PDF.", fontSize = 12.sp, color = Color(0xFF6B7280), fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = 4.dp))
+                            Text("No pages yet", color = ScanText, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            Text("Tap Scan, Gallery or Import above", color = ScanSubText, fontSize = 13.sp, modifier = Modifier.padding(top = 4.dp))
                         }
                     }
                 } else {
+                    // Page count badge
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier.background(ScanAccent.copy(.15f), RoundedCornerShape(50)).padding(horizontal = 12.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                "${imagesArray.size} page${if (imagesArray.size > 1) "s" else ""}",
+                                color = ScanAccent, fontSize = 13.sp, fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Spacer(Modifier.weight(1f))
+                        TextButton(
+                            onClick = { showPickerSheet = true },
+                            colors = ButtonDefaults.textButtonColors(contentColor = ScanAccent2)
+                        ) {
+                            Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Add more", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(3),
-                        modifier = Modifier.fillMaxWidth().heightIn(max = 500.dp),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        modifier = Modifier.fillMaxWidth().heightIn(max = 600.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(imagesArray.size) { index ->
                             Box(
-                                modifier = Modifier.aspectRatio(0.75f).background(Color.White, RoundedCornerShape(16.dp)).border(1.dp, Color(0xFFF3F4F6), RoundedCornerShape(16.dp)).shadow(4.dp, RoundedCornerShape(16.dp))
+                                modifier = Modifier
+                                    .aspectRatio(0.75f)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(ScanCard)
                             ) {
                                 FilteredPreviewImage(context, imagesArray[index], currentFilter)
-                                IconButton(
-                                    onClick = {
-                                        val newArr = imagesArray.toMutableList()
-                                        newArr.removeAt(index)
-                                        imagesArray = newArr
-                                    },
-                                    modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(24.dp).background(Color.Red, CircleShape)
-                                ) {
-                                    Icon(Icons.Default.Close, contentDescription = "Remove", tint = Color.White, modifier = Modifier.size(14.dp))
-                                }
+                                // Delete
                                 Box(
-                                    modifier = Modifier.align(Alignment.BottomStart).padding(8.dp).size(24.dp).background(Color(0xFF4F46E5), CircleShape).border(2.dp, Color.White, CircleShape),
+                                    modifier = Modifier.align(Alignment.TopEnd).padding(6.dp)
+                                        .size(22.dp).background(Color(0xFFFF4444), CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text("${index + 1}", color = Color.White, fontWeight = FontWeight.Black, fontSize = 10.sp)
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                Spacer(Modifier.height(24.dp))
-                
-                // --- Generate Button ---
-                AnimatedVisibility(visible = imagesArray.isNotEmpty()) {
-                    Button(
-                        onClick = generatePdfAction,
-                        modifier = Modifier.fillMaxWidth().height(64.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
-                        shape = RoundedCornerShape(24.dp),
-                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
-                    ) {
-                        Icon(Icons.Default.DocumentScanner, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
-                        Spacer(Modifier.width(12.dp))
-                        Text("SCAN & SAVE PDF", fontWeight = FontWeight.Black, fontSize = 20.sp, color = Color.White)
-                    }
-                }
-                
-                Spacer(Modifier.height(32.dp))
-                Divider(color = Color(0xFFD1D5DB))
-                Spacer(Modifier.height(32.dp))
-                
-                // --- History Section ---
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 20.dp, start = 4.dp)) {
-                    Icon(Icons.Default.LibraryBooks, contentDescription = null, tint = Color(0xFF4F46E5), modifier = Modifier.size(28.dp))
-                    Spacer(Modifier.width(10.dp))
-                    Text("Saved Documents", fontWeight = FontWeight.Black, fontSize = 24.sp, color = Color(0xFF1F2937))
-                }
-                
-                if (docs.isEmpty()) {
-                    Box(modifier = Modifier.fillMaxWidth().height(150.dp).background(Color.White.copy(alpha=0.7f), RoundedCornerShape(24.dp)).border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(24.dp)), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Outlined.History, contentDescription = null, tint = Color(0xFFD1D5DB), modifier = Modifier.size(64.dp).padding(bottom = 16.dp))
-                            Text("No PDFs generated yet.", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color(0xFF6B7280))
-                        }
-                    }
-                } else {
-                    docs.forEach { doc ->
-                        Card(
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp).clickable {
-                                val intent = Intent(context, PdfViewerActivity::class.java).apply {
-                                    putExtra("pdf_path", doc.path)
-                                    putExtra("pdf_name", doc.name)
-                                }
-                                context.startActivity(intent)
-                            },
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
-                            shape = RoundedCornerShape(24.dp),
-                            elevation = CardDefaults.cardElevation(2.dp),
-                            border = BorderStroke(1.dp, Color(0xFFF3F4F6))
-                        ) {
-                            Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Box(modifier = Modifier.size(64.dp).background(Color(0xFFF3F4F6), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = Color(0xFF4F46E5), modifier = Modifier.size(32.dp))
-                                }
-                                Spacer(Modifier.width(16.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(doc.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1F2937), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    Spacer(Modifier.height(6.dp))
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(doc.date, fontSize = 12.sp, color = Color(0xFF6B7280))
-                                        Text(" • ", fontSize = 12.sp, color = Color(0xFF6B7280))
-                                        Text(doc.size, fontSize = 12.sp, color = Color(0xFF6B7280))
+                                    IconButton(onClick = {
+                                        imagesArray = imagesArray.toMutableList().also { it.removeAt(index) }
+                                    }, modifier = Modifier.size(22.dp)) {
+                                        Icon(Icons.Default.Close, null, tint = Color.White, modifier = Modifier.size(12.dp))
                                     }
                                 }
-                                IconButton(onClick = { sharePdf(context, doc) }, modifier = Modifier.background(Color(0xFFF3F4F6), CircleShape)) {
-                                    Icon(Icons.Default.Share, contentDescription = "Share", tint = Color(0xFF4F46E5), modifier = Modifier.size(20.dp))
+                                // Page number
+                                Box(
+                                    modifier = Modifier.align(Alignment.BottomStart).padding(6.dp)
+                                        .background(ScanAccent, RoundedCornerShape(6.dp))
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text("${index + 1}", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Black)
                                 }
                             }
                         }
                     }
                 }
-                
-                Spacer(Modifier.height(100.dp))
-            }
-            
-            // --- Loading Overlay ---
-            if (isGenerating) {
-                Box(modifier = Modifier.fillMaxSize().background(Color.White.copy(alpha=0.95f)).clickable(enabled=false){}, contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator(color = Color(0xFF4F46E5), modifier = Modifier.size(64.dp).padding(bottom = 24.dp), strokeWidth = 6.dp)
-                        Text("Creating Magic...", fontWeight = FontWeight.Black, fontSize = 24.sp, color = Color(0xFF111827), modifier = Modifier.padding(bottom = 8.dp))
-                        Text("Please wait, enhancing resolution and saving safely.", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color(0xFF6B7280), modifier = Modifier.padding(bottom = 32.dp))
-                        
-                        Box(modifier = Modifier.width(300.dp).height(16.dp).background(Color(0xFFE5E7EB), RoundedCornerShape(50))) {
-                            Box(modifier = Modifier.fillMaxHeight().fillMaxWidth(generatingProgress).background(Color(0xFF4F46E5), RoundedCornerShape(50)))
+
+                Spacer(Modifier.height(20.dp))
+
+                // ── Generate Button ───────────────────────────────────────────
+                AnimatedVisibility(
+                    visible = imagesArray.isNotEmpty(),
+                    enter = fadeIn() + slideInVertically(),
+                    exit = fadeOut()
+                ) {
+                    Button(
+                        onClick = { onGenerate() },
+                        modifier = Modifier.fillMaxWidth().height(58.dp),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier.fillMaxSize()
+                                .background(
+                                    Brush.horizontalGradient(listOf(ScanAccent, Color(0xFF00D4AA))),
+                                    RoundedCornerShape(18.dp)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.PictureAsPdf, null, tint = Color.White, modifier = Modifier.size(22.dp))
+                                Spacer(Modifier.width(10.dp))
+                                Text("Generate PDF", color = Color.White, fontWeight = FontWeight.Black, fontSize = 18.sp)
+                            }
                         }
-                        Row(modifier = Modifier.width(300.dp).padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(generatingText, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4B5563))
-                            Text("${(generatingProgress * 100).toInt()}%", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4F46E5))
+                    }
+                }
+
+                Spacer(Modifier.height(32.dp))
+
+                // ── Saved Docs ────────────────────────────────────────────────
+                if (docs.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Recent Scans", color = ScanText, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.weight(1f))
+                        Text("${docs.size} files", color = ScanSubText, fontSize = 13.sp)
+                    }
+                    docs.forEach { doc ->
+                        Box(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(ScanCard)
+                                .clickable {
+                                    context.startActivity(Intent(context, PdfViewerActivity::class.java).apply {
+                                        putExtra("pdf_path", doc.path)
+                                        putExtra("pdf_name", doc.name)
+                                    })
+                                }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier.size(48.dp)
+                                        .background(ScanAccent.copy(.15f), RoundedCornerShape(10.dp)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(Icons.Default.PictureAsPdf, null, tint = ScanAccent, modifier = Modifier.size(26.dp))
+                                }
+                                Spacer(Modifier.width(14.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(doc.name, color = ScanText, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Text("${doc.date} • ${doc.size}", color = ScanSubText, fontSize = 12.sp, modifier = Modifier.padding(top = 3.dp))
+                                }
+                                IconButton(onClick = { sharePdf(context, doc) }) {
+                                    Icon(Icons.Default.Share, null, tint = ScanAccent2, modifier = Modifier.size(20.dp))
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(80.dp))
+            }
+        }
+
+        // ── Generating Overlay ────────────────────────────────────────────────
+        if (isGenerating) {
+            Box(
+                modifier = Modifier.fillMaxSize().background(Color.Black.copy(.85f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
+                    CircularProgressIndicator(
+                        progress = { genProgress },
+                        color = ScanAccent,
+                        trackColor = ScanSurface,
+                        modifier = Modifier.size(80.dp),
+                        strokeWidth = 6.dp
+                    )
+                    Spacer(Modifier.height(24.dp))
+                    Text("Creating PDF...", color = ScanText, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Text(genText, color = ScanAccent, fontSize = 14.sp, modifier = Modifier.padding(top = 6.dp))
+                    Spacer(Modifier.height(20.dp))
+                    Box(
+                        modifier = Modifier.fillMaxWidth().height(4.dp)
+                            .clip(RoundedCornerShape(2.dp)).background(ScanSurface)
+                    ) {
+                        Box(
+                            modifier = Modifier.fillMaxHeight().fillMaxWidth(genProgress)
+                                .background(Brush.horizontalGradient(listOf(ScanAccent, ScanAccent2)))
+                        )
+                    }
+                }
+            }
+        }
+
+        // ── Image Picker Bottom Sheet (Telegram-style) ────────────────────────
+        if (showPickerSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showPickerSheet = false },
+                containerColor = ScanCard,
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
+                    Box(modifier = Modifier.width(36.dp).height(4.dp).background(ScanDivider, CircleShape).align(Alignment.CenterHorizontally))
+                    Spacer(Modifier.height(20.dp))
+                    Text("Add Pages", color = ScanText, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(20.dp))
+                    PickerRow(
+                        icon = Icons.Default.CameraAlt,
+                        label = "Scan with Camera",
+                        sub = "Auto edge detection",
+                        color = ScanAccent
+                    ) { showPickerSheet = false; launchCameraScan() }
+                    HorizontalDivider(color = ScanDivider, modifier = Modifier.padding(vertical = 4.dp))
+                    PickerRow(
+                        icon = Icons.Default.PhotoLibrary,
+                        label = "Choose from Gallery",
+                        sub = "Multiple selection supported",
+                        color = ScanAccent2
+                    ) {
+                        showPickerSheet = false
+                        galleryLauncher.launch(
+                            androidx.activity.result.PickVisualMediaRequest(
+                                androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly
+                            )
+                        )
+                    }
+                    HorizontalDivider(color = ScanDivider, modifier = Modifier.padding(vertical = 4.dp))
+                    PickerRow(
+                        icon = Icons.Default.PictureAsPdf,
+                        label = "Import PDF",
+                        sub = "Merge pages into this document",
+                        color = Color(0xFFFF8C42)
+                    ) { showPickerSheet = false; pdfPickerLauncher.launch("application/pdf") }
+                }
+            }
+        }
+
+        // ── Filter Bottom Sheet ───────────────────────────────────────────────
+        if (showFilterSheet) {
+            val filters = listOf(
+                Triple("none",      "Original",  "No processing"),
+                Triple("magic-pro", "✨ Magic Pro", "Best for documents"),
+                Triple("print-pro", "🖨 Print Pro", "High contrast print"),
+                Triple("clear-pro", "💎 Clear Pro",  "Enhanced clarity"),
+                Triple("super-bw",  "◐ Super B&W",  "Black & white sharp")
+            )
+            ModalBottomSheet(
+                onDismissRequest = { showFilterSheet = false },
+                containerColor = ScanCard,
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
+                    Box(modifier = Modifier.width(36.dp).height(4.dp).background(ScanDivider, CircleShape).align(Alignment.CenterHorizontally))
+                    Spacer(Modifier.height(20.dp))
+                    Text("Image Filter", color = ScanText, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(16.dp))
+                    filters.forEach { (key, name, desc) ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+                                .background(if (currentFilter == key) ScanAccent.copy(.12f) else Color.Transparent)
+                                .clickable { currentFilter = key; showFilterSheet = false }
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(name, color = ScanText, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                                Text(desc, color = ScanSubText, fontSize = 12.sp)
+                            }
+                            if (currentFilter == key)
+                                Icon(Icons.Default.CheckCircle, null, tint = ScanAccent, modifier = Modifier.size(20.dp))
                         }
                     }
                 }
             }
-            
-            // --- PDF Import Modal ---
-            if (showPdfImportModal != null) {
-                Dialog(onDismissRequest = { showPdfImportModal = null }) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth().padding(16.dp),
-                        shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(24.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(24.dp)) {
-                            Text("Import PDF Options", fontWeight = FontWeight.Black, fontSize = 20.sp, color = Color(0xFF1F2937), modifier = Modifier.padding(bottom = 8.dp))
-                            Text("How do you want to process this PDF file?", fontSize = 14.sp, color = Color(0xFF6B7280), modifier = Modifier.padding(bottom = 24.dp))
-                            
+        }
+
+        // ── PDF Import Modal ──────────────────────────────────────────────────
+        if (showPdfImportModal != null) {
+            Dialog(onDismissRequest = { showPdfImportModal = null }) {
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = ScanCard)
+                ) {
+                    Column(modifier = Modifier.padding(24.dp)) {
+                        Text("Import PDF", color = ScanText, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        Spacer(Modifier.height(8.dp))
+                        Text("Add pages from this PDF into current scan?", color = ScanSubText, fontSize = 14.sp)
+                        Spacer(Modifier.height(20.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            OutlinedButton(
+                                onClick = { showPdfImportModal = null },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp),
+                                border = BorderStroke(1.dp, ScanDivider),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = ScanSubText)
+                            ) { Text("Cancel") }
                             Button(
-                                onClick = { 
-                                    scope.launch(Dispatchers.IO) {
-                                        try {
-                                            val pfd = context.contentResolver.openFileDescriptor(showPdfImportModal!!, "r")
-                                            if (pfd != null) {
+                                onClick = {
+                                    val uri = showPdfImportModal
+                                    showPdfImportModal = null
+                                    if (uri != null) {
+                                        scope.launch(Dispatchers.IO) {
+                                            try {
+                                                val pfd = context.contentResolver.openFileDescriptor(uri, "r") ?: return@launch
                                                 val renderer = android.graphics.pdf.PdfRenderer(pfd)
-                                                val uris = mutableListOf<Uri>()
+                                                val tempUris = mutableListOf<Uri>()
                                                 for (i in 0 until renderer.pageCount) {
                                                     val page = renderer.openPage(i)
-                                                    val bitmap = Bitmap.createBitmap(page.width * 2, page.height * 2, Bitmap.Config.ARGB_8888)
-                                                    bitmap.eraseColor(android.graphics.Color.WHITE)
-                                                    page.render(bitmap, null, null, android.graphics.pdf.PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                                                    val bmp = Bitmap.createBitmap(page.width * 2, page.height * 2, Bitmap.Config.ARGB_8888)
+                                                    page.render(bmp, null, null, android.graphics.pdf.PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
                                                     page.close()
-                                                    
-                                                    val tempFile = File(context.cacheDir, "pdf_ext_${System.currentTimeMillis()}_$i.jpg")
-                                                    FileOutputStream(tempFile).use { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }
-                                                    uris.add(Uri.fromFile(tempFile))
+                                                    val tmpFile = File.createTempFile("pdf_pg_$i", ".jpg", context.cacheDir)
+                                                    FileOutputStream(tmpFile).use { bmp.compress(Bitmap.CompressFormat.JPEG, 95, it) }
+                                                    tempUris.add(Uri.fromFile(tmpFile))
                                                 }
                                                 renderer.close()
-                                                pfd.close()
+                                                withContext(Dispatchers.Main) { imagesArray = imagesArray + tempUris }
+                                            } catch (e: Exception) {
                                                 withContext(Dispatchers.Main) {
-                                                    imagesArray = imagesArray + uris
-                                                    showPdfImportModal = null
+                                                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
                                                 }
                                             }
-                                        } catch (e: Exception) {
-                                            withContext(Dispatchers.Main) { Toast.makeText(context, "Failed to extract PDF", Toast.LENGTH_SHORT).show() }
-                                        }
-                                    }
-                                    showPdfImportModal = null
-                                },
-                                modifier = Modifier.fillMaxWidth().height(56.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
-                                shape = RoundedCornerShape(16.dp)
-                            ) {
-                                Icon(Icons.Default.DocumentScanner, contentDescription = null, tint = Color.White)
-                                Spacer(Modifier.width(8.dp))
-                                Text("Scan & Apply Filters", fontWeight = FontWeight.Bold)
-                            }
-                            Spacer(Modifier.height(12.dp))
-                            OutlinedButton(
-                                onClick = {
-                                    scope.launch(Dispatchers.IO) {
-                                        try {
-                                            val name = "Imported_${System.currentTimeMillis()}.pdf"
-                                            saveDirectPdf(context, showPdfImportModal!!, name)
-                                            withContext(Dispatchers.Main) {
-                                                docs = loadDocs(context)
-                                                Toast.makeText(context, "Saved directly to Reader", Toast.LENGTH_SHORT).show()
-                                                showPdfImportModal = null
-                                            }
-                                        } catch (e: Exception) {
-                                            withContext(Dispatchers.Main) { Toast.makeText(context, "Failed to save PDF", Toast.LENGTH_SHORT).show() }
                                         }
                                     }
                                 },
-                                modifier = Modifier.fillMaxWidth().height(56.dp),
-                                shape = RoundedCornerShape(16.dp),
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF059669)),
-                                border = BorderStroke(1.dp, Color(0xFFA7F3D0))
-                            ) {
-                                Icon(Icons.Default.CheckCircleOutline, contentDescription = null, tint = Color(0xFF059669))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Save Directly as Reader", fontWeight = FontWeight.Bold)
-                            }
-                            Spacer(Modifier.height(16.dp))
-                            TextButton(onClick = { showPdfImportModal = null }, modifier = Modifier.fillMaxWidth()) {
-                                Text("Cancel", color = Color(0xFF9CA3AF), fontWeight = FontWeight.Bold)
-                            }
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = ScanAccent)
+                            ) { Text("Import", color = Color.White, fontWeight = FontWeight.Bold) }
                         }
                     }
                 }
@@ -586,70 +601,128 @@ fun ScanToPdfScreen(onBack: () -> Unit) {
     }
 }
 
-// ─── Utility Components ────────────────────────────────────────────────────────
+// ─── Reusable UI components ────────────────────────────────────────────────────
 
 @Composable
-fun FilteredPreviewImage(context: Context, uri: Uri, filter: String) {
-    var bitmap by remember { mutableStateOf<Bitmap?>(null) }
-    LaunchedEffect(uri) {
-        withContext(Dispatchers.IO) {
-            val bmp = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                android.graphics.ImageDecoder.decodeBitmap(android.graphics.ImageDecoder.createSource(context.contentResolver, uri))
-            } else {
-                MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
-            }
-            bitmap = bmp.copy(Bitmap.Config.ARGB_8888, true) ?: bmp
+private fun ScanActionButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String, sub: String,
+    gradient: Brush, modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = modifier.height(88.dp).clip(RoundedCornerShape(16.dp))
+            .background(gradient).clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(icon, null, tint = Color.White, modifier = Modifier.size(26.dp))
+            Spacer(Modifier.height(4.dp))
+            Text(label, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            Text(sub, color = Color.White.copy(.75f), fontSize = 10.sp)
         }
     }
-
-    bitmap?.let { bmp ->
-        val colorMatrix = getFilterMatrix(filter)
-        Image(
-            bitmap = bmp.asImageBitmap(),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize().padding(2.dp).clip(RoundedCornerShape(14.dp)),
-            colorFilter = androidx.compose.ui.graphics.ColorFilter.colorMatrix(androidx.compose.ui.graphics.ColorMatrix(colorMatrix.array))
-        )
-    } ?: Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator(color = Color(0xFF4F46E5), modifier = Modifier.size(24.dp)) }
 }
 
+@Composable
+private fun ScanChip(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String, active: Boolean = true,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = modifier.height(38.dp).clip(RoundedCornerShape(10.dp))
+            .background(if (active) ScanAccent.copy(.15f) else ScanSurface)
+            .border(1.dp, if (active) ScanAccent.copy(.4f) else ScanDivider, RoundedCornerShape(10.dp))
+            .clickable { onClick() }
+            .padding(horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Icon(icon, null, tint = if (active) ScanAccent else ScanSubText, modifier = Modifier.size(14.dp))
+        Spacer(Modifier.width(4.dp))
+        Text(label, color = if (active) ScanAccent else ScanSubText, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+@Composable
+private fun PickerRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String, sub: String, color: Color,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable { onClick() }.padding(vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier.size(44.dp).background(color.copy(.15f), CircleShape),
+            contentAlignment = Alignment.Center
+        ) { Icon(icon, null, tint = color, modifier = Modifier.size(22.dp)) }
+        Spacer(Modifier.width(16.dp))
+        Column {
+            Text(label, color = ScanText, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+            Text(sub, color = ScanSubText, fontSize = 12.sp)
+        }
+    }
+}
+
+// ─── Image Preview ─────────────────────────────────────────────────────────────
+@Composable
+fun FilteredPreviewImage(context: Context, uri: Uri, filterType: String) {
+    val bitmap by produceState<Bitmap?>(null, uri, filterType) {
+        value = withContext(Dispatchers.IO) {
+            try {
+                val bmp = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
+                    android.graphics.ImageDecoder.decodeBitmap(android.graphics.ImageDecoder.createSource(context.contentResolver, uri))
+                else MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                bmp.copy(Bitmap.Config.ARGB_8888, true) ?: bmp
+            } catch (e: Exception) { null }
+        }
+    }
+    if (bitmap != null) {
+        val mat = getFilterMatrix(filterType)
+        Image(
+            bitmap = bitmap!!.asImageBitmap(),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop,
+            colorFilter = androidx.compose.ui.graphics.ColorFilter.colorMatrix(
+                androidx.compose.ui.graphics.ColorMatrix(mat.array)
+            )
+        )
+    }
+}
+
+// ─── Filter Matrix ─────────────────────────────────────────────────────────────
 fun getFilterMatrix(filter: String): ColorMatrix {
     val cm = ColorMatrix()
     when (filter) {
         "magic-pro" -> {
-            cm.set(floatArrayOf(
-                1.4f, 0f, 0f, 0f, 10f,
-                0f, 1.4f, 0f, 0f, 10f,
-                0f, 0f, 1.4f, 0f, 10f,
-                0f, 0f, 0f, 1.2f, 0f
+            cm.setSaturation(0f)
+            val contrast = ColorMatrix(floatArrayOf(
+                1.6f,0f,0f,0f,-40f, 0f,1.6f,0f,0f,-40f, 0f,0f,1.6f,0f,-40f, 0f,0f,0f,1f,0f
             ))
+            cm.postConcat(contrast)
         }
         "print-pro" -> {
             cm.setSaturation(0f)
             val contrast = ColorMatrix(floatArrayOf(
-                1.6f, 0f, 0f, 0f, -40f,
-                0f, 1.6f, 0f, 0f, -40f,
-                0f, 0f, 1.6f, 0f, -40f,
-                0f, 0f, 0f, 1f, 0f
+                2.2f,0f,0f,0f,-80f, 0f,2.2f,0f,0f,-80f, 0f,0f,2.2f,0f,-80f, 0f,0f,0f,1f,0f
             ))
             cm.postConcat(contrast)
         }
         "clear-pro" -> {
-            cm.set(floatArrayOf(
-                1.2f, 0f, 0f, 0f, 30f,
-                0f, 1.2f, 0f, 0f, 30f,
-                0f, 0f, 1.2f, 0f, 30f,
-                0f, 0f, 0f, 1f, 0f
+            val contrast = ColorMatrix(floatArrayOf(
+                1.3f,0f,0f,0f,-20f, 0f,1.3f,0f,0f,-20f, 0f,0f,1.3f,0f,-20f, 0f,0f,0f,1f,0f
             ))
+            cm.postConcat(contrast)
         }
         "super-bw" -> {
             cm.setSaturation(0f)
             val contrast = ColorMatrix(floatArrayOf(
-                2.5f, 0f, 0f, 0f, -150f,
-                0f, 2.5f, 0f, 0f, -150f,
-                0f, 0f, 2.5f, 0f, -150f,
-                0f, 0f, 0f, 1f, 0f
+                3.0f,0f,0f,0f,-120f, 0f,3.0f,0f,0f,-120f, 0f,0f,3.0f,0f,-120f, 0f,0f,0f,1f,0f
             ))
             cm.postConcat(contrast)
         }
@@ -657,96 +730,53 @@ fun getFilterMatrix(filter: String): ColorMatrix {
     return cm
 }
 
-fun getDocDir(context: Context): File {
-    val dir = File(context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "RasFocus/ScannedPDFs")
-    if (!dir.exists()) dir.mkdirs()
-    return dir
-}
-
-fun loadDocs(context: Context): List<ScannedDoc> {
-    val dir = getDocDir(context)
-    val files = dir.listFiles { f -> f.extension.equals("pdf", true) } ?: return emptyList()
-    val format = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
-    return files.sortedByDescending { it.lastModified() }.map {
-        ScannedDoc(
-            name = it.name,
-            path = it.absolutePath,
-            date = format.format(Date(it.lastModified())),
-            size = "${it.length() / 1024} KB"
-        )
-    }
-}
-
-private fun sharePdf(context: Context, doc: ScannedDoc) {
-    val file = File(doc.path)
-    if (!file.exists()) { Toast.makeText(context, "File not found", Toast.LENGTH_SHORT).show(); return }
-    val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
-    context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
-        type = "application/pdf"
-        putExtra(Intent.EXTRA_STREAM, uri)
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    }, "Share PDF"))
-}
-
-private suspend fun buildPdfFromImages(
-    context: Context,
-    uris: List<Uri>,
-    filterType: String,
-    autoCrop: Boolean,
-    pageSize: String,
-    onProgress: suspend (Int, Int) -> Unit
+// ─── PDF Builder ───────────────────────────────────────────────────────────────
+fun buildPdfFromImages(
+    context: Context, uris: List<Uri>, filterType: String,
+    autoCrop: Boolean, pageSize: String,
+    onProgress: (Int, Int) -> Unit
 ): File {
-    val dir = getDocDir(context)
+    val dir  = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
+        ?: context.filesDir
     val name = "RasScanner_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())}"
     val file = File(dir, "$name.pdf")
-    val doc = PdfDocument()
-    
-    val paint = Paint()
+    val doc  = PdfDocument()
+    val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
     paint.colorFilter = ColorMatrixColorFilter(getFilterMatrix(filterType))
 
     for (i in uris.indices) {
         onProgress(i + 1, uris.size)
-        val uri = uris[i]
-        
-        val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            android.graphics.ImageDecoder.decodeBitmap(android.graphics.ImageDecoder.createSource(context.contentResolver, uri))
-        } else {
-            MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
-        }
-        val softwareBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true) ?: bitmap
-        
-        val croppedBitmap = if (autoCrop) {
-            softwareBitmap 
-        } else softwareBitmap
-        
+        val raw = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
+            android.graphics.ImageDecoder.decodeBitmap(android.graphics.ImageDecoder.createSource(context.contentResolver, uris[i]))
+        else MediaStore.Images.Media.getBitmap(context.contentResolver, uris[i])
+        val bmp = raw.copy(Bitmap.Config.ARGB_8888, true) ?: raw
+
         val pageW: Int
         val pageH: Int
-        
         if (pageSize == "a4") {
-            pageW = 595
-            pageH = 842
+            // A4 at 300 DPI — CamScanner quality
+            pageW = 2480
+            pageH = 3508
         } else {
-            pageW = (croppedBitmap.width * 0.5f).toInt()
-            pageH = (croppedBitmap.height * 0.5f).toInt()
+            pageW = bmp.width
+            pageH = bmp.height
         }
 
         val pageInfo = PdfDocument.PageInfo.Builder(pageW, pageH, doc.pages.size + 1).create()
-        val page = doc.startPage(pageInfo)
-        
-        val scale = minOf(pageW.toFloat() / croppedBitmap.width, pageH.toFloat() / croppedBitmap.height)
-        val w = croppedBitmap.width * scale
-        val h = croppedBitmap.height * scale
-        val left = (pageW - w) / 2f
-        val top = (pageH - h) / 2f
-        
-        val destRect = android.graphics.RectF(left, top, left + w, top + h)
-        page.canvas.drawBitmap(croppedBitmap, null, destRect, paint)
+        val page     = doc.startPage(pageInfo)
+        val scale    = minOf(pageW.toFloat() / bmp.width, pageH.toFloat() / bmp.height)
+        val w        = bmp.width * scale
+        val h        = bmp.height * scale
+        val left     = (pageW - w) / 2f
+        val top      = (pageH - h) / 2f
+        page.canvas.drawBitmap(bmp, null, android.graphics.RectF(left, top, left + w, top + h), paint)
         doc.finishPage(page)
+        bmp.recycle()
     }
-    
+
     file.outputStream().use { doc.writeTo(it) }
     doc.close()
-    
+
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
         try {
             val values = android.content.ContentValues().apply {
@@ -757,37 +787,39 @@ private suspend fun buildPdfFromImages(
             val contentUri = context.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
             if (contentUri != null) {
                 context.contentResolver.openOutputStream(contentUri)?.use { out ->
-                    file.inputStream().use { input -> input.copyTo(out) }
+                    file.inputStream().use { it.copyTo(out) }
                 }
             }
-        } catch (e: Exception) { }
+        } catch (_: Exception) {}
     }
-    
     return file
 }
 
-private fun saveDirectPdf(context: Context, sourceUri: Uri, outName: String) {
-    val dir = getDocDir(context)
-    val file = File(dir, outName)
-    context.contentResolver.openInputStream(sourceUri)?.use { input ->
-        FileOutputStream(file).use { output ->
-            input.copyTo(output)
-        }
-    }
-    
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        try {
-            val values = android.content.ContentValues().apply {
-                put(MediaStore.MediaColumns.DISPLAY_NAME, outName)
-                put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf")
-                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/RasFocus")
-            }
-            val contentUri = context.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
-            if (contentUri != null) {
-                context.contentResolver.openOutputStream(contentUri)?.use { out ->
-                    file.inputStream().use { input -> input.copyTo(out) }
-                }
-            }
-        } catch (e: Exception) { }
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+fun loadDocs(context: Context): List<ScannedDoc> {
+    val dir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS) ?: return emptyList()
+    return dir.listFiles { f -> f.name.startsWith("RasScanner_") && f.name.endsWith(".pdf") }
+        ?.sortedByDescending { it.lastModified() }
+        ?.map { f ->
+            val kb = f.length() / 1024
+            val size = if (kb > 1024) "${"%.1f".format(kb / 1024f)} MB" else "$kb KB"
+            val date = SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(f.lastModified()))
+            ScannedDoc(f.nameWithoutExtension, f.absolutePath, date, size)
+        } ?: emptyList()
+}
+
+fun sharePdf(context: Context, doc: ScannedDoc) {
+    try {
+        val file = File(doc.path)
+        val uri  = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
+        context.startActivity(Intent.createChooser(
+            Intent(Intent.ACTION_SEND).apply {
+                type = "application/pdf"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }, "Share PDF"
+        ))
+    } catch (e: Exception) {
+        Toast.makeText(context, "Share failed: ${e.message}", Toast.LENGTH_SHORT).show()
     }
 }
