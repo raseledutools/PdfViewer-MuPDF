@@ -35,10 +35,10 @@ object DriveBackupManager {
     )
 
     // ── Public check ─────────────────────────────────────────────────────────
-    fun isAvailable(context: Context): Boolean {
-        val account = GoogleSignIn.getLastSignedInAccount(context) ?: return false
-        return GoogleSignIn.hasPermissions(account, Scope(DriveScopes.DRIVE_FILE))
-    }
+    fun isAvailable(context: Context): Boolean = runCatching {
+        val account = GoogleSignIn.getLastSignedInAccount(context) ?: return@runCatching false
+        GoogleSignIn.hasPermissions(account, Scope(DriveScopes.DRIVE_FILE))
+    }.getOrDefault(false)
 
     // ── Build Drive service safely on IO thread ───────────────────────────────
     private fun buildDriveService(context: Context): Drive? = try {

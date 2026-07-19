@@ -124,7 +124,7 @@ object DiaryCloudSync {
         }
     }
 
-    fun isLoggedIn() = auth.currentUser != null
+    fun isLoggedIn() = runCatching { auth.currentUser != null }.getOrDefault(false)
 }
 
 // ============================================================
