@@ -1025,10 +1025,15 @@ fun RasFocusApp(viewModel: MainViewModel) {
         // Drive sync: run on IO thread with full error isolation.
         // google-api-client-android can throw on main thread during
         // credential init — explicit IO dispatch prevents that.
-        if (FirebaseAuth.getInstance().currentUser != null &&
-            DriveBackupManager.isAvailable(context)) {
-            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                try { DriveBackupManager.syncNow(context) } catch (_: Exception) {}
+        // The gating check itself is also wrapped: this fires on every
+        // app launch AND every process-restart, so any exception here
+        // (Firebase/Play Services edge cases) must never crash the app.
+        runCatching {
+            if (FirebaseAuth.getInstance().currentUser != null &&
+                DriveBackupManager.isAvailable(context)) {
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    try { DriveBackupManager.syncNow(context) } catch (_: Exception) {}
+                }
             }
         }
     }

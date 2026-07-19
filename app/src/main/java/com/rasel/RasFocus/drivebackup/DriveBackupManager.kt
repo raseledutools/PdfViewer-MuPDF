@@ -81,10 +81,10 @@ object DriveBackupManager {
     )
 
     // ── Public: is Drive backup available right now? ──────────────────────
-    fun isAvailable(context: Context): Boolean {
-        val account = GoogleSignIn.getLastSignedInAccount(context) ?: return false
-        return GoogleSignIn.hasPermissions(account, Scope(DriveScopes.DRIVE_FILE))
-    }
+    fun isAvailable(context: Context): Boolean = runCatching {
+        val account = GoogleSignIn.getLastSignedInAccount(context) ?: return@runCatching false
+        GoogleSignIn.hasPermissions(account, Scope(DriveScopes.DRIVE_FILE))
+    }.getOrDefault(false)
 
     // ── Public: run a full sync (folder + settings) — call after sign-in ──
     suspend fun syncNow(context: Context): Boolean = withContext(Dispatchers.IO) {
