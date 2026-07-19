@@ -1,22 +1,14 @@
 === KOTLIN/KAPT ERRORS ===
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/MissingServices.kt:160:64 Unresolved reference 'APK_UNIVERSAL'.
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/SelfControlModule.kt:2341:137 Unresolved reference 'APK_UNIVERSAL'.
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/SelfControlModule.kt:2353:141 Unresolved reference 'APK_UNIVERSAL'.
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/SelfControlModule.kt:2361:141 Unresolved reference 'APK_LIGHT'.
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/MissingServices.kt:160:64 Unresolved reference 'APK_UNIVERSAL'.
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/SelfControlModule.kt:1741:137 Unresolved reference 'APK_UNIVERSAL'.
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/SelfControlModule.kt:1755:141 Unresolved reference 'APK_UNIVERSAL'.
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/SelfControlModule.kt:1767:141 Unresolved reference 'APK_LIGHT'.
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/FacebookActivity.kt:242:21 Unresolved reference 'injectRemoveOpenInAppButton'.
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/FacebookActivity.kt:243:21 Unresolved reference 'injectSettingsRemover'.
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/FacebookActivity.kt:244:21 Unresolved reference 'injectRemoveOpenInAppButton'.
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/FacebookActivity.kt:245:21 Unresolved reference 'injectSettingsRemover'.
 
 === UNRESOLVED / TYPE ERRORS ===
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/MissingServices.kt:160:64 Unresolved reference 'APK_UNIVERSAL'.
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/SelfControlModule.kt:2341:137 Unresolved reference 'APK_UNIVERSAL'.
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/SelfControlModule.kt:2353:141 Unresolved reference 'APK_UNIVERSAL'.
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/SelfControlModule.kt:2361:141 Unresolved reference 'APK_LIGHT'.
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/MissingServices.kt:160:64 Unresolved reference 'APK_UNIVERSAL'.
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/SelfControlModule.kt:1741:137 Unresolved reference 'APK_UNIVERSAL'.
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/SelfControlModule.kt:1755:141 Unresolved reference 'APK_UNIVERSAL'.
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/SelfControlModule.kt:1767:141 Unresolved reference 'APK_LIGHT'.
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/FacebookActivity.kt:242:21 Unresolved reference 'injectRemoveOpenInAppButton'.
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/FacebookActivity.kt:243:21 Unresolved reference 'injectSettingsRemover'.
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/FacebookActivity.kt:244:21 Unresolved reference 'injectRemoveOpenInAppButton'.
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/FacebookActivity.kt:245:21 Unresolved reference 'injectSettingsRemover'.
 
 === KAPT / MODULE ERRORS ===
    > Compilation error. See log for more details
@@ -25,9 +17,13 @@ e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/
 > Task :app:compileFullReleaseKotlin FAILED
 * What went wrong:
 Execution failed for task ':app:compileFullReleaseKotlin'.
-BUILD FAILED in 1m 24s
+BUILD FAILED in 1m 14s
 
 === LAST 50 LINES ===
+file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/src/main/kotlin', not found
+file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/src/main/kotlin', not found
+file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/src/main/kotlin', not found
+file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/src/main/kotlin', not found
 file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/src/main/kotlin', not found
 file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/src/main/kotlin', not found
 file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/src/main/kotlin', not found
@@ -38,23 +34,19 @@ Script file extensions:
 Using Kotlin/JVM incremental compilation
 [KOTLIN] Kotlin compilation 'jdkHome' argument: null
 Options for KOTLIN DAEMON: IncrementalCompilationOptions(super=CompilationOptions(compilerMode=INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=[]), areFileChangesKnown=false, modifiedFiles=null, deletedFiles=null, classpathChanges=NotAvailableForNonIncrementalRun, workingDir=/home/runner/work/RasFocus-final/RasFocus-final/app/build/kotlin/compileFullReleaseKotlin/cacheable, multiModuleICSettings=MultiModuleICSettings(buildHistoryFile=/home/runner/work/RasFocus-final/RasFocus-final/app/build/kotlin/compileFullReleaseKotlin/local-state/build-history.bin, useModuleDetection=true), usePreciseJavaTracking=true, icFeatures=IncrementalCompilationFeatures(withAbiSnapshot=false, preciseCompilationResultsBackup=true, keepIncrementalCompilationCachesInMemory=true, enableUnsafeIncrementalCompilationForMultiplatform=false), outputFiles=[/home/runner/work/RasFocus-final/RasFocus-final/app/build/tmp/kotlin-classes/fullRelease, /home/runner/work/RasFocus-final/RasFocus-final/app/build/kotlin/compileFullReleaseKotlin/cacheable, /home/runner/work/RasFocus-final/RasFocus-final/app/build/kotlin/compileFullReleaseKotlin/local-state])
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/MissingServices.kt:160:64 Unresolved reference 'APK_UNIVERSAL'.
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/SelfControlModule.kt:2341:137 Unresolved reference 'APK_UNIVERSAL'.
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/SelfControlModule.kt:2353:141 Unresolved reference 'APK_UNIVERSAL'.
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/SelfControlModule.kt:2361:141 Unresolved reference 'APK_LIGHT'.
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/MissingServices.kt:160:64 Unresolved reference 'APK_UNIVERSAL'.
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/SelfControlModule.kt:1741:137 Unresolved reference 'APK_UNIVERSAL'.
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/SelfControlModule.kt:1755:141 Unresolved reference 'APK_UNIVERSAL'.
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/SelfControlModule.kt:1767:141 Unresolved reference 'APK_LIGHT'.
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/FacebookActivity.kt:242:21 Unresolved reference 'injectRemoveOpenInAppButton'.
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/FacebookActivity.kt:243:21 Unresolved reference 'injectSettingsRemover'.
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/FacebookActivity.kt:244:21 Unresolved reference 'injectRemoveOpenInAppButton'.
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/FacebookActivity.kt:245:21 Unresolved reference 'injectSettingsRemover'.
 Finished executing kotlin compiler using DAEMON strategy
 
 > Task :app:compileFullReleaseKotlin FAILED
 AAPT2 aapt2-8.2.2-10154469-linux Daemon #0: shutdown
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784392286307.json
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784431173939.json
 
 0 problems were found storing the configuration cache.
 
-See the complete report at file:///home/runner/work/RasFocus-final/RasFocus-final/build/reports/configuration-cache/1w8ek9r2ajpw6vb7h12q99kqf/4y418utqrhq7dmpmmvab4u9ap/configuration-cache-report.html
+See the complete report at file:///home/runner/work/RasFocus-final/RasFocus-final/build/reports/configuration-cache/9jipfjloofrwnkbopwodrcoas/4y418utqrhq7dmpmmvab4u9ap/configuration-cache-report.html
 
 FAILURE: Build failed with an exception.
 
@@ -75,6 +67,6 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.9/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 1m 24s
+BUILD FAILED in 1m 14s
 31 actionable tasks: 21 executed, 10 from cache
 Configuration cache entry stored.
