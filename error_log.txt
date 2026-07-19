@@ -9,7 +9,7 @@ Tasks to be executed: [task ':app:buildKotlinToolingMetadata', task ':app:checkK
 > Task :app:checkFullReleaseDuplicateClasses FAILED
 * What went wrong:
 Execution failed for task ':app:checkFullReleaseDuplicateClasses'.
-BUILD FAILED in 35s
+BUILD FAILED in 18s
 
 === LAST 50 LINES ===
      Duplicate class android.support.v4.media.session.MediaSessionCompat$MediaSessionImplBase found in modules media-1.7.0.aar -> media-1.7.0-runtime (androidx.media:media:1.7.0) and support-media-compat-26.1.0.aar -> support-media-compat-26.1.0-runtime (com.android.support:support-media-compat:26.1.0)
@@ -59,6 +59,6 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.9/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 35s
-19 actionable tasks: 15 executed, 4 from cache
+BUILD FAILED in 18s
+24 actionable tasks: 16 executed, 8 from cache
 Configuration cache entry stored.
