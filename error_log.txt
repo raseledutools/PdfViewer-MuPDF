@@ -1,19 +1,23 @@
 === KOTLIN/KAPT ERRORS ===
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/MainActivity.kt:3790:39 Type mismatch: inferred type is com.rasel.RasFocus.combo.selfcontrol.familybrowser.DownloadItem but com.rasel.RasFocus.selfcontrol.familybrowser.DownloadItem was expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/diary.kt:1081:14 Unresolved reference: verticalScroll
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/diary.kt:1081:14 Unresolved reference: verticalScroll
 
 === UNRESOLVED / TYPE ERRORS ===
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/MainActivity.kt:3790:39 Type mismatch: inferred type is com.rasel.RasFocus.combo.selfcontrol.familybrowser.DownloadItem but com.rasel.RasFocus.selfcontrol.familybrowser.DownloadItem was expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/diary.kt:1081:14 Unresolved reference: verticalScroll
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/diary.kt:1081:14 Unresolved reference: verticalScroll
 
 === KAPT / MODULE ERRORS ===
 Tasks to be executed: [task ':app:buildKotlinToolingMetadata', task ':app:checkKotlinGradlePluginConfigurationErrors', task ':app:preBuild', task ':app:preFullReleaseBuild', task ':app:generateFullReleaseBuildConfig', task ':app:checkFullReleaseAarMetadata', task ':app:processFullReleaseGoogleServices', task ':app:mapFullReleaseSourceSetPaths', task ':app:generateFullReleaseResources', task ':app:mergeFullReleaseResources', task ':app:packageFullReleaseResources', task ':app:parseFullReleaseLocalResources', task ':app:createFullReleaseCompatibleScreenManifests', task ':app:extractDeepLinksFullRelease', task ':app:processFullReleaseMainManifest', task ':app:processFullReleaseManifest', task ':app:processFullReleaseManifestForPackage', task ':app:processFullReleaseResources', task ':app:kaptGenerateStubsFullReleaseKotlin', task ':app:kaptFullReleaseKotlin', task ':app:compileFullReleaseKotlin', task ':app:javaPreCompileFullRelease', task ':app:compileFullReleaseJavaWithJavac', task ':app:extractProguardFiles', task ':app:generateFullReleaseLintVitalReportModel', task ':app:lintVitalAnalyzeFullRelease', task ':app:lintVitalReportFullRelease', task ':app:lintVitalFullRelease', task ':app:mergeFullReleaseJniLibFolders', task ':app:mergeFullReleaseNativeLibs', task ':app:stripFullReleaseDebugSymbols', task ':app:extractFullReleaseNativeSymbolTables', task ':app:mergeFullReleaseNativeDebugMetadata', task ':app:checkFullReleaseDuplicateClasses', task ':app:mergeFullReleaseArtProfile', task ':app:expandFullReleaseArtProfileWildcards', task ':app:mergeFullReleaseGeneratedProguardFiles', task ':app:processFullReleaseJavaRes', task ':app:mergeFullReleaseJavaResource', task ':app:minifyFullReleaseWithR8', task ':app:compileFullReleaseArtProfile', task ':app:generateFullReleaseAssets', task ':app:mergeFullReleaseAssets', task ':app:compressFullReleaseAssets', task ':app:shrinkFullReleaseRes', task ':app:optimizeFullReleaseResources', task ':app:collectFullReleaseDependencies', task ':app:sdkFullReleaseDependencyData', task ':app:validateSigningFullRelease', task ':app:writeFullReleaseAppMetadata', task ':app:writeFullReleaseSigningConfigVersions', task ':app:packageFullRelease', task ':app:createFullReleaseApkListingFileRedirect', task ':app:assembleFullRelease']
-Resolve mutations for :app:kaptGenerateStubsFullReleaseKotlin (Thread[Execution worker Thread 7,5,main]) started.
-:app:kaptGenerateStubsFullReleaseKotlin (Thread[Execution worker Thread 7,5,main]) started.
+Resolve mutations for :app:kaptGenerateStubsFullReleaseKotlin (Thread[Execution worker Thread 6,5,main]) started.
+:app:kaptGenerateStubsFullReleaseKotlin (Thread[Execution worker Thread 6,5,main]) started.
 > Task :app:kaptGenerateStubsFullReleaseKotlin
-Build cache key for task ':app:kaptGenerateStubsFullReleaseKotlin' is d425b6bdb050c65f290b45b334c428ea
+Build cache key for task ':app:kaptGenerateStubsFullReleaseKotlin' is ca59a21c13602dc724e3344212bb4ab5
 Task ':app:kaptGenerateStubsFullReleaseKotlin' is not up-to-date because:
 The input changes require a full rebuild for incremental task ':app:kaptGenerateStubsFullReleaseKotlin'.
 Options for KOTLIN DAEMON: IncrementalCompilationOptions(super=CompilationOptions(compilerMode=INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=[]), areFileChangesKnown=false, modifiedFiles=null, deletedFiles=null, classpathChanges=NotAvailableForNonIncrementalRun, workingDir=/home/runner/work/RasFocus-final/RasFocus-final/app/build/kotlin/kaptGenerateStubsFullReleaseKotlin/cacheable, multiModuleICSettings=MultiModuleICSettings(buildHistoryFile=/home/runner/work/RasFocus-final/RasFocus-final/app/build/kotlin/kaptGenerateStubsFullReleaseKotlin/local-state/build-history.bin, useModuleDetection=true), usePreciseJavaTracking=true, outputFiles=[/home/runner/work/RasFocus-final/RasFocus-final/app/build/tmp/kapt3/incrementalData/fullRelease, /home/runner/work/RasFocus-final/RasFocus-final/app/build/tmp/kapt3/stubs/fullRelease, /home/runner/work/RasFocus-final/RasFocus-final/app/build/kotlin/kaptGenerateStubsFullReleaseKotlin/cacheable, /home/runner/work/RasFocus-final/RasFocus-final/app/build/kotlin/kaptGenerateStubsFullReleaseKotlin/local-state])
-Stored cache entry for task ':app:kaptGenerateStubsFullReleaseKotlin' with cache key d425b6bdb050c65f290b45b334c428ea
+Stored cache entry for task ':app:kaptGenerateStubsFullReleaseKotlin' with cache key ca59a21c13602dc724e3344212bb4ab5
 Running kapt annotation processing using the Gradle Worker API
    > Compilation error. See log for more details
 
@@ -21,7 +25,7 @@ Running kapt annotation processing using the Gradle Worker API
 > Task :app:compileFullReleaseKotlin FAILED
 * What went wrong:
 Execution failed for task ':app:compileFullReleaseKotlin'.
-BUILD FAILED in 3m 32s
+BUILD FAILED in 3m 24s
 
 === LAST 50 LINES ===
 file or directory '/home/runner/work/RasFocus-final/RasFocus-final/app/src/release/kotlin', not found
@@ -37,20 +41,20 @@ Script source files:
 Script file extensions: 
 Using Kotlin/JVM incremental compilation
 [KOTLIN] Kotlin compilation 'jdkHome' argument: null
-i: found daemon on port 17689 (37023 ms old), trying to connect
+i: found daemon on port 17438 (36685 ms old), trying to connect
 i: connected to the daemon
 Options for KOTLIN DAEMON: IncrementalCompilationOptions(super=CompilationOptions(compilerMode=INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=[]), areFileChangesKnown=false, modifiedFiles=null, deletedFiles=null, classpathChanges=NotAvailableForNonIncrementalRun, workingDir=/home/runner/work/RasFocus-final/RasFocus-final/app/build/kotlin/compileFullReleaseKotlin/cacheable, multiModuleICSettings=MultiModuleICSettings(buildHistoryFile=/home/runner/work/RasFocus-final/RasFocus-final/app/build/kotlin/compileFullReleaseKotlin/local-state/build-history.bin, useModuleDetection=true), usePreciseJavaTracking=true, outputFiles=[/home/runner/work/RasFocus-final/RasFocus-final/app/build/tmp/kotlin-classes/fullRelease, /home/runner/work/RasFocus-final/RasFocus-final/app/build/kotlin/compileFullReleaseKotlin/cacheable, /home/runner/work/RasFocus-final/RasFocus-final/app/build/kotlin/compileFullReleaseKotlin/local-state])
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/MainActivity.kt:3790:39 Type mismatch: inferred type is com.rasel.RasFocus.combo.selfcontrol.familybrowser.DownloadItem but com.rasel.RasFocus.selfcontrol.familybrowser.DownloadItem was expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/diary.kt:1081:14 Unresolved reference: verticalScroll
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/diary.kt:1081:14 Unresolved reference: verticalScroll
 
 > Task :app:compileFullReleaseKotlin FAILED
 AAPT2 aapt2-8.2.2-10154469-linux Daemon #0: shutdown
-AAPT2 aapt2-8.2.2-10154469-linux Daemon #1: shutdown
-AAPT2 aapt2-8.2.2-10154469-linux Daemon #2: shutdown
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784450761496.json
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784452116494.json
 
 0 problems were found storing the configuration cache.
 
-See the complete report at file:///home/runner/work/RasFocus-final/RasFocus-final/build/reports/configuration-cache/apw1ak3ctaokm6fma4ma628u8/6jm0vvm23t4vor14r6qpn2q53/configuration-cache-report.html
+See the complete report at file:///home/runner/work/RasFocus-final/RasFocus-final/build/reports/configuration-cache/6ypiexu367qr7uufaumr6dkdl/6jm0vvm23t4vor14r6qpn2q53/configuration-cache-report.html
 
 FAILURE: Build failed with an exception.
 
@@ -71,6 +75,6 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.9/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 3m 32s
-33 actionable tasks: 33 executed
+BUILD FAILED in 3m 24s
+33 actionable tasks: 23 executed, 10 from cache
 Configuration cache entry stored.
