@@ -7,7 +7,12 @@ import android.os.Build
 import android.widget.Toast
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -22,12 +27,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.*
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.*
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.text.style.*
 import androidx.compose.ui.unit.*
+import coil.compose.AsyncImage
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -182,7 +192,12 @@ fun SetPinDialog(currentEntry: DiaryEntry, onDismiss: () -> Unit, onPinSet: (Str
 // ── Calendar Screen ───────────────────────────────────────────────────────────
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DiaryCalendarScreen(entries: List<DiaryEntry>, onEntryClick: (DiaryEntry) -> Unit, onBack: () -> Unit) {
+fun DiaryCalendarScreen(
+    entries: List<DiaryEntry>,
+    onEntryClick: (DiaryEntry) -> Unit,
+    onNewEntryForDay: (String) -> Unit = {},   // ★ NEW: create entry for selected date
+    onBack: () -> Unit
+) {
     val today = Calendar.getInstance()
     var displayedMonth by remember { mutableStateOf(today.get(Calendar.MONTH)) }
     var displayedYear  by remember { mutableStateOf(today.get(Calendar.YEAR)) }
@@ -264,8 +279,25 @@ fun DiaryCalendarScreen(entries: List<DiaryEntry>, onEntryClick: (DiaryEntry) ->
             }
             HorizontalDivider(color = WDLine)
             if (selectedEntries.isEmpty()) {
-                Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                Column(Modifier.fillMaxWidth().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("No entries on this day", color = WDSub)
+                    Spacer(Modifier.height(16.dp))
+                    Button(
+                        onClick = {
+                            // Format the selected day as diary date string and open editor
+                            val cal = Calendar.getInstance().also {
+                                it.set(displayedYear, displayedMonth, selectedDay)
+                            }
+                            val dateStr = SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.ENGLISH).format(cal.time)
+                            onNewEntryForDay(dateStr)
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = WDPink),
+                        shape = RoundedCornerShape(50)
+                    ) {
+                        Icon(Icons.Default.Add, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("New entry for this day", color = Color.White)
+                    }
                 }
             } else {
                 LazyColumn(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
@@ -482,6 +514,14 @@ fun DiaryEditorScreen(
     onSetPin: () -> Unit,
     onSetReminder: () -> Unit
 ) {
+    // ★ Photo state — list of (uri, x_offset, y_offset, scale)
+    var photos by remember { mutableStateOf<List<PhotoItem>>(emptyList()) }
+    // Image picker launcher
+    val photoLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { photos = photos + PhotoItem(it) }
+    }
     var showMoreMenu by remember { mutableStateOf(false) }
     var showFolderMenu by remember { mutableStateOf(false) }
     var showMoodMenu by remember { mutableStateOf(false) }
@@ -556,29 +596,19 @@ fun DiaryEditorScreen(
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
 
-            // ── Attachment toolbar (Add, Photo, Voice, Video, PDF) ─────────
+            // ── Attachment toolbar — Photo only ─────────────────────────
             Surface(color = WDPinkBg, shadowElevation = 2.dp) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    AttachBtn(Icons.Default.Add,       "Add")    {}
-                    AttachBtn(Icons.Default.Image,     "Photo")  {}
-                    AttachBtn(Icons.Default.Mic,       "Voice")  {}
-                    AttachBtn(Icons.Default.Videocam,  "Video")  {}
-                    AttachBtn(Icons.Default.PictureAsPdf, "PDF") {}
+                    AttachBtn(Icons.Default.Image, "Add Photo") { photoLauncher.launch("image/*") }
                     Spacer(Modifier.weight(1f))
-                    // Tag chip row
-                    if (entry.tags.isNotEmpty()) {
-                        Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            entry.tags.take(3).forEach { tag ->
-                                Surface(shape = RoundedCornerShape(50), color = WDPink) {
-                                    Text(tag, color = Color.White, fontSize = 10.sp, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
-                                }
-                            }
-                        }
-                    }
+                    Text(
+                        "${entry.body.trim().split("\\s+".toRegex()).count { it.isNotEmpty() }} words",
+                        color = WDSub, fontSize = 11.sp
+                    )
                 }
             }
 
@@ -624,41 +654,55 @@ fun DiaryEditorScreen(
 
                 HorizontalDivider(color = WDPink.copy(.3f), thickness = 1.dp, modifier = Modifier.padding(horizontal = 16.dp))
 
-                // Body — lined paper effect
+                // ── Lined paper + draggable photos ────────────────────────
                 Box(modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 500.dp)) {
-                    // Draw lines
+
+                    // Lined paper background
                     val lineColor = Color(0xFFE0E0E0)
                     Canvas(modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 500.dp)) {
                         val lineSpacing = 34.dp.toPx()
-                        val startY = lineSpacing
-                        var y = startY
+                        var y = lineSpacing
                         while (y < size.height) {
-                            drawLine(lineColor, start = androidx.compose.ui.geometry.Offset(0f, y), end = androidx.compose.ui.geometry.Offset(size.width, y), strokeWidth = 1f)
+                            drawLine(lineColor,
+                                start = Offset(0f, y),
+                                end   = Offset(size.width, y),
+                                strokeWidth = 1f)
                             y += lineSpacing
                         }
-                        // Red margin line
-                        drawLine(Color(0xFFFFCDD2), start = androidx.compose.ui.geometry.Offset(52.dp.toPx(), 0f), end = androidx.compose.ui.geometry.Offset(52.dp.toPx(), size.height), strokeWidth = 1.5f)
+                        // Pink margin line (like a real notebook)
+                        drawLine(Color(0xFFFFCDD2),
+                            start = Offset(52.dp.toPx(), 0f),
+                            end   = Offset(52.dp.toPx(), size.height),
+                            strokeWidth = 1.5f)
                     }
+
+                    // Text field on top of lines
                     OutlinedTextField(
                         value = entry.body,
                         onValueChange = { onEntryChange(entry.copy(body = it)) },
                         placeholder = { Text("Start typing here.", color = WDSub.copy(.5f), fontSize = 16.sp) },
-                        modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 500.dp).padding(start = 56.dp, end = 16.dp, top = 4.dp),
-                        textStyle = LocalTextStyle.current.copy(fontSize = 16.sp, color = WDText, lineHeight = 34.sp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .defaultMinSize(minHeight = 500.dp)
+                            .padding(start = 56.dp, end = 16.dp, top = 4.dp),
+                        textStyle = LocalTextStyle.current.copy(
+                            fontSize = 16.sp, color = WDText, lineHeight = 34.sp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color.Transparent, unfocusedBorderColor = Color.Transparent,
-                            cursorColor = WDPink
+                            focusedBorderColor   = Color.Transparent,
+                            unfocusedBorderColor = Color.Transparent,
+                            cursorColor          = WDPink
                         )
                     )
-                }
 
-                // Word count
-                Text(
-                    "${entry.body.trim().split("\\s+".toRegex()).count { it.isNotEmpty() }} words",
-                    color = WDSub, fontSize = 11.sp,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
-                    textAlign = TextAlign.End
-                )
+                    // ★ Photos — draggable + pinch-to-resize, floating over text
+                    photos.forEachIndexed { idx, photo ->
+                        DraggablePhoto(
+                            photo   = photo,
+                            onUpdate = { updated -> photos = photos.toMutableList().also { it[idx] = updated } },
+                            onDelete = { photos = photos.toMutableList().also { it.removeAt(idx) } }
+                        )
+                    }
+                }
             }
         }
     }
@@ -672,6 +716,71 @@ private fun AttachBtn(icon: androidx.compose.ui.graphics.vector.ImageVector, lab
     ) {
         Icon(icon, null, tint = WDPink, modifier = Modifier.size(22.dp))
         Text(label, color = WDPink, fontSize = 9.sp, fontWeight = FontWeight.Medium)
+    }
+}
+
+// ── Photo item state ───────────────────────────────────────────────────────────
+private data class PhotoItem(
+    val uri: Uri,
+    val offsetX: Float = 60f,
+    val offsetY: Float = 60f,
+    val scale: Float   = 1f
+)
+
+// ── Draggable + pinch-to-resize photo overlay ─────────────────────────────────
+@Composable
+private fun DraggablePhoto(
+    photo: PhotoItem,
+    onUpdate: (PhotoItem) -> Unit,
+    onDelete: () -> Unit
+) {
+    var showDelete by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = Modifier
+            .offset { IntOffset(photo.offsetX.toInt(), photo.offsetY.toInt()) }
+            .size((120 * photo.scale).dp, (120 * photo.scale).dp)
+            .pointerInput(Unit) {
+                // Two-finger pinch to scale
+                detectTransformGestures { _, pan, zoom, _ ->
+                    val newScale = (photo.scale * zoom).coerceIn(0.4f, 4f)
+                    val newX = photo.offsetX + pan.x
+                    val newY = photo.offsetY + pan.y
+                    onUpdate(photo.copy(offsetX = newX, offsetY = newY, scale = newScale))
+                }
+            }
+            .pointerInput(Unit) {
+                // Single-finger drag
+                detectDragGestures(
+                    onDragStart = { showDelete = true },
+                    onDragEnd   = {},
+                    onDrag = { _, drag ->
+                        onUpdate(photo.copy(
+                            offsetX = photo.offsetX + drag.x,
+                            offsetY = photo.offsetY + drag.y
+                        ))
+                    }
+                )
+            }
+    ) {
+        AsyncImage(
+            model = photo.uri,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp))
+                .border(2.dp, WDPink.copy(.5f), RoundedCornerShape(8.dp))
+        )
+        // Delete button — top-right corner
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .size(22.dp)
+                .background(WDPink, CircleShape)
+                .clickable { onDelete() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(Icons.Default.Close, null, tint = Color.White, modifier = Modifier.size(14.dp))
+        }
     }
 }
 
@@ -724,6 +833,12 @@ fun ProfessionalDiaryScreen(
         DiaryCalendarScreen(
             entries = allEntries,
             onEntryClick = { entry -> viewModel.loadEntry(entry); nav = DiaryNav.EDITOR },
+            onNewEntryForDay = { dateStr ->
+                // Create a new blank entry pre-filled with the selected date
+                viewModel.startNewEntry()
+                viewModel.updateEntry(viewModel.currentEntry.value.copy(date = dateStr))
+                nav = DiaryNav.EDITOR
+            },
             onBack = { nav = DiaryNav.LIST }
         )
         return
