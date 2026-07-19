@@ -173,7 +173,7 @@ object AutoUpdater {
         try {
             val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 androidx.core.content.FileProvider.getUriForFile(
-                    context, "${context.packageName}.provider", apkFile
+                    context, "${context.packageName}.fileprovider", apkFile
                 )
             } else {
                 Uri.fromFile(apkFile)
@@ -208,8 +208,13 @@ object AutoUpdater {
 
             val downloadUrl = fetchDownloadUrl(targetApkName) ?: return false
 
+            // NOTE: app-private external files dir — this needs NO storage permission
+            // on any Android version. The public Downloads folder was tried here before
+            // but requires WRITE_EXTERNAL_STORAGE, which is capped at maxSdkVersion=28
+            // in the manifest — on Android 10+ (targetSdk 35 here) writes there fail
+            // silently with Permission denied, which is why downloads stopped working.
             val rasDir = java.io.File(
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS),
                 "RasFocus"
             )
             rasDir.mkdirs()
@@ -367,7 +372,7 @@ object AutoUpdater {
 
     fun getDownloadedUpdateFile(context: Context, tag: String): File? {
         val rasDir = File(
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+            context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS),
             "RasFocus"
         )
         val file = File(rasDir, "RasFocus_$tag.apk")
