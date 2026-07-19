@@ -206,6 +206,20 @@ android {
 }
 
 dependencies {
+    // ── Exclude old Support Library — conflicts with AndroidX (duplicate class error)
+    // com.android.support:support-media-compat:26.1.0 vs androidx.media:media:1.7.0
+    // com.android.support:support-compat:26.1.0 vs androidx.core:core:1.13.1
+    configurations.all {
+        exclude(group = "com.android.support", module = "support-media-compat")
+        exclude(group = "com.android.support", module = "support-compat")
+        exclude(group = "com.android.support", module = "support-fragment")
+        exclude(group = "com.android.support", module = "support-core-ui")
+        exclude(group = "com.android.support", module = "support-core-utils")
+        exclude(group = "com.android.support", module = "support-annotations")
+        exclude(group = "com.android.support", module = "animated-vector-drawable")
+        exclude(group = "com.android.support", module = "appcompat-v7")
+    }
+
     implementation("androidx.work:work-runtime-ktx:2.9.0")
     // FIX: androidx.camera:camera-camera2/lifecycle/view and com.google.zxing:core
     // were declared here as plain `implementation` (both flavors) but grep
