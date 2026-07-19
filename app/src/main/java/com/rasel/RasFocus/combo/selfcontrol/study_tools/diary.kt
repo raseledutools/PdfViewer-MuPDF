@@ -655,50 +655,123 @@ fun DiaryEditorScreen(
 
                 HorizontalDivider(color = WDPink.copy(.3f), thickness = 1.dp, modifier = Modifier.padding(horizontal = 16.dp))
 
-                // ── Lined paper + draggable photos ────────────────────────
-                Box(modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 500.dp)) {
+                // ── Realistic notebook canvas ─────────────────────────────
+                // Paper colors
+                val paperBg     = Color(0xFFFFFDE7)   // warm cream — real notebook paper
+                val lineBlue    = Color(0xFFBBDEFB)   // college-ruled blue lines
+                val marginRed   = Color(0xFFEF9A9A)   // red margin line (classic notebook)
+                val shadowColor = Color(0x22000000)
+                val lineSpacingDp = 32.dp
 
-                    // Lined paper background
-                    val lineColor = Color(0xFFE0E0E0)
-                    Canvas(modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 500.dp)) {
-                        val lineSpacing = 34.dp.toPx()
-                        var y = lineSpacing
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .defaultMinSize(minHeight = 600.dp)
+                        .padding(horizontal = 4.dp)
+                        .shadow(4.dp, RoundedCornerShape(2.dp))
+                        .background(paperBg, RoundedCornerShape(2.dp))
+                ) {
+                    val density = LocalDensity.current
+
+                    // ── Canvas: draw lines + margin ──────────────────────
+                    Canvas(modifier = Modifier
+                        .fillMaxWidth()
+                        .defaultMinSize(minHeight = 600.dp)
+                    ) {
+                        val spacing   = lineSpacingDp.toPx()
+                        val marginX   = 56.dp.toPx()
+
+                        // Subtle top header band (like spiral notebook header)
+                        drawRect(
+                            color = Color(0xFFF8BBD0).copy(alpha = 0.35f),
+                            size  = androidx.compose.ui.geometry.Size(size.width, spacing * 1.5f)
+                        )
+
+                        // Horizontal ruled lines — start after header
+                        var y = spacing * 2f
                         while (y < size.height) {
-                            drawLine(lineColor,
-                                start = Offset(0f, y),
-                                end   = Offset(size.width, y),
-                                strokeWidth = 1f)
-                            y += lineSpacing
+                            drawLine(
+                                color       = lineBlue,
+                                start       = Offset(0f, y),
+                                end         = Offset(size.width, y),
+                                strokeWidth = 1.2f
+                            )
+                            y += spacing
                         }
-                        // Pink margin line (like a real notebook)
-                        drawLine(Color(0xFFFFCDD2),
-                            start = Offset(52.dp.toPx(), 0f),
-                            end   = Offset(52.dp.toPx(), size.height),
-                            strokeWidth = 1.5f)
+
+                        // Vertical red margin line
+                        drawLine(
+                            color       = marginRed,
+                            start       = Offset(marginX, 0f),
+                            end         = Offset(marginX, size.height),
+                            strokeWidth = 1.8f
+                        )
+
+                        // Left spiral holes (3 circles evenly spaced)
+                        val holeX = 14.dp.toPx()
+                        listOf(0.25f, 0.5f, 0.75f).forEach { fraction ->
+                            val holeY = size.height * fraction
+                            drawCircle(
+                                color  = Color(0xFFD7CCC8),
+                                radius = 7.dp.toPx(),
+                                center = Offset(holeX, holeY)
+                            )
+                            drawCircle(
+                                color  = paperBg,
+                                radius = 5.dp.toPx(),
+                                center = Offset(holeX, holeY)
+                            )
+                        }
+
+                        // Subtle right-edge shadow (paper depth)
+                        val shadowBrush = androidx.compose.ui.graphics.Brush.horizontalGradient(
+                            colors = listOf(Color.Transparent, shadowColor),
+                            startX = size.width - 8.dp.toPx(),
+                            endX   = size.width
+                        )
+                        drawRect(brush = shadowBrush)
                     }
 
-                    // Text field on top of lines
+                    // ── Text input — aligns with ruled lines ─────────────
                     OutlinedTextField(
                         value = entry.body,
                         onValueChange = { onEntryChange(entry.copy(body = it)) },
-                        placeholder = { Text("Start typing here.", color = WDSub.copy(.5f), fontSize = 16.sp) },
+                        placeholder = {
+                            Text(
+                                "Start writing here...",
+                                color = Color(0xFFBCAAA4),
+                                fontSize = 15.sp,
+                                fontFamily = androidx.compose.ui.text.font.FontFamily.Default
+                            )
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .defaultMinSize(minHeight = 500.dp)
-                            .padding(start = 56.dp, end = 16.dp, top = 4.dp),
+                            .defaultMinSize(minHeight = 600.dp)
+                            .padding(
+                                start  = 66.dp,   // right of margin line + gap
+                                end    = 12.dp,
+                                top    = (lineSpacingDp * 1.6f)  // below header band
+                            ),
                         textStyle = LocalTextStyle.current.copy(
-                            fontSize = 16.sp, color = WDText, lineHeight = 34.sp),
+                            fontSize   = 15.sp,
+                            color      = Color(0xFF37474F),
+                            lineHeight = lineSpacingDp,
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Default
+                        ),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor   = Color.Transparent,
                             unfocusedBorderColor = Color.Transparent,
-                            cursorColor          = WDPink
-                        )
+                            cursorColor          = WDPink,
+                            focusedContainerColor   = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent
+                        ),
+                        minLines = 18
                     )
 
-                    // ★ Photos — draggable + pinch-to-resize, floating over text
+                    // ── Photos — draggable + pinch-to-resize ─────────────
                     photos.forEachIndexed { idx, photo ->
                         DraggablePhoto(
-                            photo   = photo,
+                            photo    = photo,
                             onUpdate = { updated -> photos = photos.toMutableList().also { it[idx] = updated } },
                             onDelete = { photos = photos.toMutableList().also { it.removeAt(idx) } }
                         )
