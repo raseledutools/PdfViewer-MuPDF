@@ -47,9 +47,8 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          # stdout + stderr দুইটাই capture — kapt error stderr-এ যায়
-          # --no-configuration-cache: Kotlin 1.9.24 + kapt + config cache = "Could not load module" bug
-          ./gradlew assembleFullRelease --build-cache --parallel --no-configuration-cache 2>&1 | tee /tmp/build.log; BUILD_EXIT=${PIPESTATUS[0]}
+          # stdout + stderr দুইটাই capture
+          ./gradlew assembleFullRelease --build-cache --parallel 2>&1 | tee /tmp/build.log; BUILD_EXIT=${PIPESTATUS[0]}
           exit $BUILD_EXIT
 
       - name: On failure — commit error_log.txt to repo (readable by Claude)
