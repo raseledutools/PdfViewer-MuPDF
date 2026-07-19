@@ -30,7 +30,6 @@ local.properties
 app/src/main/res/raw/service_account.json
 
 # Temp / junk files — root এ রাখার দরকার নেই
-error_log.txt
 error.bat
 commit_out.txt
 git_log.txt
