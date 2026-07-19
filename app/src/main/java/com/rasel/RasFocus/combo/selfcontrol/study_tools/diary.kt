@@ -28,6 +28,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -671,10 +672,21 @@ fun ProfessionalDiaryScreen(
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("My Journal", color = Color.White, fontWeight = FontWeight.Bold) },
+                    title = {
+                        Text(
+                            "Write note",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 22.sp
+                        )
+                    },
                     navigationIcon = {
+                        // Screenshot-এ "←" back-arrow দেখানো হলেও, এখানে এটা
+                        // sidebar drawer খোলে (Calendar, Folder filter, Cloud
+                        // Sync, PDF Export, entry list — এগুলো হারিয়ে যাওয়া
+                        // যাবে না)। আসল save & exit checkmark (✓) বাটনে।
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(Icons.Default.Menu, contentDescription = "Menu", tint = Color.White)
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Menu", tint = Color.White)
                         }
                     },
                     actions = {
@@ -685,52 +697,89 @@ fun ProfessionalDiaryScreen(
                             )
                             CloudStatus.SUCCESS -> Icon(Icons.Default.CloudDone, contentDescription = "Synced", tint = Color.Green)
                             CloudStatus.ERROR -> Icon(Icons.Default.CloudOff, contentDescription = "Error", tint = Color.Red)
-                            CloudStatus.NOT_LOGGED_IN -> Icon(Icons.Default.CloudOff, contentDescription = "Not logged in", tint = Color.Gray)
-                            else -> {
-                                Text(
-                                    if (saveStatus == SaveStatus.SAVING) "Saving..." else "Saved",
-                                    color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp,
-                                    modifier = Modifier.padding(end = 4.dp)
+                            CloudStatus.NOT_LOGGED_IN -> {}
+                            else -> {}
+                        }
+
+                        // Mood/emoji button — screenshot এর 😊 icon
+                        IconButton(onClick = { showMoodDialog = true }) {
+                            Icon(
+                                Icons.Default.Face,
+                                contentDescription = "Mood",
+                                tint = if (currentEntry.mood.isNotBlank()) Color(0xFFDD0099) else Color.White
+                            )
+                        }
+
+                        // Checkmark — save + close, screenshot এর ✓ icon
+                        IconButton(onClick = {
+                            viewModel.forceSaveOnExit()
+                            onNavigateBack()
+                        }) {
+                            Icon(Icons.Default.Check, contentDescription = "Save", tint = Color.White)
+                        }
+
+                        // Overflow menu — reminder, lock, tag, delete, folder সব এখানে
+                        var showOverflowMenu by remember { mutableStateOf(false) }
+                        Box {
+                            IconButton(onClick = { showOverflowMenu = true }) {
+                                Icon(Icons.Default.MoreVert, contentDescription = "More", tint = Color.White)
+                            }
+                            DropdownMenu(expanded = showOverflowMenu, onDismissRequest = { showOverflowMenu = false }) {
+                                DropdownMenuItem(
+                                    text = { Text(if (currentEntry.reminderTimeMillis > 0) "Edit Reminder" else "Set Reminder") },
+                                    leadingIcon = {
+                                        Icon(
+                                            if (currentEntry.reminderTimeMillis > 0) Icons.Default.Notifications else Icons.Default.NotificationsNone,
+                                            contentDescription = null,
+                                            tint = if (currentEntry.reminderTimeMillis > 0) Color(0xFFDD0099) else Color.Gray
+                                        )
+                                    },
+                                    onClick = { showOverflowMenu = false; showReminderDialog = true }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(if (currentEntry.isLocked) "Remove Lock" else "Lock Entry") },
+                                    leadingIcon = {
+                                        Icon(
+                                            if (currentEntry.isLocked) Icons.Default.Lock else Icons.Default.LockOpen,
+                                            contentDescription = null,
+                                            tint = if (currentEntry.isLocked) Color(0xFFDD0099) else Color.Gray
+                                        )
+                                    },
+                                    onClick = { showOverflowMenu = false; showSetPinDialog = true }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Add Tag") },
+                                    leadingIcon = { Icon(Icons.Default.Label, contentDescription = null, tint = Color.Gray) },
+                                    onClick = { showOverflowMenu = false; showTagDialog = true }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Folder: ${currentEntry.folder}") },
+                                    leadingIcon = { Icon(Icons.Default.Folder, contentDescription = null, tint = Color.Gray) },
+                                    onClick = { showOverflowMenu = false; showFolderMenu = true }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Export PDF") },
+                                    leadingIcon = { Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = Color.Gray) },
+                                    onClick = { showOverflowMenu = false; showExportMenu = true }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Delete", color = Color(0xFFD32F2F)) },
+                                    leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = Color(0xFFD32F2F)) },
+                                    onClick = {
+                                        showOverflowMenu = false
+                                        if (currentEntry.title.isNotBlank() || currentEntry.body.isNotBlank()) {
+                                            viewModel.deleteEntry(currentEntry)
+                                            Toast.makeText(context, "Entry Deleted", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
                                 )
                             }
                         }
-
-                        // Reminder button
-                        IconButton(onClick = { showReminderDialog = true }) {
-                            Icon(
-                                if (currentEntry.reminderTimeMillis > 0) Icons.Default.Notifications
-                                else Icons.Default.NotificationsNone,
-                                contentDescription = "Reminder",
-                                tint = if (currentEntry.reminderTimeMillis > 0) Color.Yellow else Color.White
-                            )
-                        }
-
-                        // Lock button
-                        IconButton(onClick = { showSetPinDialog = true }) {
-                            Icon(
-                                if (currentEntry.isLocked) Icons.Default.Lock else Icons.Default.LockOpen,
-                                contentDescription = "Lock",
-                                tint = if (currentEntry.isLocked) Color(0xFFFFD700) else Color.White
-                            )
-                        }
-
-                        IconButton(onClick = {
-                            if (currentEntry.title.isNotBlank() || currentEntry.body.isNotBlank()) {
-                                viewModel.deleteEntry(currentEntry)
-                                Toast.makeText(context, "Entry Deleted", Toast.LENGTH_SHORT).show()
-                            }
-                        }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.White)
-                        }
-
-                        IconButton(onClick = onNavigateBack) {
-                            Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
-                        }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFD32F2F))
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Black)
                 )
             },
-            containerColor = bgColor
+            containerColor = Color(0xFFDD0099)
         ) { paddingValues ->
             DiaryEditorArea(
                 modifier = Modifier.padding(paddingValues),
@@ -1023,146 +1072,199 @@ fun DiaryEditorArea(
     onDismissFolderMenu: () -> Unit
 ) {
     val wordCount = entry.body.trim().split("\\s+".toRegex()).count { it.isNotEmpty() }
+    val magenta = Color(0xFFDD0099)
 
-    Column(modifier = modifier.fillMaxSize().background(paperColor)) {
-        Column(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 16.dp)) {
-
-            // Reminder badge
-            if (entry.reminderTimeMillis > 0) {
-                val remStr = SimpleDateFormat("MMM d, hh:mm a", Locale.getDefault())
-                    .format(Date(entry.reminderTimeMillis))
-                Row(
-                    modifier = Modifier.fillMaxWidth()
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(Color(0xFFFFF9C4))
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Default.Alarm, contentDescription = null,
-                        tint = Color(0xFFE65100), modifier = Modifier.size(14.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Reminder: $remStr", fontSize = 11.sp, color = Color(0xFFE65100))
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-
-            // Date Banner
-            val currentDate = if (entry.date.isNotBlank()) entry.date
-                else SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.ENGLISH).format(Date())
-            Box(
-                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp))
-                    .background(Brush.linearGradient(listOf(Color(0xFF667EEA), Color(0xFF764BA2))))
-                    .padding(16.dp)
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(magenta)
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Reminder badge
+        if (entry.reminderTimeMillis > 0) {
+            val remStr = SimpleDateFormat("MMM d, hh:mm a", Locale.getDefault())
+                .format(Date(entry.reminderTimeMillis))
+            Row(
+                modifier = Modifier.fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color.White)
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(currentDate.split(", ")[0].uppercase(), color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp, letterSpacing = 1.sp)
-                        Text(currentDate.substringAfter(", ").trim(), color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                    }
-                    if (entry.isLocked) {
-                        Icon(Icons.Default.Lock, contentDescription = null, tint = Color(0xFFFFD700), modifier = Modifier.size(20.dp))
-                    } else {
-                        Icon(Icons.Default.DateRange, contentDescription = "Date", tint = Color.White)
-                    }
-                }
+                Icon(Icons.Default.Alarm, contentDescription = null, tint = magenta, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Reminder: $remStr", fontSize = 12.sp, color = Color(0xFF555555))
             }
+        }
 
-            // Title Input
+        // ── Date Card ──────────────────────────────────────────────────────
+        val currentDate = if (entry.date.isNotBlank()) entry.date
+            else SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.ENGLISH).format(Date())
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color.White)
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Default.CalendarToday, contentDescription = "Date", tint = Color(0xFF555555), modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.width(14.dp))
+            Text(currentDate, color = magenta, fontSize = 17.sp, fontWeight = FontWeight.Medium)
+            Spacer(modifier = Modifier.weight(1f))
+            if (entry.isLocked) {
+                Icon(Icons.Default.Lock, contentDescription = "Locked", tint = magenta, modifier = Modifier.size(18.dp))
+            }
+        }
+
+        // ── Title Card ─────────────────────────────────────────────────────
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color.White)
+                .padding(horizontal = 16.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Default.Edit, contentDescription = "Title", tint = Color(0xFF555555), modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.width(14.dp))
             OutlinedTextField(
                 value = entry.title,
                 onValueChange = { onEntryChange(entry.copy(title = it)) },
-                placeholder = { Text("Entry Title...", color = Color.Gray.copy(alpha = 0.7f)) },
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                textStyle = LocalTextStyle.current.copy(fontSize = 26.sp, fontWeight = FontWeight.Bold, color = textColor),
+                placeholder = { Text("Add title", color = Color(0xFF555555), fontSize = 17.sp) },
+                modifier = Modifier.weight(1f),
+                textStyle = LocalTextStyle.current.copy(fontSize = 17.sp, color = Color(0xFF212121)),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color.Transparent, unfocusedBorderColor = Color.Transparent, cursorColor = Color(0xFFD32F2F)
+                    focusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color.Transparent,
+                    cursorColor = magenta
                 ),
                 singleLine = true
             )
+        }
 
-            // Meta row
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box {
-                    Row(modifier = Modifier.clickable { onFolderClick() }, verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Folder, contentDescription = "Folder", tint = Color.Gray, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(entry.folder, color = Color.Gray, fontSize = 13.sp)
-                    }
-                    DropdownMenu(expanded = showFolderMenu, onDismissRequest = onDismissFolderMenu) {
-                        listOf("General", "Work", "Personal", "Secret").forEach { folder ->
-                            DropdownMenuItem(
-                                text = { Text(folder) },
-                                onClick = { onEntryChange(entry.copy(folder = folder)); onDismissFolderMenu() }
-                            )
-                        }
-                    }
-                }
-                Text("$wordCount words", color = Color.Gray, fontSize = 12.sp,
-                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
-            }
-
-            // Toolbar
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp).horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onMoodClick, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.Face, contentDescription = "Mood",
-                        tint = if (entry.mood.isNotBlank()) Color(0xFF2389D7) else Color.Gray)
-                }
-                IconButton(onClick = { }, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.Mic, contentDescription = "Audio", tint = Color.Gray)
-                }
-                IconButton(onClick = { }, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.Brush, contentDescription = "Draw", tint = Color.Gray)
-                }
-                IconButton(onClick = { }, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.Image, contentDescription = "Image", tint = Color.Gray)
-                }
-                IconButton(onClick = onTagClick, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.Label, contentDescription = "Tag",
-                        tint = if (entry.tags.isNotEmpty()) Color(0xFF2389D7) else Color.Gray)
-                }
-                VerticalDivider(modifier = Modifier.height(24.dp), color = Color.LightGray)
-                Text("B", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = Color.Gray, modifier = Modifier.clickable { }.padding(4.dp))
-                Text("I", fontStyle = FontStyle.Italic, fontSize = 18.sp, color = Color.Gray, modifier = Modifier.clickable { }.padding(4.dp))
-                Text("U", textDecoration = TextDecoration.Underline, fontSize = 18.sp, color = Color.Gray, modifier = Modifier.clickable { }.padding(4.dp))
-            }
-
-            if (entry.tags.isNotEmpty()) {
+        // ── Meta row: folder + word count (compact, screenshot-এ নেই কিন্তু
+        //    feature ধরে রাখার জন্য ছোট আকারে) ─────────────────────────────
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box {
                 Row(
-                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.clickable { onFolderClick() },
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    entry.tags.forEach { tag -> Chip(label = tag, onClose = { onRemoveTag(tag) }) }
+                    Icon(Icons.Default.Folder, contentDescription = "Folder", tint = Color.White, modifier = Modifier.size(15.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(entry.folder, color = Color.White, fontSize = 12.sp)
+                }
+                DropdownMenu(expanded = showFolderMenu, onDismissRequest = onDismissFolderMenu) {
+                    listOf("General", "Work", "Personal", "Secret").forEach { folder ->
+                        DropdownMenuItem(
+                            text = { Text(folder) },
+                            onClick = { onEntryChange(entry.copy(folder = folder)); onDismissFolderMenu() }
+                        )
+                    }
                 }
             }
+            Text(
+                "$wordCount words",
+                color = Color.White.copy(alpha = 0.85f),
+                fontSize = 11.sp,
+                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+            )
+        }
 
-            HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f))
+        if (entry.tags.isNotEmpty()) {
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                entry.tags.forEach { tag -> Chip(label = tag, onClose = { onRemoveTag(tag) }) }
+            }
+        }
 
-            // Body
+        // ── Body Card — ruled/lined paper effect ────────────────────────────
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color.White)
+        ) {
             OutlinedTextField(
                 value = entry.body,
                 onValueChange = { onEntryChange(entry.copy(body = it)) },
-                placeholder = { Text("Start writing your thoughts here...", color = Color.Gray.copy(alpha = 0.5f)) },
-                modifier = Modifier.fillMaxWidth().weight(1f),
-                textStyle = LocalTextStyle.current.copy(fontSize = 17.sp, color = textColor, lineHeight = 27.sp),
+                placeholder = {
+                    Text("Start typing here.", color = Color(0xFF555555), fontSize = 17.sp)
+                },
+                modifier = Modifier
+                    .fillMaxSize()
+                    .ruledLines(lineColor = Color(0xFFE0E0E0), lineSpacing = 34.dp, topOffset = 52.dp),
+                textStyle = LocalTextStyle.current.copy(fontSize = 17.sp, color = Color(0xFF212121), lineHeight = 34.sp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color.Transparent, unfocusedBorderColor = Color.Transparent, cursorColor = Color(0xFFD32F2F)
+                    focusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedContainerColor = Color.Transparent,
+                    cursorColor = magenta
                 )
             )
         }
+
+        // ── Toolbar — mood, tag, formatting (feature ধরে রাখার জন্য) ────────
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color.White)
+                .padding(horizontal = 12.dp, vertical = 4.dp)
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onMoodClick, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.Face, contentDescription = "Mood", tint = if (entry.mood.isNotBlank()) magenta else Color(0xFF555555))
+            }
+            IconButton(onClick = { }, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.Mic, contentDescription = "Audio", tint = Color(0xFF555555))
+            }
+            IconButton(onClick = { }, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.Brush, contentDescription = "Draw", tint = Color(0xFF555555))
+            }
+            IconButton(onClick = { }, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.Image, contentDescription = "Image", tint = Color(0xFF555555))
+            }
+            IconButton(onClick = onTagClick, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.Label, contentDescription = "Tag", tint = if (entry.tags.isNotEmpty()) magenta else Color(0xFF555555))
+            }
+            VerticalDivider(modifier = Modifier.height(24.dp), color = Color.LightGray)
+            Text("B", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = Color(0xFF555555), modifier = Modifier.clickable { }.padding(4.dp))
+            Text("I", fontStyle = FontStyle.Italic, fontSize = 18.sp, color = Color(0xFF555555), modifier = Modifier.clickable { }.padding(4.dp))
+            Text("U", textDecoration = TextDecoration.Underline, fontSize = 18.sp, color = Color(0xFF555555), modifier = Modifier.clickable { }.padding(4.dp))
+        }
     }
 }
+
+// ── Ruled/lined paper effect — body card এর background এ horizontal line আঁকে ──
+private fun Modifier.ruledLines(lineColor: Color, lineSpacing: androidx.compose.ui.unit.Dp, topOffset: androidx.compose.ui.unit.Dp): Modifier =
+    this.drawBehind {
+        val spacingPx = lineSpacing.toPx()
+        val topPx = topOffset.toPx()
+        var y = topPx
+        while (y < size.height) {
+            drawLine(
+                color = lineColor,
+                start = androidx.compose.ui.geometry.Offset(0f, y),
+                end = androidx.compose.ui.geometry.Offset(size.width, y),
+                strokeWidth = 1.dp.toPx()
+            )
+            y += spacingPx
+        }
+    }
 
 @Composable
 fun Chip(label: String, onClose: () -> Unit) {
