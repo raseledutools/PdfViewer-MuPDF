@@ -48,7 +48,7 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           # stdout + stderr দুইটাই capture — kapt error stderr-এ যায়
-          ./gradlew assembleFullRelease --build-cache --parallel --info 2>&1 | tee /tmp/build.log; BUILD_EXIT=${PIPESTATUS[0]}
+          ./gradlew assembleFullRelease --build-cache --parallel --info --stacktrace 2>&1 | tee /tmp/build.log; BUILD_EXIT=${PIPESTATUS[0]}
           exit $BUILD_EXIT
 
       - name: On failure — commit error_log.txt to repo (readable by Claude)
@@ -66,6 +66,10 @@ jobs:
 
             echo "=== KAPT / MODULE ERRORS ==="
             grep -E "Could not load module|kaptGenerateStubs|kapt error|annotation processing|Compilation error" /tmp/build.log || true
+            echo ""
+
+            echo "=== STACKTRACE ==="
+            grep -A 30 "Could not load module\|Caused by:" /tmp/build.log | head -80 || true
             echo ""
 
             echo "=== BUILD FAILURE ==="
