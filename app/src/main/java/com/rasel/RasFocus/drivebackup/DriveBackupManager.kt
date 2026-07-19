@@ -60,9 +60,10 @@ object DriveBackupManager {
     const val APP_FOLDER_NAME = "RasFocus+"
     private const val FOLDER_MIME = "application/vnd.google-apps.folder"
 
-    private const val SETTINGS_FILE_NAME = "rasfocus_settings_backup.json"
-    private const val DIARY_ALL_FILE_NAME = "RasFocus_Diary_AllEntries.pdf"
-    private const val DIARY_SINGLE_FILE_NAME = "RasFocus_Diary_LatestEntry.pdf"
+    private const val SETTINGS_FILE_NAME    = "rasfocus_settings_backup.json"
+    private const val DIARY_ALL_FILE_NAME   = "RasFocus_Diary_AllEntries.pdf"
+    private const val DIARY_SINGLE_FILE_NAME= "RasFocus_Diary_LatestEntry.pdf"
+    private const val DIARY_JSON_FILE_NAME  = "RasFocus_Diary_Backup.json"
 
     private const val PREF_NAME = "drive_backup_prefs"
     private const val KEY_FOLDER_ID = "app_folder_id"
@@ -105,6 +106,65 @@ object DriveBackupManager {
     // ── Public: upload/update the "single entry" diary PDF ────────────────
     suspend fun uploadDiarySingleEntryPdf(context: Context, localFile: JFile): Boolean =
         uploadNamedFile(context, localFile, DIARY_SINGLE_FILE_NAME, "application/pdf")
+
+    // ── Public: upload/update diary JSON backup ────────────────────────────
+    suspend fun uploadDiaryJson(context: Context, localFile: JFile): Boolean =
+        uploadNamedFile(context, localFile, DIARY_JSON_FILE_NAME, "application/json")
+
+    // ── Public: restore settings JSON from Drive ───────────────────────────
+    suspend fun importSettingsFromDrive(context: Context): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val drive    = buildDriveService(context) ?: return@withContext false
+            val folderId = getOrCreateAppFolderId(context, drive) ?: return@withContext false
+            val query    = "name='$SETTINGS_FILE_NAME' and '$folderId' in parents and trashed=false"
+            val found    = drive.files().list().setQ(query).setSpaces("drive")
+                .setFields("files(id)").execute().files?.firstOrNull()
+                ?: return@withContext false
+
+            val stream = drive.files().get(found.id).executeMediaAsInputStream()
+            val json   = org.json.JSONObject(stream.bufferedReader().readText())
+
+            for (prefName in SETTINGS_PREF_NAMES) {
+                if (!json.has(prefName)) continue
+                val obj   = json.getJSONObject(prefName)
+                val prefs = context.getSharedPreferences(prefName, Context.MODE_PRIVATE)
+                val edit  = prefs.edit()
+                obj.keys().forEach { key ->
+                    when (val v = obj.get(key)) {
+                        is Boolean -> edit.putBoolean(key, v)
+                        is Int     -> edit.putInt(key, v)
+                        is Long    -> edit.putLong(key, v)
+                        is Float   -> edit.putFloat(key, v)
+                        is String  -> edit.putString(key, v)
+                        else       -> edit.putString(key, v.toString())
+                    }
+                }
+                edit.apply()
+            }
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "importSettingsFromDrive failed", e)
+            false
+        }
+    }
+
+    // ── Public: download diary JSON from Drive and return parsed entries ───
+    suspend fun importDiaryJsonFromDrive(context: Context): String? = withContext(Dispatchers.IO) {
+        try {
+            val drive    = buildDriveService(context) ?: return@withContext null
+            val folderId = getOrCreateAppFolderId(context, drive) ?: return@withContext null
+            val query    = "name='$DIARY_JSON_FILE_NAME' and '$folderId' in parents and trashed=false"
+            val found    = drive.files().list().setQ(query).setSpaces("drive")
+                .setFields("files(id)").execute().files?.firstOrNull()
+                ?: return@withContext null
+
+            val stream = drive.files().get(found.id).executeMediaAsInputStream()
+            stream.bufferedReader().readText()
+        } catch (e: Exception) {
+            Log.e(TAG, "importDiaryJsonFromDrive failed", e)
+            null
+        }
+    }
 
     private suspend fun uploadNamedFile(
         context: Context,

@@ -76,11 +76,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.tasks.await
 import com.rasel.RasFocus.parental.ParentControls
 
@@ -1322,6 +1324,15 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onSkip: () -> Unit) {
             .build()
         val googleSignInClient = GoogleSignIn.getClient(activity, gso)
 
+        // ★ FIX: If user is already signed in but Drive permission wasn't
+        // granted (e.g. they skipped it last time), request it now.
+        // signOut() clears the cached token so the consent screen shows again.
+        val existing = GoogleSignIn.getLastSignedInAccount(activity)
+        if (existing != null && !GoogleSignIn.hasPermissions(existing, Scope(DriveScopes.DRIVE_FILE))) {
+            // Need Drive permission — fresh sign-in will show consent screen
+            googleSignInClient.signOut()
+        }
+
         // FIX: signOut().addOnCompleteListener এ launch করলে callback আসার আগেই
         // onUserLeaveHint() fire হয়ে MainActivity restart হয়ে যেত — activity
         // recreate হওয়ায় googleSignInLauncher ও googleSignInCallback হারিয়ে যেত,
@@ -1343,7 +1354,13 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onSkip: () -> Unit) {
                         onLoginSuccess()
                         // RasFocus+ Drive backup: fire-and-forget — creates/finds the
                         // "RasFocus+" Drive folder and syncs settings. Doesn't block login.
-                        coroutineScope.launch { DriveBackupManager.syncNow(activity) }
+                        coroutineScope.launch {
+                            withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                try { DriveBackupManager.syncNow(activity) } catch (_: Exception) {}
+                            }
+                        }
+                        // Schedule 3-hourly auto backup (diary PDF + JSON + settings)
+                        com.rasel.RasFocus.drivebackup.DiaryAutoBackupWorker.schedule(activity)
                     } catch (e: Exception) {
                         isLoading = false
                         errorMsg = "Google Sign-In Failed"

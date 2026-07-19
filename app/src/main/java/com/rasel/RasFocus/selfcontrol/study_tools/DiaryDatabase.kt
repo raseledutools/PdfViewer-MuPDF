@@ -66,6 +66,14 @@ interface DiaryDao {
 
     @Query("SELECT * FROM diary_entries WHERE id = :entryId LIMIT 1")
     suspend fun getEntryById(entryId: Long): DiaryEntry?
+
+    // One-shot query for WorkManager / backup (no Flow, no coroutine collect needed)
+    @Query("SELECT * FROM diary_entries ORDER BY timestamp DESC")
+    suspend fun getAllEntriesOnce(): List<DiaryEntry>
+
+    // Upsert from Drive JSON import
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(entries: List<DiaryEntry>)
 }
 
 // ============================================================

@@ -755,7 +755,7 @@ fun DiaryEditorScreen(
                         textStyle = LocalTextStyle.current.copy(
                             fontSize   = 15.sp,
                             color      = Color(0xFF37474F),
-                            lineHeight = lineSpacingDp,
+                            lineHeight = 32.sp,
                             fontFamily = androidx.compose.ui.text.font.FontFamily.Default
                         ),
                         colors = OutlinedTextFieldDefaults.colors(
