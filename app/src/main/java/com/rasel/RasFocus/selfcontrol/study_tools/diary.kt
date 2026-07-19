@@ -889,7 +889,11 @@ fun ProfessionalDiaryScreen(
     var showExportMenu     by remember { mutableStateOf(false) }
 
     DisposableEffect(Unit) { onDispose { viewModel.forceSaveOnExit() } }
-    LaunchedEffect(Unit) { if (DiaryCloudSync.isLoggedIn()) viewModel.syncFromCloud() }
+    LaunchedEffect(Unit) {
+        runCatching {
+            if (DiaryCloudSync.isLoggedIn()) viewModel.syncFromCloud()
+        }
+    }
 
     // Lock screen
     if (nav == DiaryNav.EDITOR && currentEntry.isLocked && !isUnlocked) {
@@ -960,7 +964,7 @@ fun ProfessionalDiaryScreen(
                 DiaryDrawer(
                     selectedFilter = selectedFilter,
                     cloudStatus = cloudStatus,
-                    isLoggedIn = DiaryCloudSync.isLoggedIn(),
+                    isLoggedIn = runCatching { DiaryCloudSync.isLoggedIn() }.getOrDefault(false),
                     allEntries = allEntries,
                     onFilterSelect = { viewModel.setFolderFilter(it); scope.launch { drawerState.close() } },
                     onNewEntry = { viewModel.startNewEntry(); nav = DiaryNav.EDITOR; scope.launch { drawerState.close() } },
