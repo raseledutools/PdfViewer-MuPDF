@@ -442,7 +442,108 @@ class FacebookActivity : ComponentActivity() {
         } catch (_: Exception) {}
     }
 
-    private fun checkAdultSearchKeyword(url: String): String? {
+    private fun injectRemoveOpenInAppButton(view: WebView) {
+        view.evaluateJavascript("""
+            (function() {
+                if (window.__rasFbOpenAppRemoverActive__) return;
+                window.__rasFbOpenAppRemoverActive__ = true;
+                function removeOpenApp() {
+                    try {
+                        document.querySelectorAll('a[href^="fb://"], a[href^="intent://"], a[href^="market://"]')
+                            .forEach(function(el) {
+                                var parent = el.closest('[class*="banner"],[id*="banner"],[data-sigil*="appbanner"],[role="banner"]');
+                                if (parent) parent.style.display = 'none'; else el.style.display = 'none';
+                            });
+                        document.querySelectorAll('[data-sigil*="appbanner"],[id*="MAppBanner"],[class*="appBanner"]')
+                            .forEach(function(el) { el.style.display = 'none'; });
+                    } catch(e) {}
+                }
+                removeOpenApp();
+                try {
+                    new MutationObserver(function() { removeOpenApp(); })
+                        .observe(document.body || document.documentElement, {childList:true, subtree:true});
+                } catch(e) {}
+            })();
+        """.trimIndent(), null)
+    }
+
+    private fun injectSettingsRemover(view: WebView) {
+        val prefs = getSharedPreferences("browser_settings", Context.MODE_PRIVATE)
+        val hideVideo    = prefs.getBoolean("fb_hide_videos", false)
+        val hideReels    = prefs.getBoolean("fb_hide_reels", false)
+        val hideNewsfeed = prefs.getBoolean("fb_hide_newsfeed", false)
+        val grayscale    = prefs.getBoolean("fb_grayscale", false)
+        val textOnly     = prefs.getBoolean("fb_text_only", false)
+
+        if (!hideVideo && !hideReels && !hideNewsfeed && !grayscale && !textOnly) return
+
+        val js = """
+            (function() {
+                if (window.__rasFbSettingsInterval__) {
+                    clearInterval(window.__rasFbSettingsInterval__);
+                    window.__rasFbSettingsInterval__ = null;
+                }
+                window.__rasFbSettingsRemover__ = true;
+
+                document.documentElement.style.filter = ${if (grayscale) "'grayscale(100%)'" else "''"}; 
+
+                if ($textOnly) {
+                    if (!document.getElementById('__rasTextOnlyStyle__')) {
+                        var s = document.createElement('style');
+                        s.id = '__rasTextOnlyStyle__';
+                        s.innerHTML = 'img, video, svg, i[class*="icon"], [role="img"] { display: none !important; }';
+                        document.head && document.head.appendChild(s);
+                    }
+                } else {
+                    var old = document.getElementById('__rasTextOnlyStyle__');
+                    if (old) old.remove();
+                }
+
+                function applySettings() {
+                    try {
+                        if ($hideVideo || $hideReels) {
+                            document.querySelectorAll('[role="tablist"] [role="tab"], a[role="tab"]').forEach(function(tab) {
+                                var href = (tab.getAttribute('href') || '').toLowerCase();
+                                var txt  = (tab.innerText || tab.textContent || '').toLowerCase().trim();
+                                if ($hideVideo && (href.indexOf('/watch') !== -1 || txt === 'video')) tab.style.display = 'none';
+                                if ($hideReels && (href.indexOf('/reels') !== -1 || txt === 'reels')) tab.style.display = 'none';
+                            });
+                        }
+                        if ($hideReels) {
+                            document.querySelectorAll('div, section').forEach(function(el) {
+                                var txt = (el.getAttribute('data-type') || el.getAttribute('data-gt') || '').toLowerCase();
+                                if (txt.indexOf('reel') !== -1) { el.style.display = 'none'; return; }
+                                if (el.childElementCount === 0) {
+                                    var t = (el.textContent || '').trim().toLowerCase();
+                                    if (t === 'reels') {
+                                        var parent = el.closest('[data-mcomponent]') || el.closest('div[class]');
+                                        if (parent) parent.style.display = 'none';
+                                    }
+                                }
+                            });
+                        }
+                        if ($hideNewsfeed) {
+                            document.querySelectorAll('[data-mcomponent="MContainer"], article, [role="article"]').forEach(function(el) {
+                                if (!el.closest('header') && !el.closest('[role="banner"]')) el.style.display = 'none';
+                            });
+                        }
+                        if ($hideVideo) {
+                            document.querySelectorAll('video').forEach(function(v) {
+                                var parent = v.closest('[data-mcomponent]') || v.closest('div[class]');
+                                if (parent) parent.style.display = 'none';
+                            });
+                        }
+                    } catch(e) {}
+                }
+
+                applySettings();
+                window.__rasFbSettingsInterval__ = setInterval(applySettings, 800);
+            })();
+        """.trimIndent()
+        view.evaluateJavascript(js, null)
+    }
+
+
         return try {
             val uri = android.net.Uri.parse(url)
             val host = uri.host?.lowercase() ?: return null
