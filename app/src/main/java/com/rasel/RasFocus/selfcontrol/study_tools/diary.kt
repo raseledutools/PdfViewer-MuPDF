@@ -10,6 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
 import org.json.JSONObject
 import android.app.TimePickerDialog
 import android.content.Intent
@@ -929,8 +930,7 @@ fun ProfessionalDiaryScreen(
                                 } else Toast.makeText(context, "Export failed", Toast.LENGTH_SHORT).show()
                                 showExportMenu = false
                             }
-                        ) { Text("PDF
-(this entry)", fontSize = 11.sp, textAlign = TextAlign.Center) }
+                        ) { Text("PDF\n(this entry)", fontSize = 11.sp, textAlign = TextAlign.Center) }
 
                         OutlinedButton(
                             modifier = Modifier.weight(1f),
@@ -942,8 +942,7 @@ fun ProfessionalDiaryScreen(
                                 } else Toast.makeText(context, "Export failed", Toast.LENGTH_SHORT).show()
                                 showExportMenu = false
                             }
-                        ) { Text("PDF
-(all entries)", fontSize = 11.sp, textAlign = TextAlign.Center) }
+                        ) { Text("PDF\n(all entries)", fontSize = 11.sp, textAlign = TextAlign.Center) }
                     }
 
                     // ── LOCAL IMPORT ──────────────────────────────────────
@@ -984,7 +983,6 @@ fun ProfessionalDiaryScreen(
                                             // reuse DiaryPdfExporter + build JSON inline
                                             val dao = DiaryDatabase.getDatabase(context).diaryDao()
                                             val entries = dao.getAllEntriesOnce()
-                                            import org.json.JSONArray
                                             val arr2 = JSONArray()
                                             entries.forEach { e ->
                                                 arr2.put(JSONObject().apply {
