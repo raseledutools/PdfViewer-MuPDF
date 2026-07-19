@@ -185,19 +185,16 @@ object AutoUpdater {
 
             val downloadUrl = fetchDownloadUrl(targetApkName) ?: return false
 
-            // Public Downloads/RasFocus/ folder — user দেখতে পাবে, file manager থেকে install করা যাবে
             val rasDir = java.io.File(
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
                 "RasFocus"
             )
             rasDir.mkdirs()
-
-            // পুরনো version-এর APK মুছে দাও
             rasDir.listFiles()?.filter { it.name.startsWith("RasFocus_") && it.name.endsWith(".apk") }
                 ?.forEach { it.delete() }
 
             val apkFile = java.io.File(rasDir, "RasFocus_$newTag.apk")
-            
+
             val url = URL(downloadUrl)
             val connection = url.openConnection() as HttpURLConnection
             connection.connect()
@@ -207,24 +204,62 @@ object AutoUpdater {
                 return false
             }
 
-            val input = connection.inputStream
-            val output = FileOutputStream(apkFile)
+            // ── Progress notification setup ────────────────────────────────────
+            val notifManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val ch = NotificationChannel(CHANNEL_ID, "App Updates", NotificationManager.IMPORTANCE_LOW)
+                notifManager.createNotificationChannel(ch)
+            }
+            val progressBuilder = NotificationCompat.Builder(context, CHANNEL_ID)
+                .setSmallIcon(android.R.drawable.stat_sys_download)
+                .setContentTitle("RasFocus আপডেট ডাউনলোড হচ্ছে")
+                .setOngoing(true)
+                .setOnlyAlertOnce(true)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
 
-            val data = ByteArray(4096)
+            val totalBytes = connection.contentLengthLong   // -1 if unknown
+            val input  = connection.inputStream
+            val output = FileOutputStream(apkFile)
+            val buf    = ByteArray(8192)
+            var downloaded = 0L
+            var lastNotifPct = -1
             var count: Int
-            while (input.read(data).also { count = it } != -1) {
-                output.write(data, 0, count)
+
+            while (input.read(buf).also { count = it } != -1) {
+                output.write(buf, 0, count)
+                downloaded += count
+
+                if (totalBytes > 0) {
+                    val pct = (downloaded * 100 / totalBytes).toInt()
+                    // notification প্রতি 5% এ update করো — বেশি frequent হলে system slow হয়
+                    if (pct >= lastNotifPct + 5) {
+                        lastNotifPct = pct
+                        val mb = "%.1f".format(downloaded / 1_048_576f)
+                        val total = "%.1f".format(totalBytes / 1_048_576f)
+                        progressBuilder
+                            .setContentText("$mb MB / $total MB")
+                            .setProgress(100, pct, false)
+                        notifManager.notify(NOTIFICATION_ID, progressBuilder.build())
+                    }
+                } else {
+                    // size অজানা হলে indeterminate bar দেখাও
+                    val mb = "%.1f".format(downloaded / 1_048_576f)
+                    progressBuilder
+                        .setContentText("$mb MB ডাউনলোড হয়েছে...")
+                        .setProgress(0, 0, true)
+                    notifManager.notify(NOTIFICATION_ID, progressBuilder.build())
+                }
             }
 
-            output.flush()
-            output.close()
-            input.close()
+            output.flush(); output.close(); input.close()
 
+            // Progress notification সরিয়ে install notification দেখাও
+            notifManager.cancel(NOTIFICATION_ID)
             showInstallNotification(context, apkFile, newTag)
-            Log.d(TAG, "Silent download complete: $newTag")
+            Log.d(TAG, "Download complete: $newTag")
             true
         } catch (e: Exception) {
-            Log.e(TAG, "Silent download failed", e)
+            Log.e(TAG, "Download failed", e)
             false
         }
     }
@@ -232,27 +267,39 @@ object AutoUpdater {
     private suspend fun fetchDownloadUrl(targetApkName: String): String? {
         return try {
             val apiUrl = "https://api.github.com/repos/$GITHUB_OWNER/$GITHUB_REPO/releases/latest"
-            val url = URL(apiUrl)
-            val connection = url.openConnection() as HttpURLConnection
-            connection.requestMethod = "GET"
-            connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
+            val connection = (URL(apiUrl).openConnection() as HttpURLConnection).apply {
+                requestMethod = "GET"
+                setRequestProperty("Accept", "application/vnd.github.v3+json")
+            }
+            if (connection.responseCode != HttpURLConnection.HTTP_OK) return null
 
-            if (connection.responseCode == HttpURLConnection.HTTP_OK) {
-                val response = connection.inputStream.bufferedReader().readText()
-                val json = JSONObject(response)
-                val assets = json.getJSONArray("assets")
-                
+            val assets = JSONObject(connection.inputStream.bufferedReader().readText())
+                .getJSONArray("assets")
+
+            // ── Split APK request (armeabi-v7a): prefer exact split, reject universal ──
+            // Universal APK নামেও "armeabi" থাকে না, কিন্তু নিশ্চিত হতে
+            // universal শব্দ থাকলে skip করছি।
+            if (targetApkName == APK_FULL_SPLIT) {
                 for (i in 0 until assets.length()) {
                     val asset = assets.getJSONObject(i)
-                    if (asset.getString("name").contains(targetApkName, ignoreCase = true)) {
+                    val name  = asset.getString("name")
+                    if (name.contains("armeabi-v7a", ignoreCase = true) &&
+                        !name.contains("universal", ignoreCase = true)) {
                         return asset.getString("browser_download_url")
                     }
                 }
             }
+
+            // ── Universal / light request: prefer universal, avoid split ──
+            for (i in 0 until assets.length()) {
+                val asset = assets.getJSONObject(i)
+                val name  = asset.getString("name")
+                if (name.contains(targetApkName, ignoreCase = true)) {
+                    return asset.getString("browser_download_url")
+                }
+            }
             null
-        } catch (e: Exception) {
-            null
-        }
+        } catch (e: Exception) { null }
     }
 
     private fun showInstallNotification(context: Context, apkFile: File, newTag: String) {
