@@ -329,45 +329,41 @@ object AutoUpdater {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "App Updates",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "Notifications for new app updates"
+            val channel = NotificationChannel(CHANNEL_ID, "App Updates", NotificationManager.IMPORTANCE_HIGH).apply {
+                description = "RasFocus update notifications"
             }
             notificationManager.createNotificationChannel(channel)
         }
 
-        // Notification tap → সরাসরি system installer খোলে
-        val installIntent = Intent(Intent.ACTION_VIEW).apply {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                val uri = androidx.core.content.FileProvider.getUriForFile(
-                    context, "${context.packageName}.provider", apkFile
-                )
-                setDataAndType(uri, "application/vnd.android.package-archive")
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            } else {
-                setDataAndType(Uri.fromFile(apkFile), "application/vnd.android.package-archive")
-            }
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
+        // Notification tap → MainActivity খোলে, APK path extra দিয়ে।
+        // MainActivity সেটা দেখে install dialog দেখাবে।
+        // সরাসরি installer intent background থেকে fire করলে
+        // MIUI / One UI / ColorOS-এ phone hang করে।
+        val openIntent = context.packageManager
+            .getLaunchIntentForPackage(context.packageName)
+            ?.apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                putExtra(EXTRA_APK_PATH, apkFile.absolutePath)
+                putExtra(EXTRA_APK_TAG, newTag)
+            } ?: return
 
         val pendingIntent = PendingIntent.getActivity(
-            context, 0, installIntent,
+            context, 0, openIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+        NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
             .setContentTitle("✅ RasFocus আপডেট প্রস্তুত!")
-            .setContentText("$newTag ডাউনলোড সম্পন্ন — install করতে tap করুন")
+            .setContentText("$newTag ডাউনলোড সম্পন্ন — tap করে install করুন")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
-
-        notificationManager.notify(NOTIFICATION_ID, builder.build())
+            .also { notificationManager.notify(NOTIFICATION_ID, it.build()) }
     }
+
+    const val EXTRA_APK_PATH = "rasfocus_apk_path"
+    const val EXTRA_APK_TAG  = "rasfocus_apk_tag"
 
     fun getDownloadedUpdateFile(context: Context, tag: String): File? {
         val rasDir = File(

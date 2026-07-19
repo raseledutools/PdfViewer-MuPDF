@@ -885,6 +885,22 @@ class MainActivity : ComponentActivity() {
     // ব্যবহারকারী app থেকে বের হয়ে যেত।
     var isLaunchingInternalActivity: Boolean = false
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleInstallIntent(intent)
+    }
+
+    private fun handleInstallIntent(intent: Intent?) {
+        val apkPath = intent?.getStringExtra(AutoUpdater.EXTRA_APK_PATH) ?: return
+        val apkFile = java.io.File(apkPath)
+        if (!apkFile.exists()) return
+        // UI thread ready হওয়ার পরে install করো — সরাসরি করলে hang হয়
+        window.decorView.post {
+            AutoUpdater.triggerInstall(this, apkFile)
+        }
+    }
+
     val googleSignInLauncher = registerForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -912,23 +928,19 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        // Initialize DataManager so all features have access to persisted state
         com.rasel.RasFocus.DataManager.init(this)
-        
-        // Check for app updates via GitHub API (Immediate check + Background periodic check)
         AutoUpdater.checkForUpdates(this)
         AutoUpdater.setupBackgroundAutoUpdate(this)
-        
-        // Ensure Notification Service is running if terms are accepted
+
         val prefs = getSharedPreferences("rasfocus_prefs", android.content.Context.MODE_PRIVATE)
         if (prefs.getBoolean("has_accepted_terms", false)) {
-            try {
-                UsageNotificationService.start(this)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+            try { UsageNotificationService.start(this) } catch (e: Exception) { e.printStackTrace() }
         }
-        
+
+        // Notification tap এলে install dialog দেখাও — hang এড়াতে
+        // UI thread ready হওয়ার পরে launch করছি (window.decorView.post)
+        handleInstallIntent(intent)
+
         setContent {
             com.rasel.RasFocus.ui.theme.RasFocusAppTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
