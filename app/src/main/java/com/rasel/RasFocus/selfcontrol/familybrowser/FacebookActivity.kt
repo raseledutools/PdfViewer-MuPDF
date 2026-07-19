@@ -220,25 +220,30 @@ class FacebookActivity : ComponentActivity() {
             webViewClient = object : WebViewClient() {
                 override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
                     super.onPageStarted(view, url, favicon)
-                    // Navigation এর সময় white flash বন্ধ করো
                     view.setBackgroundColor(Color.parseColor("#f0f2f5"))
                     view.alpha = 1f
+                    // SPA navigation এ instant adult block
+                    val adultHtml = checkAdultSearchKeyword(url)
+                    if (adultHtml != null) {
+                        view.stopLoading()
+                        view.loadDataWithBaseURL("https://m.facebook.com/", adultHtml, "text/html", "UTF-8", null)
+                    }
+                    // নতুন page এ guard flag reset — SPA navigation এ re-inject হবে
+                    view.evaluateJavascript("window.__rasFbSettingsRemover__=false;window.__rasFbOpenAppRemoverActive__=false;window.__rasFbFooterRemoverActive__=false;", null)
                 }
 
                 override fun onPageFinished(view: WebView, url: String) {
                     super.onPageFinished(view, url)
                     view.alpha = 1f
                     flushCookies()
-                    // Adult keyword block — loadUrl দিয়ে redirect করো,
-                    // loadDataWithBaseURL(null,...) page সাদা করে দেয়
                     val adultHtml = checkAdultSearchKeyword(url)
                     if (adultHtml != null) {
                         view.loadDataWithBaseURL("https://m.facebook.com/", adultHtml, "text/html", "UTF-8", null)
                         return
                     }
-                    // JS injection — গার্ড ফ্ল্যাগ দিয়ে ensure করা যে একবারই
-                    // মূল cleanup চলবে। onPageFinished এ inject করা safe
-                    // কারণ DOM ready থাকে।
+                    injectFooterRemover(view)
+                    injectRemoveOpenInAppButton(view)
+                    injectSettingsRemover(view)
                 }
 
                 override fun shouldInterceptRequest(
