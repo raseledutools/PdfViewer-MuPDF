@@ -2338,7 +2338,7 @@ fun UpdateCenterSection(context: Context) {
                     
                     if (downloadedFile != null) {
                         Button(
-                            onClick = { com.rasel.RasFocus.AutoUpdater.downloadAndInstallUpdate(context, com.rasel.RasFocus.AutoUpdater.APK_UNIVERSAL, releaseInfo!!.tagName) },
+                            onClick = { com.rasel.RasFocus.AutoUpdater.installDownloadedUpdate(context, downloadedFile) },
                             modifier = Modifier.fillMaxWidth().height(50.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
                             shape = RoundedCornerShape(12.dp)
@@ -2350,7 +2350,7 @@ fun UpdateCenterSection(context: Context) {
                     } else {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                             Button(
-                                onClick = { com.rasel.RasFocus.AutoUpdater.downloadAndInstallUpdate(context, com.rasel.RasFocus.AutoUpdater.APK_UNIVERSAL, releaseInfo!!.tagName) },
+                                onClick = { com.rasel.RasFocus.AutoUpdater.installDownloadedUpdate(context, downloadedFile) },
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE)),
                                 shape = RoundedCornerShape(12.dp)

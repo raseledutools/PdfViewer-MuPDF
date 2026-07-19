@@ -222,16 +222,29 @@ object AutoUpdater {
                 val response = connection.inputStream.bufferedReader().readText()
                 val json = JSONObject(response)
                 val assets = json.getJSONArray("assets")
-                
+
+                // APK name প্রতি release এ বদলায় — নামের উপর নির্ভর না করে
+                // file size দিয়ে split vs universal বেছে নাও।
+                // split APK সবসময় universal এর চেয়ে ছোট।
+                val apkAssets = mutableListOf<Pair<String, Long>>()
                 for (i in 0 until assets.length()) {
                     val asset = assets.getJSONObject(i)
-                    if (asset.getString("name").contains(targetApkName, ignoreCase = true)) {
-                        return asset.getString("browser_download_url")
+                    val name = asset.getString("name")
+                    if (name.endsWith(".apk", ignoreCase = true)) {
+                        apkAssets.add(asset.getString("browser_download_url") to asset.getLong("size"))
                     }
                 }
-            }
-            null
+                if (apkAssets.isEmpty()) return null
+                val picked = if (targetApkName.contains("split", ignoreCase = true) ||
+                                 targetApkName.contains("armeabi", ignoreCase = true)) {
+                    apkAssets.minByOrNull { it.second }
+                } else {
+                    apkAssets.maxByOrNull { it.second }
+                }
+                picked?.first
+            } else null
         } catch (e: Exception) {
+            Log.e(TAG, "fetchDownloadUrl failed", e)
             null
         }
     }
@@ -250,16 +263,27 @@ object AutoUpdater {
             notificationManager.createNotificationChannel(channel)
         }
 
-        val installIntent = getInstallIntent(context, apkFile)
+        // Notification tap → app খোলে (installer সরাসরি না)
+        // সরাসরি installer launch করলে MIUI/One UI তে hang হয়
+        val openAppIntent = context.packageManager
+            .getLaunchIntentForPackage(context.packageName)
+            ?.apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP) }
+            ?: Intent(Intent.ACTION_MAIN).apply {
+                addCategory(Intent.CATEGORY_LAUNCHER)
+                `package` = context.packageName
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        openAppIntent.putExtra("show_update_install", true)
+
         val pendingIntent = PendingIntent.getActivity(
-            context, 0, installIntent,
+            context, 0, openAppIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.stat_sys_download_done) // built-in icon
-            .setContentTitle("RasFocus Update Ready")
-            .setContentText("Version $newTag is downloaded. Tap to install.")
+            .setSmallIcon(android.R.drawable.stat_sys_download_done)
+            .setContentTitle("RasFocus Update Ready ✓")
+            .setContentText("v$newTag downloaded — tap to install")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
@@ -268,18 +292,35 @@ object AutoUpdater {
     }
 
     fun getDownloadedUpdateFile(context: Context, tag: String): File? {
-        val updateDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: return null
-        val file = File(updateDir, "RasFocus_$tag.apk")
-        return if (file.exists() && file.length() > 0) file else null
+        // নতুন location: public Downloads/RasFocus/
+        val publicDir = File(
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+            "RasFocus"
+        )
+        val publicFile = File(publicDir, "RasFocus_$tag.apk")
+        if (publicFile.exists() && publicFile.length() > 1_000_000L) return publicFile
+
+        // পুরনো location fallback (আগের version এ download হয়ে থাকলে)
+        val privateDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+        if (privateDir != null) {
+            val privateFile = File(privateDir, "RasFocus_$tag.apk")
+            if (privateFile.exists() && privateFile.length() > 1_000_000L) return privateFile
+        }
+        return null
     }
 
     fun installDownloadedUpdate(context: Context, file: File) {
         try {
+            if (!file.exists() || file.length() < 1_000_000L) {
+                Toast.makeText(context, "Update file missing. Please download again.", Toast.LENGTH_LONG).show()
+                file.delete()
+                return
+            }
             val intent = getInstallIntent(context, file)
             context.startActivity(intent)
         } catch (e: Exception) {
             Log.e(TAG, "Install failed", e)
-            Toast.makeText(context, "Installation failed.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Install failed: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 

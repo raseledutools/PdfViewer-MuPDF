@@ -1738,7 +1738,7 @@ fun UpdateCenterSection(context: Context) {
                     
                     if (downloadedFile != null) {
                         Button(
-                            onClick = { com.rasel.RasFocus.AutoUpdater.downloadAndInstallUpdate(context, com.rasel.RasFocus.AutoUpdater.APK_UNIVERSAL, releaseInfo!!.tagName) },
+                            onClick = { com.rasel.RasFocus.AutoUpdater.installDownloadedUpdate(context, downloadedFile) },
                             modifier = Modifier.fillMaxWidth().height(52.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B5E20)),
                             shape = RoundedCornerShape(14.dp),
