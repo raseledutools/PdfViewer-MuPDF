@@ -241,7 +241,6 @@ class FacebookActivity : ComponentActivity() {
                         view.loadDataWithBaseURL("https://m.facebook.com/", adultHtml, "text/html", "UTF-8", null)
                         return
                     }
-                    injectFooterRemover(view)
                     injectRemoveOpenInAppButton(view)
                     injectSettingsRemover(view)
                 }
