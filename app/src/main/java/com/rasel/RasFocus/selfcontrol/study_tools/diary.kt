@@ -1,6 +1,16 @@
 package com.rasel.RasFocus.selfcontrol.study_tools
 
 import android.app.DatePickerDialog
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import com.rasel.RasFocus.drivebackup.DiaryAutoBackupWorker
+import com.rasel.RasFocus.drivebackup.DriveBackupManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import android.app.TimePickerDialog
 import android.content.Intent
 import android.os.Build
@@ -847,33 +857,270 @@ fun ProfessionalDiaryScreen(
         )
     }
 
+    // ── Backup & Restore Dialog ───────────────────────────────────────────────
     if (showExportMenu) {
+        val driveAvailable = DriveBackupManager.isAvailable(context)
+        var busyMsg by remember { mutableStateOf("") }
+
+        // JSON file picker for import
+        val jsonPickerLauncher = rememberLauncherForActivityResult(
+            ActivityResultContracts.GetContent()
+        ) { uri: Uri? ->
+            if (uri == null) return@rememberLauncherForActivityResult
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val text = context.contentResolver.openInputStream(uri)
+                        ?.bufferedReader()?.readText() ?: return@launch
+                    val root    = JSONObject(text)
+                    val arr     = root.optJSONArray("entries") ?: return@launch
+                    val db      = DiaryDatabase.getDatabase(context)
+                    val toInsert = (0 until arr.length()).map { i ->
+                        val o = arr.getJSONObject(i)
+                        DiaryEntry(
+                            id        = 0,   // let Room assign new id
+                            title     = o.optString("title"),
+                            body      = o.optString("body"),
+                            date      = o.optString("date"),
+                            mood      = o.optString("mood"),
+                            folder    = o.optString("folder", "Personal"),
+                            tags      = o.optString("tags").split(",")
+                                         .filter { it.isNotBlank() },
+                            isLocked  = o.optBoolean("locked", false),
+                            timestamp = o.optLong("timestamp",
+                                System.currentTimeMillis())
+                        )
+                    }
+                    db.diaryDao().upsertAll(toInsert)
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context,
+                            "✅ Imported ${toInsert.size} entries", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, "Import failed: ${e.message}",
+                            Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            showExportMenu = false
+        }
+
         AlertDialog(
             onDismissRequest = { showExportMenu = false },
-            title = { Text("📄 Export as PDF") },
-            text = { Text("Choose what you want to export.") },
-            confirmButton = {
-                Column {
-                    Button(onClick = {
-                        val file = DiaryPdfExporter.exportSingleEntry(context, currentEntry)
-                        if (file != null) {
-                            val intent = DiaryPdfExporter.getShareIntent(context, file)
-                            context.startActivity(Intent.createChooser(intent, "Share PDF"))
-                        } else Toast.makeText(context, "Export Failed", Toast.LENGTH_SHORT).show()
-                        showExportMenu = false
-                    }) { Text("Export Current Entry") }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Button(onClick = {
-                        val file = DiaryPdfExporter.exportAllEntries(context, allEntries)
-                        if (file != null) {
-                            val intent = DiaryPdfExporter.getShareIntent(context, file)
-                            context.startActivity(Intent.createChooser(intent, "Share PDF"))
-                        } else Toast.makeText(context, "Export Failed", Toast.LENGTH_SHORT).show()
-                        showExportMenu = false
-                    }) { Text("Export All Entries") }
+            title = { Text("📂 Backup & Restore", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (busyMsg.isNotBlank()) {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                        Text(busyMsg, fontSize = 12.sp, color = Color(0xFF888888))
+                    }
+
+                    // ── LOCAL EXPORT ──────────────────────────────────────
+                    Text("📱 Local Export", fontWeight = FontWeight.SemiBold,
+                        fontSize = 13.sp, color = Color(0xFFE91E8C))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                val file = DiaryPdfExporter.exportSingleEntry(context, currentEntry)
+                                if (file != null) {
+                                    context.startActivity(Intent.createChooser(
+                                        DiaryPdfExporter.getShareIntent(context, file), "Share PDF"))
+                                } else Toast.makeText(context, "Export failed", Toast.LENGTH_SHORT).show()
+                                showExportMenu = false
+                            }
+                        ) { Text("PDF
+(this entry)", fontSize = 11.sp, textAlign = TextAlign.Center) }
+
+                        OutlinedButton(
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                val file = DiaryPdfExporter.exportAllEntries(context, allEntries)
+                                if (file != null) {
+                                    context.startActivity(Intent.createChooser(
+                                        DiaryPdfExporter.getShareIntent(context, file), "Share PDF"))
+                                } else Toast.makeText(context, "Export failed", Toast.LENGTH_SHORT).show()
+                                showExportMenu = false
+                            }
+                        ) { Text("PDF
+(all entries)", fontSize = 11.sp, textAlign = TextAlign.Center) }
+                    }
+
+                    // ── LOCAL IMPORT ──────────────────────────────────────
+                    OutlinedButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { jsonPickerLauncher.launch("application/json") }
+                    ) {
+                        Icon(Icons.Default.FileUpload, null,
+                            modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Import JSON from device")
+                    }
+
+                    HorizontalDivider()
+
+                    // ── DRIVE SECTION ─────────────────────────────────────
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("☁️ Google Drive", fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp, color = Color(0xFF4A90D9))
+                        if (!driveAvailable) {
+                            Spacer(Modifier.width(8.dp))
+                            Text("(sign in required)", fontSize = 11.sp,
+                                color = Color(0xFF888888))
+                        }
+                    }
+
+                    if (driveAvailable) {
+                        val scope = rememberCoroutineScope()
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            // Drive JSON export
+                            Button(
+                                modifier = Modifier.weight(1f),
+                                onClick = {
+                                    busyMsg = "Exporting to Drive..."
+                                    scope.launch {
+                                        val file = withContext(Dispatchers.IO) {
+                                            DiaryAutoBackupWorker::class.java
+                                            // reuse DiaryPdfExporter + build JSON inline
+                                            val dao = DiaryDatabase.getDatabase(context).diaryDao()
+                                            val entries = dao.getAllEntriesOnce()
+                                            import org.json.JSONArray
+                                            val arr2 = JSONArray()
+                                            entries.forEach { e ->
+                                                arr2.put(JSONObject().apply {
+                                                    put("id", e.id); put("title", e.title)
+                                                    put("body", e.body); put("date", e.date)
+                                                    put("mood", e.mood); put("folder", e.folder)
+                                                    put("tags", e.tags.joinToString(","))
+                                                    put("locked", e.isLocked)
+                                                    put("timestamp", e.timestamp)
+                                                })
+                                            }
+                                            val root2 = JSONObject().apply {
+                                                put("exported_at", java.text.SimpleDateFormat(
+                                                    "yyyy-MM-dd HH:mm", java.util.Locale.ENGLISH)
+                                                    .format(java.util.Date()))
+                                                put("entry_count", entries.size)
+                                                put("entries", arr2)
+                                            }
+                                            java.io.File(context.cacheDir, "diary_manual.json")
+                                                .also { it.writeText(root2.toString(2)) }
+                                        }
+                                        val ok = DriveBackupManager.uploadDiaryJson(context, file)
+                                        file.delete()
+                                        busyMsg = ""
+                                        Toast.makeText(context,
+                                            if (ok) "✅ JSON saved to Drive" else "❌ Upload failed",
+                                            Toast.LENGTH_SHORT).show()
+                                        showExportMenu = false
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A90D9))
+                            ) { Text("Export JSON", fontSize = 11.sp) }
+
+                            // Drive PDF export
+                            Button(
+                                modifier = Modifier.weight(1f),
+                                onClick = {
+                                    busyMsg = "Exporting PDF to Drive..."
+                                    scope.launch {
+                                        val f = withContext(Dispatchers.IO) {
+                                            DiaryPdfExporter.exportAllEntries(context, allEntries)
+                                        }
+                                        val ok = if (f != null)
+                                            DriveBackupManager.uploadDiaryPdf(context, f)
+                                        else false
+                                        busyMsg = ""
+                                        Toast.makeText(context,
+                                            if (ok) "✅ PDF saved to Drive" else "❌ Upload failed",
+                                            Toast.LENGTH_SHORT).show()
+                                        showExportMenu = false
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A90D9))
+                            ) { Text("Export PDF", fontSize = 11.sp) }
+                        }
+
+                        // Drive JSON import
+                        Button(
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = {
+                                busyMsg = "Downloading from Drive..."
+                                scope.launch {
+                                    val jsonStr = DriveBackupManager.downloadDiaryJson(context)
+                                    if (jsonStr != null) {
+                                        withContext(Dispatchers.IO) {
+                                            try {
+                                                val root3   = JSONObject(jsonStr)
+                                                val arr3    = root3.optJSONArray("entries")
+                                                    ?: return@withContext
+                                                val db      = DiaryDatabase.getDatabase(context)
+                                                val entries3 = (0 until arr3.length()).map { i ->
+                                                    val o = arr3.getJSONObject(i)
+                                                    DiaryEntry(
+                                                        id        = 0,
+                                                        title     = o.optString("title"),
+                                                        body      = o.optString("body"),
+                                                        date      = o.optString("date"),
+                                                        mood      = o.optString("mood"),
+                                                        folder    = o.optString("folder", "Personal"),
+                                                        tags      = o.optString("tags").split(",")
+                                                                     .filter { it.isNotBlank() },
+                                                        isLocked  = o.optBoolean("locked", false),
+                                                        timestamp = o.optLong("timestamp",
+                                                            System.currentTimeMillis())
+                                                    )
+                                                }
+                                                db.diaryDao().upsertAll(entries3)
+                                                withContext(Dispatchers.Main) {
+                                                    Toast.makeText(context,
+                                                        "✅ Imported ${entries3.size} entries from Drive",
+                                                        Toast.LENGTH_SHORT).show()
+                                                }
+                                            } catch (e: Exception) {
+                                                withContext(Dispatchers.Main) {
+                                                    Toast.makeText(context,
+                                                        "Import failed: ${e.message}",
+                                                        Toast.LENGTH_SHORT).show()
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        Toast.makeText(context, "No backup found on Drive",
+                                            Toast.LENGTH_SHORT).show()
+                                    }
+                                    busyMsg = ""
+                                    showExportMenu = false
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF34A853))
+                        ) {
+                            Icon(Icons.Default.CloudDownload, null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Import from Drive")
+                        }
+
+                        // Backup Now (one-shot manual trigger)
+                        OutlinedButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = {
+                                DiaryAutoBackupWorker.runNow(context)
+                                Toast.makeText(context, "Backup queued ✅",
+                                    Toast.LENGTH_SHORT).show()
+                                showExportMenu = false
+                            }
+                        ) {
+                            Icon(Icons.Default.CloudUpload, null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Backup Now (auto runs every 3h)")
+                        }
+                    }
                 }
             },
-            dismissButton = { TextButton(onClick = { showExportMenu = false }) { Text("Cancel") } }
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showExportMenu = false }) { Text("Close") }
+            }
         )
     }
 

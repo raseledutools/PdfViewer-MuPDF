@@ -283,6 +283,14 @@ dependencies {
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
     implementation("com.google.android.gms:play-services-auth:21.2.0")
 
+    // Google Drive API for diary backup/restore
+    implementation("com.google.api-client:google-api-client-android:2.2.0") {
+        exclude(group = "org.apache.httpcomponents")
+    }
+    implementation("com.google.apis:google-api-services-drive:v3-rev20220815-2.0.0") {
+        exclude(group = "org.apache.httpcomponents")
+    }
+
     // Cloudinary
     implementation("com.cloudinary:cloudinary-android:2.5.0") {
         // FIX: Cloudinary transitively pulls in Facebook's Fresco
