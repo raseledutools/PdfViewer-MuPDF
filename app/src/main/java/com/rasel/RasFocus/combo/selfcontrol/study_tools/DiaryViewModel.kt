@@ -177,7 +177,7 @@ class DiaryViewModel(application: Application) : AndroidViewModel(application) {
             _selectedFolderFilter.collectLatest { filter ->
                 val flow = if (filter == "All Entries") repository.getAllEntries()
                            else repository.getEntriesByFolder(filter)
-                flow.collectLatest { entries -> _allEntries.value = entries }
+                flow.collect { entries -> _allEntries.value = entries }
             }
         }
     }
@@ -303,12 +303,13 @@ class DiaryViewModel(application: Application) : AndroidViewModel(application) {
             _cloudStatus.value = CloudStatus.NOT_LOGGED_IN
             return
         }
-        viewModelScope.launch {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             _cloudStatus.value = CloudStatus.SYNCING
             runCatching {
                 val cloudEntries = DiaryCloudSync.fetchAllEntries()
                 cloudEntries.forEach { repository.saveEntry(it) }
             }.onSuccess {
+                kotlinx.coroutines.delay(300) // Let Room Flow settle before UI update
                 _cloudStatus.value = CloudStatus.SUCCESS
             }.onFailure {
                 _cloudStatus.value = CloudStatus.ERROR
@@ -316,21 +317,20 @@ class DiaryViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // ---- AUTO SAVE ----
     private fun triggerAutoSave() {
         autoSaveJob?.cancel()
         _saveStatus.value = SaveStatus.SAVING
-        autoSaveJob = viewModelScope.launch {
+        autoSaveJob = viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             delay(800)
             saveCurrentEntryNow()
         }
     }
 
-    suspend fun saveCurrentEntryNow() {
+    suspend fun saveCurrentEntryNow() = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         val entry = _currentEntry.value
         if (entry.title.isBlank() && entry.body.isBlank()) {
             _saveStatus.value = SaveStatus.SYNCED
-            return
+            return@withContext
         }
         repository.saveEntry(entry)
         _saveStatus.value = SaveStatus.SYNCED
