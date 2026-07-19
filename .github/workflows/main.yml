@@ -109,8 +109,10 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
-          name: PdfViewer v1.0.${{ github.run_number }}
-          files: app/build/outputs/apk/full/release/*universal*.apk
+          name: RasFocus v1.0.${{ github.run_number }}
+          files: |
+            app/build/outputs/apk/full/release/*universal*.apk
+            app/build/outputs/apk/full/release/*armeabi-v7a*.apk
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
