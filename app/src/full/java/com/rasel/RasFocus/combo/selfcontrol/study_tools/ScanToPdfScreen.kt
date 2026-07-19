@@ -1,5 +1,7 @@
 package com.rasel.RasFocus.combo.selfcontrol.study_tools
 
+import com.rasel.RasFocus.selfcontrol.study_tools.PdfViewerActivity
+
 import android.Manifest
 import android.app.Activity
 import android.content.Context

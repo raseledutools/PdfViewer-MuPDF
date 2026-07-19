@@ -2,7 +2,12 @@ package com.rasel.RasFocus.selfcontrol.study_tools
 
 import android.app.Activity
 import android.content.Context
-import android.graphics.*
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.RectF
+import android.graphics.Typeface
+import android.graphics.Paint as APaint
+import android.graphics.Color as AColor
 import android.net.Uri
 import android.os.Bundle
 import android.view.WindowManager
@@ -63,7 +68,7 @@ sealed class PptxShape {
         val color: Int = android.graphics.Color.BLACK,
         val x: Float = 0f, val y: Float = 0f,
         val w: Float = 1f, val h: Float = 1f,
-        val align: Paint.Align = Paint.Align.LEFT
+        val align: APaint.Align = APaint.Align.LEFT
     ) : PptxShape()
 
     data class Rect(
@@ -316,7 +321,7 @@ object SlideRenderer {
                     val pw = shape.w * width
                     val ph = shape.h * height
 
-                    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    val paint = APaint(APaint.ANTI_ALIAS_FLAG).apply {
                         color     = shape.color
                         textSize  = shape.fontSize * (width / 960f)
                         typeface  = Typeface.create(
@@ -336,8 +341,8 @@ object SlideRenderer {
                     val lineH = paint.textSize * 1.3f
                     lines.forEachIndexed { i, line ->
                         val lx = when (shape.align) {
-                            Paint.Align.CENTER -> px + pw / 2
-                            Paint.Align.RIGHT  -> px + pw
+                            APaint.Align.CENTER -> px + pw / 2
+                            APaint.Align.RIGHT  -> px + pw
                             else               -> px + 8f
                         }
                         val ly = py + 8f + (i + 1) * lineH
@@ -351,12 +356,12 @@ object SlideRenderer {
                         (shape.x + shape.w) * width, (shape.y + shape.h) * height
                     )
                     if (shape.fillColor != android.graphics.Color.TRANSPARENT) {
-                        canvas.drawRect(rect, Paint().apply { color = shape.fillColor })
+                        canvas.drawRect(rect, APaint().apply { color = shape.fillColor })
                     }
-                    canvas.drawRect(rect, Paint().apply {
+                    canvas.drawRect(rect, APaint().apply {
                         color     = shape.strokeColor
                         strokeWidth = shape.strokeWidth
-                        style     = Paint.Style.STROKE
+                        style     = APaint.Style.STROKE
                     })
                 }
 
@@ -373,7 +378,7 @@ object SlideRenderer {
         return bmp
     }
 
-    private fun wrapText(text: String, paint: Paint, maxWidth: Float): List<String> {
+    private fun wrapText(text: String, paint: APaint, maxWidth: Float): List<String> {
         val result = mutableListOf<String>()
         text.split("\n").forEach { paragraph ->
             val words = paragraph.split(" ")

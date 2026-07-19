@@ -41,19 +41,21 @@ object DriveBackupManager {
     }.getOrDefault(false)
 
     // ── Build Drive service safely on IO thread ───────────────────────────────
-    private fun buildDriveService(context: Context): Drive? = try {
-        val account = GoogleSignIn.getLastSignedInAccount(context) ?: return null
-        if (!GoogleSignIn.hasPermissions(account, Scope(DriveScopes.DRIVE_FILE))) return null
-        val androidAccount = account.account ?: return null
-        val credential = GoogleAccountCredential.usingOAuth2(
-            context, listOf(DriveScopes.DRIVE_FILE)
-        ).also { it.selectedAccount = androidAccount }
-        Drive.Builder(
-            NetHttpTransport(), GsonFactory.getDefaultInstance(), credential
-        ).setApplicationName("RasFocus+").build()
-    } catch (e: Exception) {
-        Log.e(TAG, "buildDriveService failed", e)
-        null
+    private fun buildDriveService(context: Context): Drive? {
+        return try {
+            val account = GoogleSignIn.getLastSignedInAccount(context) ?: return null
+            if (!GoogleSignIn.hasPermissions(account, Scope(DriveScopes.DRIVE_FILE))) return null
+            val androidAccount = account.account ?: return null
+            val credential = GoogleAccountCredential.usingOAuth2(
+                context, listOf(DriveScopes.DRIVE_FILE)
+            ).also { it.selectedAccount = androidAccount }
+            Drive.Builder(
+                NetHttpTransport(), GsonFactory.getDefaultInstance(), credential
+            ).setApplicationName("RasFocus+").build()
+        } catch (e: Exception) {
+            Log.e(TAG, "buildDriveService failed", e)
+            null
+        }
     }
 
     // ── Get or create the "RasFocus+" folder in Drive ────────────────────────
