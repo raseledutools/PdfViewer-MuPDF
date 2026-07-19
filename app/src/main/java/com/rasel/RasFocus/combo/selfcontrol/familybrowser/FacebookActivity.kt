@@ -543,7 +543,7 @@ class FacebookActivity : ComponentActivity() {
         view.evaluateJavascript(js, null)
     }
 
-
+    private fun checkAdultSearchKeyword(url: String): String? {
         return try {
             val uri = android.net.Uri.parse(url)
             val host = uri.host?.lowercase() ?: return null
