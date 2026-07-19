@@ -93,6 +93,51 @@ data class ParentControls(
     val familyBrowserEnabled: Boolean = false
 )
 
+// FIX: viewModel.pcControls (in MainActivity.kt's MainViewModel) is typed as
+// StateFlow<com.rasel.RasFocus.parental.ParentControls> — the NON-combo
+// class. But this file (combo/parental) declares its OWN separate
+// ParentControls data class above with an identical field set. Kotlin
+// treated these as two unrelated types, so reading .lockAllTabs etc. off a
+// value that was actually the non-combo type failed to resolve, and passing
+// this file's local ParentControls into updatePcControls() (which expects
+// the non-combo type) failed with a type mismatch. Since both classes have
+// exactly the same fields in the same order, converting between them is a
+// straightforward 1:1 mapping.
+private fun com.rasel.RasFocus.parental.ParentControls.toComboControls(): ParentControls = ParentControls(
+    lockAllTabs = lockAllTabs, forceAdultBlock = forceAdultBlock, forceReelsBlock = forceReelsBlock,
+    forceShortsBlock = forceShortsBlock, appControlEnabled = appControlEnabled, appMode = appMode,
+    allowedAppsCsv = allowedAppsCsv, blockedAppsCsv = blockedAppsCsv, webBlockEnabled = webBlockEnabled,
+    blockedWebsCsv = blockedWebsCsv, blockTaskManager = blockTaskManager, blockSettings = blockSettings,
+    blockFileManager = blockFileManager, blockedFoldersCsv = blockedFoldersCsv, internetFasting = internetFasting,
+    timeLimitMinutes = timeLimitMinutes, powerAction = powerAction, lockUntilEpoch = lockUntilEpoch,
+    lockType = lockType, newInstalledAppsCsv = newInstalledAppsCsv,
+    fbEnabled = fbEnabled, fbStartTime = fbStartTime, fbEndTime = fbEndTime,
+    fbLiteEnabled = fbLiteEnabled, fbLiteStartTime = fbLiteStartTime, fbLiteEndTime = fbLiteEndTime,
+    ytEnabled = ytEnabled, ytStartTime = ytStartTime, ytEndTime = ytEndTime,
+    chromeEnabled = chromeEnabled, chromeStartTime = chromeStartTime, chromeEndTime = chromeEndTime,
+    deepStudyEnabled = deepStudyEnabled, buttonPhoneEnabled = buttonPhoneEnabled,
+    singleAppsBlockEnabled = singleAppsBlockEnabled, extremeBlockEnabled = extremeBlockEnabled,
+    singleWebsiteBlockEnabled = singleWebsiteBlockEnabled, familyBrowserEnabled = familyBrowserEnabled
+)
+
+private fun ParentControls.toNonComboControls(): com.rasel.RasFocus.parental.ParentControls =
+    com.rasel.RasFocus.parental.ParentControls(
+        lockAllTabs = lockAllTabs, forceAdultBlock = forceAdultBlock, forceReelsBlock = forceReelsBlock,
+        forceShortsBlock = forceShortsBlock, appControlEnabled = appControlEnabled, appMode = appMode,
+        allowedAppsCsv = allowedAppsCsv, blockedAppsCsv = blockedAppsCsv, webBlockEnabled = webBlockEnabled,
+        blockedWebsCsv = blockedWebsCsv, blockTaskManager = blockTaskManager, blockSettings = blockSettings,
+        blockFileManager = blockFileManager, blockedFoldersCsv = blockedFoldersCsv, internetFasting = internetFasting,
+        timeLimitMinutes = timeLimitMinutes, powerAction = powerAction, lockUntilEpoch = lockUntilEpoch,
+        lockType = lockType, newInstalledAppsCsv = newInstalledAppsCsv,
+        fbEnabled = fbEnabled, fbStartTime = fbStartTime, fbEndTime = fbEndTime,
+        fbLiteEnabled = fbLiteEnabled, fbLiteStartTime = fbLiteStartTime, fbLiteEndTime = fbLiteEndTime,
+        ytEnabled = ytEnabled, ytStartTime = ytStartTime, ytEndTime = ytEndTime,
+        chromeEnabled = chromeEnabled, chromeStartTime = chromeStartTime, chromeEndTime = chromeEndTime,
+        deepStudyEnabled = deepStudyEnabled, buttonPhoneEnabled = buttonPhoneEnabled,
+        singleAppsBlockEnabled = singleAppsBlockEnabled, extremeBlockEnabled = extremeBlockEnabled,
+        singleWebsiteBlockEnabled = singleWebsiteBlockEnabled, familyBrowserEnabled = familyBrowserEnabled
+    )
+
 // ══════════════════════════════════════════════════════════════
 //  MAIN SCREEN  —  Header scrolls away with content (not fixed).
 //  Footer is a single, clean action bar (no duplicated controls).
@@ -155,7 +200,8 @@ fun ParentControlScreen(
     }
 
     val firebaseControls = (viewModel?.pcControls
-        ?: kotlinx.coroutines.flow.MutableStateFlow(ParentControls())).collectAsState(ParentControls()).value
+        ?: kotlinx.coroutines.flow.MutableStateFlow(com.rasel.RasFocus.parental.ParentControls()))
+        .collectAsState(com.rasel.RasFocus.parental.ParentControls()).value.toComboControls()
     val activeControls = if (isFirebaseMode) firebaseControls else controls
 
     val activeRules = if (isFirebaseMode) listOf(
@@ -166,7 +212,7 @@ fun ParentControlScreen(
     ).count { it } else activeRulesCount
 
     val onControlChangeActive: (ParentControls) -> Unit = if (isFirebaseMode)
-        { c -> viewModel!!.updatePcControls(deviceId!!, c) } else onControlChange
+        { c -> viewModel!!.updatePcControls(deviceId!!, c.toNonComboControls()) } else onControlChange
 
     val onSendPowerActive: (Int) -> Unit = if (isFirebaseMode)
         { a -> viewModel!!.sendPcPowerCommand(deviceId!!, a) } else onSendPower
