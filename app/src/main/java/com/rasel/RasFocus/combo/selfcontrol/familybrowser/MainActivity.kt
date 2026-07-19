@@ -3824,13 +3824,13 @@ fun DownloadPanel(vm: BrowserViewModel, onDismiss: () -> Unit) {
 
 @Composable
 private fun DownloadItemRow(
-    item:     com.rasel.RasFocus.selfcontrol.familybrowser.DownloadItem,
+    item:     DownloadItem,
     context:  android.content.Context,
     onOpen:   () -> Unit,
     onDelete: () -> Unit
 ) {
-    val isDone   = item.status == com.rasel.RasFocus.selfcontrol.familybrowser.DownloadStatus.COMPLETED
-    val isFailed = item.status == com.rasel.RasFocus.selfcontrol.familybrowser.DownloadStatus.FAILED
+    val isDone   = item.status == DownloadStatus.COMPLETED
+    val isFailed = item.status == DownloadStatus.FAILED
     val progress = if (item.totalBytes > 0) (item.downloadedBytes.toFloat() / item.totalBytes) else 0f
 
     Surface(

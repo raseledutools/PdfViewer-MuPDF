@@ -2,14 +2,18 @@ package com.rasel.RasFocus.selfcontrol.familybrowser
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.PictureInPictureParams
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.res.Configuration
 import android.graphics.Color
+import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
+import android.util.Rational
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -42,8 +46,22 @@ class YoutubeActivity : ComponentActivity() {
     // onPageFinished এর দ্বিতীয় check স্কিপ করে দেয়।
     private var adultBlockAlreadyShownForThisLoad = false
 
-    // Mini player চালু আছে কিনা track করার জন্য
+    // Mini player চালু আছে কিনা track করার জন্য (পুরনো overlay-permission-based
+    // floating service path — screen lock এ এখনো এটাই ব্যবহার হয়)
     private var isMiniPlayerActive = false
+
+    // ── System Picture-in-Picture (Android native PiP) ──────────────────────
+    // isMiniPlayerActive থেকে আলাদা রাখা হলো ইচ্ছাকৃতভাবে — দুটো সম্পূর্ণ আলাদা
+    // mechanism। isMiniPlayerActive = নিজস্ব overlay service (screen lock এ
+    // ব্যবহার হয়, overlay permission লাগে)। isInSystemPip = Android-এর built-in
+    // PiP API (home button/recent-apps এ ব্যবহার হয়, কোনো extra permission লাগে
+    // না)। দুটো একসাথে active হলে conflict হবে, তাই home-button path এ শুধু
+    // একটাই বেছে নেওয়া হয় (দেখুন onUserLeaveHint)।
+    private var isInSystemPip = false
+
+    // Video-র actual aspect ratio ধরে রাখি যাতে PiP window সঠিক shape এ খোলে
+    // (16:9 hardcode না করে — vertical Shorts এ mismatch হতো)
+    private var lastKnownVideoAspectRatio: Rational = Rational(16, 9)
 
     // ── LAYER 2: Wake Lock ─────────────────────────────────────────────────────
     private var wakeLock: PowerManager.WakeLock? = null
@@ -299,7 +317,16 @@ class YoutubeActivity : ComponentActivity() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
-            setLayerType(View.LAYER_TYPE_HARDWARE, null)
+            // Android version অনুযায়ী সঠিক layer type:
+            // Android 10 (API 29) এ inline <video> TextureView দিয়ে render হয়,
+            // তাই LAYER_TYPE_HARDWARE লাগে — না হলে video frame black থাকে,
+            // শুধু audio চলে। Android 11+ এ Chromium নিজেই SurfaceControl দিয়ে
+            // compositor bypass করে, তাই LAYER_TYPE_NONE সেখানে সঠিক।
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
+                setLayerType(View.LAYER_TYPE_HARDWARE, null)
+            } else {
+                setLayerType(View.LAYER_TYPE_NONE, null)
+            }
             setBackgroundColor(Color.BLACK)
 
             settings.apply {
@@ -333,6 +360,7 @@ class YoutubeActivity : ComponentActivity() {
                 ),
                 "RasBlockBridge"
             )
+            addJavascriptInterface(PipAspectBridge(), "RasPipAspectBridge")
 
             webViewClient = object : WebViewClient() {
                 override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
@@ -349,6 +377,7 @@ class YoutubeActivity : ComponentActivity() {
                     injectAdBlocker(view)
                     injectSettingsRemover(view)
                     adBlocker.injectContentScanner(view)
+                    injectVideoAspectRatioTracker(view)
 
                     // FIX: এই navigation এ shouldOverrideUrlLoading/shouldInterceptRequest
                     // এ URL-level check করে ইতিমধ্যে একবার block page দেখানো হয়ে থাকলে,
@@ -573,38 +602,32 @@ class YoutubeActivity : ComponentActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         if (isMiniPlayerActive) {
-            // ★ FIX: Lock → Floating → Unlock flow
-            // isMiniPlayerActive = true মানে WebView এখন floating service এ আছে
-            // Service বন্ধ করলে onDestroy() এ WebView pendingWebView এ রাখবে
             isMiniPlayerActive = false
             stopBgAudioService()
 
-            // Floating service বন্ধ করো — onDestroy() এ pendingWebView set হবে
-            try {
-                stopService(Intent(
-                    this,
-                    com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService::class.java
-                ))
-            } catch (_: Exception) {}
-
-            if (webView == null) {
-                // ★ FIX: Service synchronous হয় না, তাই postDelayed দিয়ে WebView নাও
-                // pendingWebView set হতে সামান্য সময় লাগে
-                val rootFrame = getRootFrame()
-
-                // প্রথমে immediately চেষ্টা করো
-                val immediateWv = com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView
-                if (immediateWv != null) {
-                    reattachWebView(immediateWv, rootFrame)
-                } else {
-                    // Fallback: একটু অপেক্ষা করো — service onDestroy() সময় নিচ্ছে
+            // OPTIMIZED: grab pendingWebView BEFORE stopping service —
+            // service onDestroy() sets it too but that's async.
+            // If caller (Open App button) already set pendingWebView, we get it
+            // immediately without any delay. stopService() then cleans up.
+            val rootFrame = getRootFrame()
+            val immediateWv = com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView
+            if (immediateWv != null) {
+                // Got it instantly — reattach now, stop service in parallel
+                com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView = null
+                reattachWebView(immediateWv, rootFrame)
+                try {
+                    stopService(Intent(this, com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService::class.java))
+                } catch (_: Exception) {}
+            } else {
+                // WebView still in service — stop it, wait for onDestroy to set pendingWebView
+                try {
+                    stopService(Intent(this, com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService::class.java))
+                } catch (_: Exception) {}
+                if (webView == null) {
                     rootFrame?.postDelayed({
                         val pendingWv = com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView
-                        if (pendingWv != null) {
-                            reattachWebView(pendingWv, rootFrame)
-                        }
-                        // পুরোপুরি fail হলে: নতুন করে YouTube load করো (worst case)
-                    }, 200)
+                        if (pendingWv != null) reattachWebView(pendingWv, rootFrame)
+                    }, 120) // reduced from 200ms → 120ms
                 }
             }
             return
@@ -645,9 +668,9 @@ class YoutubeActivity : ComponentActivity() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
-            // ★ FIX: Black screen → WebView আগে invisible রাখো, content load হলে visible করো
+            // Keep black background while WebView surface re-attaches
             returnedWv.visibility = View.INVISIBLE
-            returnedWv.alpha = 1f
+            returnedWv.alpha = 0f
             rootFrame.setBackgroundColor(android.graphics.Color.BLACK)
             rootFrame.addView(returnedWv)
             rootFrame.bringToFront()
@@ -659,34 +682,45 @@ class YoutubeActivity : ComponentActivity() {
         injectVisibilitySpoof(returnedWv)
         injectYoutubeHacksForced(returnedWv)
 
-        // ★ FIX: 150ms পরে visible করো — WebView render হওয়ার পরে
-        // এতে black flash দেখা যাবে না
-        returnedWv.postDelayed({
+        // OPTIMIZED TRANSITION: single 80ms pass — layout must settle first.
+        // Then JS poll every 60ms (1 frame) until video surface is ready
+        // (readyState >= 2 = HAVE_CURRENT_DATA), show immediately.
+        // Hard fallback: 400ms so worst-case blank is halved vs old 600ms.
+        var shown = false
+        fun showWebView() {
+            if (shown) return
+            shown = true
             returnedWv.visibility = View.VISIBLE
             returnedWv.alpha = 1f
             returnedWv.bringToFront()
-            returnedWv.invalidate()
-        }, 150)
-
-        // ★ FIX: Video unmute + play ensure
-        returnedWv.postDelayed({
-            injectVisibilitySpoof(returnedWv)
+            // Unmute + resume play in same pass — no extra postDelayed needed
             returnedWv.evaluateJavascript("""
-                (function() {
+                (function(){
                     try {
-                        var videos = document.querySelectorAll('video');
-                        for (var i = 0; i < videos.length; i++) {
-                            try {
-                                videos[i].muted = false;
-                                if (videos[i].paused && !videos[i].ended) {
-                                    videos[i].play().catch(function(){});
-                                }
-                            } catch(e) {}
+                        var vs = document.querySelectorAll('video');
+                        for(var i=0;i<vs.length;i++){
+                            vs[i].muted = false;
+                            if(vs[i].paused && !vs[i].ended) vs[i].play().catch(function(){});
                         }
-                    } catch(e) {}
-                })();
+                    } catch(e){}
+                })()
             """.trimIndent(), null)
-        }, 300)
+        }
+        // Hard fallback at 400ms
+        returnedWv.postDelayed({ showWebView() }, 400)
+        // Poll every 60ms starting at 80ms — show as soon as surface ready
+        fun pollReady(attempt: Int) {
+            returnedWv.postDelayed({
+                returnedWv.evaluateJavascript("""
+                    (function(){try{var v=document.querySelector('video');return v?String(v.readyState):'0';}catch(e){return '0';}})()"
+                """.trimIndent()) { rs ->
+                    val ready = rs?.trim('"')?. toIntOrNull() ?: 0
+                    if (ready >= 2) showWebView()
+                    else if (attempt < 5) pollReady(attempt + 1) // max 5 polls = 380ms
+                }
+            }, (80 + attempt * 60).toLong())
+        }
+        pollReady(0)
     }
 
     private fun injectVisibilitySpoofBeforeLeave(wv: WebView) {
@@ -729,17 +763,20 @@ class YoutubeActivity : ComponentActivity() {
     override fun onPause() {
         webView?.resumeTimers()
         webView?.onResume()
-        webView?.let {
-            // ★ FIX BUG 1: Only inject visibility spoof here — NOT
-            // injectYoutubeHacksForced() which force-plays ALL paused
-            // videos. If the user explicitly paused, we must NOT
-            // override that. Visibility spoof alone is enough to keep
-            // audio running when the app goes to background.
-            injectVisibilitySpoof(it)
-        }
+        webView?.let { injectVisibilitySpoof(it) }
         super.onPause()
 
-        startBgAudioService()
+        // FIX AUDIO-ON-LOCK: screenOffReceiver's ACTION_SCREEN_OFF already calls
+        // launchFloatingOnLock() which starts BackgroundAudioService with correct
+        // title/thumb metadata. If we also call startBgAudioService() here, it runs
+        // BEFORE the floating launch captures the WebView, so evaluateJavascript gets
+        // a null/wrong webView → notification shows wrong title, and the double-start
+        // can cause the service to restart mid-stream, killing audio for ~1s.
+        // Solution: skip service start here if a floating/lock transition is in progress
+        // (isMiniPlayerActive is set by launchFloatingOnLock before onPause fires).
+        if (!isMiniPlayerActive) {
+            startBgAudioService()
+        }
         if (wakeLock?.isHeld == false) wakeLock?.acquire()
     }
 
@@ -751,7 +788,13 @@ class YoutubeActivity : ComponentActivity() {
     override fun onStop() {
         webView?.resumeTimers()
         super.onStop()
-        if (webView != null && !isFinishing) startBgAudioService()
+        // FIX: onUserLeaveHint → launchFloatingOnLock → onPause → onStop sequential.
+        // onPause already skips service start when isMiniPlayerActive, but onStop
+        // was still calling it — causing a second service start that restarted the
+        // foreground service mid-stream and cut audio for ~1s on home press.
+        if (webView != null && !isFinishing && !isMiniPlayerActive) {
+            startBgAudioService()
+        }
     }
 
     override fun onDestroy() {
@@ -951,24 +994,35 @@ class YoutubeActivity : ComponentActivity() {
                     if (skipBtn) { skipBtn.click(); }
                     var ads = document.querySelectorAll('.ytp-ad-overlay-container, ytm-promoted-video-renderer, .ad-showing');
                     ads.forEach(function(ad) { ad.style.display = 'none'; });
-                    var adText = document.querySelector('.ytp-ad-text');
-                    var video = document.querySelector('video');
-                    if (adText && video && video.duration > 0) { video.currentTime = video.duration; }
+                    // ★ FIX (black screen after ad-block): আগে এখানে ad চলাকালীন
+                    // video.currentTime = video.duration সেট করে জোর করে ad শেষ
+                    // করা হতো। কিন্তু YouTube ad ও main video একই <video> element
+                    // শেয়ার করে — HTML5 API দিয়ে সরাসরি currentTime জোর করে
+                    // পাল্টালে YouTube-এর নিজস্ব player state machine-এর সাথে
+                    // real <video> element-এর state desync হয়ে যেত। এর ফলে audio
+                    // pipeline ঠিক চলতো (আলাদা track), কিন্তু video renderer/surface
+                    // নতুন frame নিতে ব্যর্থ হতো — তাই ad block হওয়ার পরপরই স্ক্রিন
+                    // কালো থেকে যেত। skipBtn.click() (উপরে) YouTube-এর নিজের player
+                    // এর মাধ্যমেই properly skip করে, তাই এই forced-seek hack টা
+                    // সম্পূর্ণ সরিয়ে দেওয়া হলো।
                 }, 500);
             })();
         """.trimIndent(), null)
     }
 
     private fun injectYoutubeHacksForced(view: WebView) {
-        // Called on lock / home-button press.
-        // Respects __rasUserPaused__: if the user deliberately paused
-        // before locking, we do NOT force-play — their intent wins.
-        // If the system paused (YouTube's visibility-change handler),
-        // we force-play so audio continues through lock screen.
+        // Called on lock / home-button / re-attach.
+        // Only force-plays if user did NOT manually pause (__rasUserPaused__).
+        // FIX SLOW: re-registers the keep-alive setInterval each time this was called
+        // (injectYoutubeHacks guard __rasBgAudioInjected__ is on the OTHER function,
+        // this one had no guard so repeated calls stacked up multiple intervals).
+        // Now just does a one-shot play attempt + visibility spoof — the interval
+        // lives in injectYoutubeHacks which IS guarded.
         view.evaluateJavascript("""
             (function() {
                 try {
                     Object.defineProperty(document, 'hidden', { get: function(){ return false; }, configurable: true });
+                    Object.defineProperty(document, 'visibilityState', { get: function(){ return 'visible'; }, configurable: true });
                     var videos = document.querySelectorAll('video');
                     for (var i = 0; i < videos.length; i++) {
                         try {
@@ -978,6 +1032,36 @@ class YoutubeActivity : ComponentActivity() {
                         } catch(e) {}
                     }
                 } catch(e) {}
+            })();
+        """.trimIndent(), null)
+    }
+
+    /**
+     * System PiP window খোলার সময় সঠিক aspect ratio ব্যবহার করার জন্য video-র
+     * videoWidth/videoHeight periodically পড়ে RasPipAspectBridge দিয়ে Kotlin
+     * এ পাঠায়। guard flag দিয়ে single interval নিশ্চিত করা হয়েছে (অন্য
+     * injectXxx function গুলোর মতো একই pattern) — না হলে YouTube এর SPA
+     * navigation এ প্রতিবার onPageFinished fire হওয়ায় interval জমতে থাকতো।
+     */
+    private fun injectVideoAspectRatioTracker(view: WebView) {
+        view.evaluateJavascript("""
+            (function() {
+                if (window.__rasPipAspectTrackerActive__) return;
+                window.__rasPipAspectTrackerActive__ = true;
+                var lastW = 0, lastH = 0;
+                setInterval(function() {
+                    try {
+                        var v = document.querySelector('video');
+                        if (!v || !v.videoWidth || !v.videoHeight) return;
+                        // মান একই থাকলে বৃথা bridge call এড়িয়ে যাও
+                        if (v.videoWidth === lastW && v.videoHeight === lastH) return;
+                        lastW = v.videoWidth;
+                        lastH = v.videoHeight;
+                        if (window.RasPipAspectBridge) {
+                            window.RasPipAspectBridge.onVideoDimensions(v.videoWidth, v.videoHeight);
+                        }
+                    } catch(e) {}
+                }, 1000);
             })();
         """.trimIndent(), null)
     }
@@ -1022,6 +1106,33 @@ class YoutubeActivity : ComponentActivity() {
         @android.webkit.JavascriptInterface
         fun onGoHome() {
             runOnUiThread { wv.loadUrl("https://m.youtube.com/") }
+        }
+    }
+
+    /**
+     * System PiP window সঠিক shape এ খোলার জন্য video-র actual
+     * videoWidth/videoHeight দরকার — নাহলে vertical Shorts এও 16:9 PiP
+     * window খুলে video-টা squeezed/letterboxed দেখাতো। JS periodically
+     * এই bridge কল করে সর্বশেষ dimension পাঠায়; আমরা শুধু ratio টা মনে
+     * রাখি (aspectRatioUpdated), actual PiP entry-র সময় ব্যবহার করবো।
+     */
+    inner class PipAspectBridge {
+        @android.webkit.JavascriptInterface
+        fun onVideoDimensions(width: Int, height: Int) {
+            if (width <= 0 || height <= 0) return
+            runOnUiThread {
+                // PictureInPictureParams.setAspectRatio() এর সীমা: ratio টা
+                // 2.39:1 থেকে 1:2.39 এর মধ্যে থাকতে হবে (Android spec) —
+                // এর বাইরে গেলে system IllegalArgumentException ছুঁড়ে।
+                // অতিরিক্ত লম্বা/চ্যাপ্টা কোনো edge-case video তে crash
+                // এড়াতে clamp করে রাখলাম।
+                val clampedW = width.coerceAtMost(height * 239 / 100)
+                val clampedH = height.coerceAtMost(width * 239 / 100)
+                lastKnownVideoAspectRatio = Rational(
+                    if (width > height * 239 / 100) clampedW else width,
+                    if (height > width * 239 / 100) clampedH else height
+                )
+            }
         }
     }
 

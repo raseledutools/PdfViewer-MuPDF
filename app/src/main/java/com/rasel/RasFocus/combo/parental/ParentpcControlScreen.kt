@@ -93,49 +93,42 @@ data class ParentControls(
     val familyBrowserEnabled: Boolean = false
 )
 
-// FIX: viewModel.pcControls (in MainActivity.kt's MainViewModel) is typed as
-// StateFlow<com.rasel.RasFocus.parental.ParentControls> — the NON-combo
-// class. But this file (combo/parental) declares its OWN separate
-// ParentControls data class above with an identical field set. Kotlin
-// treated these as two unrelated types, so reading .lockAllTabs etc. off a
-// value that was actually the non-combo type failed to resolve, and passing
-// this file's local ParentControls into updatePcControls() (which expects
-// the non-combo type) failed with a type mismatch. Since both classes have
-// exactly the same fields in the same order, converting between them is a
-// straightforward 1:1 mapping.
+// FIX: viewModel.pcControls is StateFlow<com.rasel.RasFocus.parental.ParentControls>
+// (non-combo), but this file has its own identical local ParentControls class.
+// Kotlin treats them as unrelated types — conversion functions bridge the gap.
 private fun com.rasel.RasFocus.parental.ParentControls.toComboControls(): ParentControls = ParentControls(
-    lockAllTabs = lockAllTabs, forceAdultBlock = forceAdultBlock, forceReelsBlock = forceReelsBlock,
-    forceShortsBlock = forceShortsBlock, appControlEnabled = appControlEnabled, appMode = appMode,
-    allowedAppsCsv = allowedAppsCsv, blockedAppsCsv = blockedAppsCsv, webBlockEnabled = webBlockEnabled,
-    blockedWebsCsv = blockedWebsCsv, blockTaskManager = blockTaskManager, blockSettings = blockSettings,
-    blockFileManager = blockFileManager, blockedFoldersCsv = blockedFoldersCsv, internetFasting = internetFasting,
-    timeLimitMinutes = timeLimitMinutes, powerAction = powerAction, lockUntilEpoch = lockUntilEpoch,
-    lockType = lockType, newInstalledAppsCsv = newInstalledAppsCsv,
-    fbEnabled = fbEnabled, fbStartTime = fbStartTime, fbEndTime = fbEndTime,
-    fbLiteEnabled = fbLiteEnabled, fbLiteStartTime = fbLiteStartTime, fbLiteEndTime = fbLiteEndTime,
-    ytEnabled = ytEnabled, ytStartTime = ytStartTime, ytEndTime = ytEndTime,
-    chromeEnabled = chromeEnabled, chromeStartTime = chromeStartTime, chromeEndTime = chromeEndTime,
-    deepStudyEnabled = deepStudyEnabled, buttonPhoneEnabled = buttonPhoneEnabled,
-    singleAppsBlockEnabled = singleAppsBlockEnabled, extremeBlockEnabled = extremeBlockEnabled,
-    singleWebsiteBlockEnabled = singleWebsiteBlockEnabled, familyBrowserEnabled = familyBrowserEnabled
+    lockAllTabs=lockAllTabs, forceAdultBlock=forceAdultBlock, forceReelsBlock=forceReelsBlock,
+    forceShortsBlock=forceShortsBlock, appControlEnabled=appControlEnabled, appMode=appMode,
+    allowedAppsCsv=allowedAppsCsv, blockedAppsCsv=blockedAppsCsv, webBlockEnabled=webBlockEnabled,
+    blockedWebsCsv=blockedWebsCsv, blockTaskManager=blockTaskManager, blockSettings=blockSettings,
+    blockFileManager=blockFileManager, blockedFoldersCsv=blockedFoldersCsv, internetFasting=internetFasting,
+    timeLimitMinutes=timeLimitMinutes, powerAction=powerAction, lockUntilEpoch=lockUntilEpoch,
+    lockType=lockType, newInstalledAppsCsv=newInstalledAppsCsv,
+    fbEnabled=fbEnabled, fbStartTime=fbStartTime, fbEndTime=fbEndTime,
+    fbLiteEnabled=fbLiteEnabled, fbLiteStartTime=fbLiteStartTime, fbLiteEndTime=fbLiteEndTime,
+    ytEnabled=ytEnabled, ytStartTime=ytStartTime, ytEndTime=ytEndTime,
+    chromeEnabled=chromeEnabled, chromeStartTime=chromeStartTime, chromeEndTime=chromeEndTime,
+    deepStudyEnabled=deepStudyEnabled, buttonPhoneEnabled=buttonPhoneEnabled,
+    singleAppsBlockEnabled=singleAppsBlockEnabled, extremeBlockEnabled=extremeBlockEnabled,
+    singleWebsiteBlockEnabled=singleWebsiteBlockEnabled, familyBrowserEnabled=familyBrowserEnabled
 )
 
 private fun ParentControls.toNonComboControls(): com.rasel.RasFocus.parental.ParentControls =
     com.rasel.RasFocus.parental.ParentControls(
-        lockAllTabs = lockAllTabs, forceAdultBlock = forceAdultBlock, forceReelsBlock = forceReelsBlock,
-        forceShortsBlock = forceShortsBlock, appControlEnabled = appControlEnabled, appMode = appMode,
-        allowedAppsCsv = allowedAppsCsv, blockedAppsCsv = blockedAppsCsv, webBlockEnabled = webBlockEnabled,
-        blockedWebsCsv = blockedWebsCsv, blockTaskManager = blockTaskManager, blockSettings = blockSettings,
-        blockFileManager = blockFileManager, blockedFoldersCsv = blockedFoldersCsv, internetFasting = internetFasting,
-        timeLimitMinutes = timeLimitMinutes, powerAction = powerAction, lockUntilEpoch = lockUntilEpoch,
-        lockType = lockType, newInstalledAppsCsv = newInstalledAppsCsv,
-        fbEnabled = fbEnabled, fbStartTime = fbStartTime, fbEndTime = fbEndTime,
-        fbLiteEnabled = fbLiteEnabled, fbLiteStartTime = fbLiteStartTime, fbLiteEndTime = fbLiteEndTime,
-        ytEnabled = ytEnabled, ytStartTime = ytStartTime, ytEndTime = ytEndTime,
-        chromeEnabled = chromeEnabled, chromeStartTime = chromeStartTime, chromeEndTime = chromeEndTime,
-        deepStudyEnabled = deepStudyEnabled, buttonPhoneEnabled = buttonPhoneEnabled,
-        singleAppsBlockEnabled = singleAppsBlockEnabled, extremeBlockEnabled = extremeBlockEnabled,
-        singleWebsiteBlockEnabled = singleWebsiteBlockEnabled, familyBrowserEnabled = familyBrowserEnabled
+        lockAllTabs=lockAllTabs, forceAdultBlock=forceAdultBlock, forceReelsBlock=forceReelsBlock,
+        forceShortsBlock=forceShortsBlock, appControlEnabled=appControlEnabled, appMode=appMode,
+        allowedAppsCsv=allowedAppsCsv, blockedAppsCsv=blockedAppsCsv, webBlockEnabled=webBlockEnabled,
+        blockedWebsCsv=blockedWebsCsv, blockTaskManager=blockTaskManager, blockSettings=blockSettings,
+        blockFileManager=blockFileManager, blockedFoldersCsv=blockedFoldersCsv, internetFasting=internetFasting,
+        timeLimitMinutes=timeLimitMinutes, powerAction=powerAction, lockUntilEpoch=lockUntilEpoch,
+        lockType=lockType, newInstalledAppsCsv=newInstalledAppsCsv,
+        fbEnabled=fbEnabled, fbStartTime=fbStartTime, fbEndTime=fbEndTime,
+        fbLiteEnabled=fbLiteEnabled, fbLiteStartTime=fbLiteStartTime, fbLiteEndTime=fbLiteEndTime,
+        ytEnabled=ytEnabled, ytStartTime=ytStartTime, ytEndTime=ytEndTime,
+        chromeEnabled=chromeEnabled, chromeStartTime=chromeStartTime, chromeEndTime=chromeEndTime,
+        deepStudyEnabled=deepStudyEnabled, buttonPhoneEnabled=buttonPhoneEnabled,
+        singleAppsBlockEnabled=singleAppsBlockEnabled, extremeBlockEnabled=extremeBlockEnabled,
+        singleWebsiteBlockEnabled=singleWebsiteBlockEnabled, familyBrowserEnabled=familyBrowserEnabled
     )
 
 // ══════════════════════════════════════════════════════════════
@@ -320,8 +313,8 @@ fun ParentControlScreen(
                     InterfaceLockSection(activeControls, onControlChangeActive) { showToast(it) }
                     ContentBlockSection(activeControls, onControlChangeActive) { showToast(it) }
                     AppControlSection(activeControls, onControlChangeActive) { showToast(it) }
-                    SpecificAppsSection(activeControls, onControlChangeActive) { showToast(it) }
-                    SelfControlFeaturesSection(activeControls, onControlChangeActive) { showToast(it) }
+                    PcSpecificAppsSection(activeControls, onControlChangeActive) { showToast(it) }
+                    PcSelfControlFeaturesSection(activeControls, onControlChangeActive) { showToast(it) }
                     NewlyInstalledAppsSection(activeControls)
                     WebsiteBlockSection(activeControls, onControlChangeActive) { showToast(it) }
                     SystemLockSection(activeControls, onControlChangeActive) { showToast(it) }
@@ -1465,7 +1458,7 @@ private fun DividerLabel(text: String) {
 // ============================================================================
 
 @Composable
-private fun SpecificAppsSection(
+private fun PcSpecificAppsSection(
     c: ParentControls, onChange: (ParentControls) -> Unit, onToast: (String) -> Unit
 ) {
     Surface(
@@ -1595,7 +1588,7 @@ private fun NewlyInstalledAppsSection(
 }
 
 @Composable
-private fun SelfControlFeaturesSection(
+private fun PcSelfControlFeaturesSection(
     c: ParentControls, onChange: (ParentControls) -> Unit, onToast: (String) -> Unit
 ) {
     Surface(

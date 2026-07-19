@@ -171,6 +171,13 @@ class BlockerPrefs(context: Context) {
         get() = prefs.getBoolean("fb_video", false)
         set(v) = prefs.edit().putBoolean("fb_video", v).apply()
 
+    // পুরো Facebook app block — video/reels না, পুরো app-ই। Messenger এর
+    // Facebook icon সহ যেকোনো entry point দিয়ে খুললেও package foreground
+    // এ আসা মাত্রই kill হবে (locale/UI-text এর উপর নির্ভর করে না)।
+    var blockFacebookApp: Boolean
+        get() = prefs.getBoolean("fb_app_full", false)
+        set(v) = prefs.edit().putBoolean("fb_app_full", v).apply()
+
     var uninstallProtection: Boolean
         get() = prefs.getBoolean("uninstall_prot", false)
         set(v) = prefs.edit().putBoolean("uninstall_prot", v).apply()
@@ -462,12 +469,14 @@ class RasFocusBlockingService : AccessibilityService() {
             if (!handled) handled = handleWaBusinessBlocking(root, pkg)
             if (!handled) handled = handleTikTok(root, pkg)
             if (!handled && (pkg == "com.facebook.katana" || pkg == "com.facebook.lite")) {
-                handled = handleFacebookVideo(root, pkg)
+                handled = handleFacebookAppBlock(pkg)
+                if (!handled) handled = handleFacebookVideo(root, pkg)
                 if (!handled) handled = handleFacebookFeedShortVideo(root, pkg)
             }
 
             // ── Advanced ──
             if (!handled) handled = handleUnsupportedBrowsers(root, pkg)
+            if (!handled) handled = handleUnsupportedWebView(root, pkg)
             if (!handled) handled = handleNewlyInstalledApps(root, pkg)
 
             // ── Protection ──
@@ -528,10 +537,12 @@ class RasFocusBlockingService : AccessibilityService() {
             if (!handled) handled = handleWaBusinessBlocking(root, pkg)
             if (!handled) handled = handleTikTok(root, pkg)
             if (!handled) handled = handleUnsupportedBrowsers(root, pkg)
+            if (!handled) handled = handleUnsupportedWebView(root, pkg)
             if (!handled) handled = handleNewlyInstalledApps(root, pkg)
             if (!handled) handled = handleUninstallProtection(root, pkg)
             if (!handled) handleRebootProtection(root, pkg)
             if (!handled && (pkg == "com.facebook.katana" || pkg == "com.facebook.lite")) {
+                if (!handled) handled = handleFacebookAppBlock(pkg)
                 if (!handled) handled = handleFacebookVideo(root, pkg)
                 if (!handled) handleFacebookFeedShortVideo(root, pkg)
             }
@@ -1412,6 +1423,20 @@ class RasFocusBlockingService : AccessibilityService() {
         return false
     }
 
+    // ── পুরো Facebook app block ──
+    // সরাসরি package-name match করে instant kill করে — কোনো view-id বা
+    // on-screen text পড়ার দরকার নেই, তাই Facebook app update বা device
+    // language যাই হোক না কেন কাজ করবে। Messenger এর Facebook shortcut
+    // দিয়ে খুললেও com.facebook.katana foreground এ আসা মাত্রই ধরা পড়বে।
+    private fun handleFacebookAppBlock(pkg: String): Boolean {
+        if (!prefs.blockFacebookApp) return false
+        if (pkg == "com.facebook.katana" || pkg == "com.facebook.lite") {
+            forceKillAppAndGoHome(pkg, "Facebook Blocked", "Facebook is blocked on this device.")
+            return true
+        }
+        return false
+    }
+
     private fun handleFacebookVideo(root: AccessibilityNodeInfo, pkg: String): Boolean {
         if (!prefs.blockFbVideo) return false
         if (root.findAccessibilityNodeInfosByViewId("com.facebook.katana:id/watch_tab").isNotEmpty()
@@ -1563,6 +1588,44 @@ class RasFocusBlockingService : AccessibilityService() {
             performGlobalAction(GLOBAL_ACTION_HOME); return true
         }
         return false
+    }
+
+    // ── App-এর ভেতরের embedded WebView block (browser app না হয়েও web browsing) ──
+    // Messenger এর "Facebook" shortcut এরকম case ধরার জন্য — এখানে foreground
+    // package কখনো Facebook হয় না (Messenger-ই থাকে), তাই package-match দিয়ে
+    // ধরা যায় না। এর বদলে screen-এ বড়সড় android.webkit.WebView node আছে কিনা
+    // সেটা দেখে ধরা হচ্ছে — content কী সেটা matter করে না, কোনো webview মানেই block।
+    private fun findWebViewNode(node: AccessibilityNodeInfo, depth: Int = 0): AccessibilityNodeInfo? {
+        if (depth > 30) return null
+        if (node.className?.toString() == "android.webkit.WebView") return node
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            val found = findWebViewNode(child, depth + 1)
+            if (found != null) return found
+        }
+        return null
+    }
+
+    private fun handleUnsupportedWebView(root: AccessibilityNodeInfo, pkg: String): Boolean {
+        if (!prefs.blockUnsupported) return false
+        if (pkg.startsWith("com.android.") || pkg == "android") return false
+        if (pkg in ALL_BROWSER_PKGS) return false // এগুলো handleUnsupportedBrowsers/handleAdultContent দিয়ে আলাদাভাবে হ্যান্ডল হয়
+
+        val webView = findWebViewNode(root) ?: return false
+        if (!webView.isVisibleToUser) return false
+
+        // ছোট/hidden webview (Google/Facebook login popup, payment checkout ইত্যাদি)
+        // বাদ দিতে — screen area এর কমপক্ষে ৪৫% দখল করলে তবেই "browsing করছে" ধরা হবে।
+        val screenBounds = android.graphics.Rect()
+        root.getBoundsInScreen(screenBounds)
+        val wvBounds = android.graphics.Rect()
+        webView.getBoundsInScreen(wvBounds)
+        val screenArea = (screenBounds.width().toLong() * screenBounds.height().toLong()).coerceAtLeast(1)
+        val wvArea = wvBounds.width().toLong() * wvBounds.height().toLong()
+        if (wvArea * 100 / screenArea < 45) return false
+
+        forceKillAppAndGoHome(pkg, "Unsupported Browser", "এই app এর ভেতরের browser (WebView) ব্লক করা আছে।")
+        return true
     }
 
     private fun handleNewlyInstalledApps(root: AccessibilityNodeInfo, pkg: String): Boolean {
@@ -1920,6 +1983,7 @@ fun ExtremeBlockScreen() {
     var blockUnsupported by remember { mutableStateOf(prefs.blockUnsupported) }
     var blockNewApps     by remember { mutableStateOf(prefs.blockNewApps) }
     var blockFbVideo     by remember { mutableStateOf(prefs.blockFbVideo) }
+    var blockFacebookApp by remember { mutableStateOf(prefs.blockFacebookApp) }
 
     val dpm = remember { ctx.getSystemService(android.content.Context.DEVICE_POLICY_SERVICE) as android.app.admin.DevicePolicyManager }
     val adminComponent = remember { android.content.ComponentName(ctx, com.rasel.RasFocus.features.MyDeviceAdminReceiver::class.java) }
@@ -1974,7 +2038,13 @@ fun ExtremeBlockScreen() {
             for (row in 0..(size.height / spacing).toInt() + 1) drawLine(Color(0xFF131720), Offset(0f, row * spacing), Offset(size.width, row * spacing), strokeWidth = 0.5f)
         }
 
-        Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp).padding(top = 8.dp)) {
+        Column(modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .statusBarsPadding()
+            .padding(horizontal = 16.dp)
+            .padding(top = 16.dp, bottom = 24.dp)
+        ) {
             Spacer(Modifier.height(8.dp))
             HeaderBar(isActive = isServiceActive)
             Spacer(Modifier.height(12.dp))
@@ -2063,6 +2133,8 @@ fun ExtremeBlockScreen() {
                 RasSwitch(label = "Block newly installed apps", sublabel = "Prevents all new installs & APK sideloads", checked = blockNewApps, accentColor = ACCENT2, onCheckedChange = { if (it || !focusLockActive) { blockNewApps = it; prefs.blockNewApps = it; RasFocusBlockingService.instance?.checkCurrentWindow() } })
                 RasDivider()
                 RasSwitch(label = "Block Facebook video", sublabel = "Blocks Watch, Reels & inline videos", checked = blockFbVideo, accentColor = ACCENT2, onCheckedChange = { if (it || !focusLockActive) { blockFbVideo = it; prefs.blockFbVideo = it; RasFocusBlockingService.instance?.checkCurrentWindow() } })
+                RasDivider()
+                RasSwitch(label = "Block Facebook completely", sublabel = "Kills Facebook instantly — even opened via Messenger's Facebook icon", checked = blockFacebookApp, accentColor = ACCENT2, onCheckedChange = { if (it || !focusLockActive) { blockFacebookApp = it; prefs.blockFacebookApp = it; RasFocusBlockingService.instance?.checkCurrentWindow() } })
             }
 
             Spacer(Modifier.height(16.dp))
@@ -2552,4 +2624,3 @@ class ServiceRestartReceiver : android.content.BroadcastReceiver() {
 // FirebaseKeywordSync stub removed — real implementation lives in
 // FirebaseKeywordSync.kt (was causing a Redeclaration compile error).
 // ============================================================
-

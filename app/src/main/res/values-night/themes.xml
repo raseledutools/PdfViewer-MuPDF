@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Theme.BlockerHero" parent="android:Theme.DeviceDefault.NoActionBar" />
+
+    <!-- Night mode তেও Facebook bg একই — Facebook dark mode নিজেই handle করে -->
+    <style name="Theme.RasFocus.Facebook" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">#f0f2f5</item>
+        <item name="android:windowIsTranslucent">false</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
 </resources>

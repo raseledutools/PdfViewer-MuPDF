@@ -7,8 +7,15 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.Canvas
+import android.graphics.drawable.Drawable
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -143,91 +150,220 @@ fun BlockOverlayScreen(
         }
     }
 
+    // ── Clock state ─────────────────────────────────────────────────────────────
+    var timeStr by remember { mutableStateOf("") }
+    var dateStr by remember { mutableStateOf("") }
+    LaunchedEffect(Unit) {
+        while (true) {
+            val now = java.util.Calendar.getInstance()
+            val h   = now.get(java.util.Calendar.HOUR_OF_DAY)
+            val m   = now.get(java.util.Calendar.MINUTE)
+            timeStr = "%02d:%02d".format(h, m)
+            val days = arrayOf("Sun","Mon","Tue","Wed","Thu","Fri","Sat")
+            val months = arrayOf("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec")
+            dateStr = "${days[now.get(java.util.Calendar.DAY_OF_WEEK)-1]}, ${months[now.get(java.util.Calendar.MONTH)]} ${now.get(java.util.Calendar.DAY_OF_MONTH)}"
+            kotlinx.coroutines.delay(1000L)
+        }
+    }
+
+    // ── App icon ─────────────────────────────────────────────────────────────
+    val appIcon = remember(blockedPackage) {
+        try { context.packageManager.getApplicationIcon(blockedPackage) } catch (_: Exception) { null }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(com.rasel.RasFocus.ui.theme.RasFocusTheme.colors.surface, com.rasel.RasFocus.ui.theme.RasFocusTheme.colors.surface)
+                    colors = listOf(
+                        Color(0xFF0A0A1A),
+                        Color(0xFF0D1B2A),
+                        Color(0xFF0A0A1A)
+                    )
                 )
             )
     ) {
+        // ── Subtle grid pattern (launcher feel) ──────────────────────────────
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val step = 80.dp.toPx()
+            val paint = androidx.compose.ui.graphics.Paint().apply {
+                color = Color.White.copy(alpha = 0.03f)
+            }
+            var x = 0f
+            while (x < size.width) {
+                drawLine(Color.White.copy(alpha = 0.03f), androidx.compose.ui.geometry.Offset(x, 0f), androidx.compose.ui.geometry.Offset(x, size.height), 1f)
+                x += step
+            }
+            var y = 0f
+            while (y < size.height) {
+                drawLine(Color.White.copy(alpha = 0.03f), androidx.compose.ui.geometry.Offset(0f, y), androidx.compose.ui.geometry.Offset(size.width, y), 1f)
+                y += step
+            }
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(28.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .statusBarsPadding()
+                .navigationBarsPadding(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // ── Blocked icon ───────────────────────────────────────────────────
-            Box(
-                modifier = Modifier
-                    .size(90.dp)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(Color(0xFFEF4444).copy(alpha = 0.15f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Block,
-                    contentDescription = null,
-                    tint = Color(0xFFEF4444),
-                    modifier = Modifier.size(50.dp)
-                )
-            }
 
-            Spacer(Modifier.height(24.dp))
-
+            // ── TOP: Clock (launcher-এর মতো) ────────────────────────────────
+            Spacer(Modifier.height(48.dp))
             Text(
-                text = "blocked!",
-                fontSize = 14.sp,
-                color = Color(0xFFEF4444),
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 3.sp
-            )
-
-            Spacer(Modifier.height(8.dp))
-
-            Text(
-                text = appName,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.ExtraBold,
+                text = timeStr,
+                fontSize = 72.sp,
+                fontWeight = FontWeight.Thin,
                 color = Color.White,
-                textAlign = TextAlign.Center
+                letterSpacing = (-2).sp
             )
-
-            Spacer(Modifier.height(8.dp))
-
             Text(
-                text = "\"${profile.profileName}\" profile দ্বারা block করা হয়েছে",
-                fontSize = 14.sp,
-                color = Color(0xFF94A3B8),
-                textAlign = TextAlign.Center
+                text = dateStr,
+                fontSize = 15.sp,
+                color = Color.White.copy(alpha = 0.6f),
+                letterSpacing = 1.sp
             )
 
-            Spacer(Modifier.height(36.dp))
+            Spacer(Modifier.weight(1f))
 
-            // ── Mode-specific unlock UI ────────────────────────────────────────
-            when (profile.lockMode) {
-                1 -> PinUnlockSection(profile.parentPin, onUnlocked)
-                2 -> LongTextUnlockSection(onUnlocked)
-                3 -> DailyLimitInfoSection(blockedPackage, profile.dailyLimitMinutes, context)
-                4 -> HourlyLimitInfoSection(profile.hourlyLimitMinutes)
-                else -> SelfControlInfoSection(profile)   // 0 = self control
+            // ── MIDDLE: Blocked app card (professional glass card) ───────────
+            val cardScrollState = rememberScrollState()
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
+                shape = RoundedCornerShape(28.dp),
+                color = Color.White.copy(alpha = 0.08f),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.15f))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(28.dp)
+                        .verticalScroll(cardScrollState),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // App icon with blocked overlay
+                    Box(contentAlignment = Alignment.BottomEnd) {
+                        if (appIcon != null) {
+                            val bmp = remember(appIcon) {
+                                val b = android.graphics.Bitmap.createBitmap(
+                                    appIcon.intrinsicWidth.coerceAtLeast(1),
+                                    appIcon.intrinsicHeight.coerceAtLeast(1),
+                                    android.graphics.Bitmap.Config.ARGB_8888
+                                )
+                                val c = android.graphics.Canvas(b)
+                                appIcon.setBounds(0, 0, c.width, c.height)
+                                appIcon.draw(c)
+                                b.asImageBitmap()
+                            }
+                            androidx.compose.foundation.Image(
+                                bitmap = bmp,
+                                contentDescription = null,
+                                modifier = Modifier.size(72.dp).clip(RoundedCornerShape(18.dp))
+                            )
+                        } else {
+                            Box(
+                                Modifier.size(72.dp).clip(RoundedCornerShape(18.dp))
+                                    .background(Color(0xFF1E293B)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.Apps, null, tint = Color.White.copy(0.5f), modifier = Modifier.size(36.dp))
+                            }
+                        }
+                        // Red block badge
+                        Box(
+                            Modifier
+                                .size(24.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFEF4444)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Block, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                        }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    Text(
+                        text = appName,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = "\u201C${profile.profileName}\u201D",
+                        fontSize = 13.sp,
+                        color = Color(0xFF64748B),
+                        letterSpacing = 0.5.sp
+                    )
+
+                    Spacer(Modifier.height(24.dp))
+
+                    HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                    Spacer(Modifier.height(20.dp))
+
+                    // ── Mode-specific unlock UI ────────────────────────────
+                    when (profile.lockMode) {
+                        1 -> PinUnlockSection(profile.parentPin, onUnlocked)
+                        2 -> LongTextUnlockSection(onUnlocked)
+                        3 -> DailyLimitInfoSection(blockedPackage, profile.dailyLimitMinutes, context)
+                        4 -> HourlyLimitInfoSection(profile.hourlyLimitMinutes)
+                        else -> SelfControlInfoSection(profile)
+                    }
+                }
             }
 
-            Spacer(Modifier.height(36.dp))
+            Spacer(Modifier.weight(1f))
 
-            // ── Go Home button — always visible ───────────────────────────────
-            OutlinedButton(
-                onClick = onGoHome,
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.3f))
+            // ── BOTTOM: Launcher dock ────────────────────────────────────────
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp)
+                    .padding(bottom = 32.dp),
+                shape = RoundedCornerShape(32.dp),
+                color = Color.White.copy(alpha = 0.1f),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.15f))
             ) {
-                Icon(Icons.Default.Home, contentDescription = null, modifier = Modifier.size(20.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Home এ যাও", fontWeight = FontWeight.Bold)
+                Row(
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Home button (dock icon style)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(16.dp))
+                            .clickable(onClick = onGoHome)
+                            .padding(horizontal = 20.dp, vertical = 8.dp)
+                    ) {
+                        Box(
+                            Modifier
+                                .size(52.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(Color(0xFF1E3A5F)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.Home,
+                                contentDescription = "Home",
+                                tint = Color(0xFF60A5FA),
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            "Home",
+                            fontSize = 11.sp,
+                            color = Color.White.copy(0.7f),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
             }
         }
     }
@@ -360,6 +496,27 @@ fun LongTextUnlockSection(onUnlocked: () -> Unit) {
 // ── Self Control info (no unlock) ──────────────────────────────────────────────
 @Composable
 fun SelfControlInfoSection(profile: BlockingFocusProfile) {
+    val context = LocalContext.current
+
+    // FIX: আগে profile.selfDays/selfHours/selfMinutes দেখাত — এগুলো session
+    // setup-এর সময়ের value, actual remaining time না। তাই "wrong day" দেখাত।
+    // এখন SharedPreferences থেকে KEY_BREAK_END নিয়ে actual remaining calculate করছি।
+    val remainingLabel = remember {
+        val endTime = context.getSharedPreferences("take_rest_prefs", Context.MODE_PRIVATE)
+            .getLong("break_end_time", 0L)
+        val remaining = endTime - System.currentTimeMillis()
+        if (remaining <= 0L) return@remember "শেষ হয়ে গেছে"
+        val totalSec  = remaining / 1000L
+        val d = totalSec / 86400L
+        val h = (totalSec % 86400L) / 3600L
+        val m = (totalSec % 3600L) / 60L
+        buildString {
+            if (d > 0) append("${d}d ")
+            if (h > 0) append("${h}h ")
+            append("${m}m")
+        }.trim().ifBlank { "< 1m" }
+    }
+
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF14532D).copy(alpha = 0.5f))
@@ -372,13 +529,8 @@ fun SelfControlInfoSection(profile: BlockingFocusProfile) {
             Spacer(Modifier.height(10.dp))
             Text("Self Control Mode", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = com.rasel.RasFocus.ui.theme.RasFocusTheme.colors.primary)
             Spacer(Modifier.height(8.dp))
-            val label = buildString {
-                if (profile.selfDays   > 0) append("${profile.selfDays}d ")
-                if (profile.selfHours  > 0) append("${profile.selfHours}h ")
-                append("${profile.selfMinutes}m")
-            }
             Text(
-                text = "Timer শেষ হলে ($label) block উঠবে।\nএখন unlock করা যাবে না।",
+                text = "বাকি সময়: $remainingLabel\nTimer শেষ হলে block উঠবে। এখন unlock করা যাবে না।",
                 fontSize = 14.sp,
                 color = Color(0xFF94A3B8),
                 textAlign = TextAlign.Center,

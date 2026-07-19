@@ -13,64 +13,98 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.core.app.NotificationCompat
 import com.rasel.RasFocus.combo.selfcontrol.familybrowser.FamilyBrowserActivity
+import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
 /**
- * FloatingWindowService
+ * FloatingWindowService — MULTI-WINDOW সংস্করণ
  *
- * যেকোনো tab এর URL কে একটা draggable, resizable floating WebView এ দেখায়।
+ * প্রতিটা tab এর জন্য আলাদা floating bubble/window। একসাথে একাধিক tab
+ * floating অবস্থায় থাকতে পারে — নতুন tab float করলে আগেরটা বন্ধ হয় না।
+ *
+ * প্রতিটা window এর নিজস্ব state (`FloatWindow`) থাকে, তাই কোনো shared
+ * class-level var নেই যেটা windows-এর মধ্যে conflict করতে পারে।
+ *
  * SYSTEM_ALERT_WINDOW permission দরকার।
  *
  * Usage:
- *   FloatingWindowService.launch(context, url, title)
- *   FloatingWindowService.dismiss(context)
+ *   FloatingWindowService.launch(context, url, title)   // নতুন id দিয়ে launch
+ *   FloatingWindowService.dismissAll(context)           // সব বন্ধ করো
  */
 class FloatingWindowService : Service() {
 
     companion object {
-        const val ACTION_LAUNCH  = "com.rasel.familybrowser.FLOAT_LAUNCH"
-        const val ACTION_DISMISS = "com.rasel.familybrowser.FLOAT_DISMISS"
+        const val ACTION_LAUNCH      = "com.rasel.familybrowser.FLOAT_LAUNCH"
+        const val ACTION_DISMISS     = "com.rasel.familybrowser.FLOAT_DISMISS"
+        const val ACTION_DISMISS_ALL = "com.rasel.familybrowser.FLOAT_DISMISS_ALL"
         const val EXTRA_URL      = "float_url"
         const val EXTRA_TITLE    = "float_title"
+        const val EXTRA_WINDOW_ID = "float_window_id"
         private const val NOTIF_ID   = 8888
         private const val CHANNEL_ID = "float_window_channel"
+        private const val BUBBLE_CONTENT_TAG = 991001
+        private const val BUBBLE_ICON_TAG    = 991002
 
-        fun launch(context: Context, url: String, title: String) {
+        /** নতুন floating window খোলে — প্রতিটা কলের জন্য নতুন unique windowId তৈরি হয়, তাই আগেরগুলো বন্ধ হয় না। */
+        fun launch(context: Context, url: String, title: String): String {
+            val windowId = "fw_${System.currentTimeMillis()}_${(0..999).random()}"
             val intent = Intent(context, FloatingWindowService::class.java).apply {
                 action = ACTION_LAUNCH
                 putExtra(EXTRA_URL, url)
                 putExtra(EXTRA_TITLE, title)
+                putExtra(EXTRA_WINDOW_ID, windowId)
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
                 context.startForegroundService(intent)
             else
                 context.startService(intent)
+            return windowId
         }
 
-        fun dismiss(context: Context) {
+        /** একটা নির্দিষ্ট windowId এর floating window বন্ধ করে। */
+        fun dismiss(context: Context, windowId: String) {
             context.startService(
                 Intent(context, FloatingWindowService::class.java).apply {
                     action = ACTION_DISMISS
+                    putExtra(EXTRA_WINDOW_ID, windowId)
+                })
+        }
+
+        /** সব floating window বন্ধ করে (পুরনো single-window callers এর জন্য backward-compatible)। */
+        fun dismissAll(context: Context) {
+            context.startService(
+                Intent(context, FloatingWindowService::class.java).apply {
+                    action = ACTION_DISMISS_ALL
                 })
         }
     }
 
+    /** প্রতিটা floating tab-এর নিজস্ব সম্পূর্ণ state — কোনো shared var নেই, তাই একাধিক window নিরাপদে সহাবস্থান করতে পারে। */
+    private inner class FloatWindow(val id: String, val url: String, val title: String) {
+        var floatRoot: View? = null
+        var webView: WebView? = null
+        lateinit var params: WindowManager.LayoutParams
+
+        var winW = 0
+        var winH = 0
+        var posX = 0
+        var posY = 0
+
+        var isMinimized = false
+        var expandedW = 0
+        var expandedH = 0
+        var expandedX = 0
+        var expandedY = 0
+
+        var resizeStartW = 0
+        var resizeStartH = 0
+        var resizeStartX = 0f
+        var resizeStartY = 0f
+    }
+
     private lateinit var windowManager: WindowManager
-    private var floatRoot: View?    = null
-    private var webView:  WebView? = null
-
-    // Window size & position
-    private var winW = 0
-    private var winH = 0
-    private var posX = 100
-    private var posY = 200
-
-    // Resize state
-    private var resizeStartW = 0
-    private var resizeStartH = 0
-    private var resizeStartX = 0f
-    private var resizeStartY = 0f
+    private val windows = LinkedHashMap<String, FloatWindow>()
 
     // ── Lifecycle ──────────────────────────────────────────────────────────────
 
@@ -78,22 +112,28 @@ class FloatingWindowService : Service() {
         super.onCreate()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         createNotificationChannel()
-
-        // Default size = 60% of screen width, 50% height
-        val dm = resources.displayMetrics
-        winW = (dm.widthPixels  * 0.60f).toInt()
-        winH = (dm.heightPixels * 0.50f).toInt()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startForeground(NOTIF_ID, buildNotification())
         when (intent?.action) {
-            ACTION_DISMISS -> { removeWindow(); stopSelf(); return START_NOT_STICKY }
-            ACTION_LAUNCH  -> {
-                val url   = intent.getStringExtra(EXTRA_URL)   ?: "about:blank"
-                val title = intent.getStringExtra(EXTRA_TITLE) ?: "Floating Tab"
-                removeWindow()        // পুরনো থাকলে সরাও
-                addWindow(url, title)
+            ACTION_DISMISS -> {
+                val id = intent.getStringExtra(EXTRA_WINDOW_ID)
+                if (id != null) removeWindow(id)
+                if (windows.isEmpty()) { stopSelf(); return START_NOT_STICKY }
+            }
+            ACTION_DISMISS_ALL -> {
+                removeAllWindows()
+                stopSelf()
+                return START_NOT_STICKY
+            }
+            ACTION_LAUNCH -> {
+                val url      = intent.getStringExtra(EXTRA_URL)   ?: "about:blank"
+                val title    = intent.getStringExtra(EXTRA_TITLE) ?: "Floating Tab"
+                val windowId = intent.getStringExtra(EXTRA_WINDOW_ID)
+                    ?: "fw_${System.currentTimeMillis()}"
+                addWindow(windowId, url, title)
+                updateNotification()
             }
         }
         return START_STICKY
@@ -102,23 +142,34 @@ class FloatingWindowService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
-        removeWindow()
+        removeAllWindows()
         super.onDestroy()
     }
 
     // ── Window creation ────────────────────────────────────────────────────────
 
     @SuppressLint("ClickableViewAccessibility", "SetJavaScriptEnabled", "InflateParams")
-    private fun addWindow(url: String, title: String) {
+    private fun addWindow(windowId: String, url: String, title: String) {
+        val fw = FloatWindow(windowId, url, title)
+        windows[windowId] = fw
+
+        val dm = resources.displayMetrics
+        fw.winW = (dm.widthPixels  * 0.60f).toInt()
+        fw.winH = (dm.heightPixels * 0.50f).toInt()
+
+        // নতুন window গুলো একটু একটু করে cascade (সরিয়ে) বসাও, যাতে একে অপরকে পুরোপুরি না ঢাকে
+        val cascadeOffset = (windows.size - 1) * dp(28)
+        fw.posX = 60 + cascadeOffset
+        fw.posY = 140 + cascadeOffset
+
         val overlayType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
         else
             @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE
 
         val params = WindowManager.LayoutParams(
-            winW, winH, posX, posY,
+            fw.winW, fw.winH, fw.posX, fw.posY,
             overlayType,
-            // FLAG_NOT_FOCUSABLE সরানো হয়েছে — WebView এ keyboard আসার জন্য
             WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
             WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
@@ -127,25 +178,23 @@ class FloatingWindowService : Service() {
             gravity = Gravity.TOP or Gravity.START
             softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
         }
+        fw.params = params
 
-        // ── Root container ─────────────────────────────────────────────────────
-        val root = buildRootView(url, title, params)
-        floatRoot = root
+        val root = buildRootView(fw)
+        fw.floatRoot = root
         windowManager.addView(root, params)
     }
 
     @SuppressLint("ClickableViewAccessibility", "SetJavaScriptEnabled")
-    private fun buildRootView(
-        url: String,
-        title: String,
-        params: WindowManager.LayoutParams
-    ): View {
+    private fun buildRootView(fw: FloatWindow): View {
         val dm = resources.displayMetrics
         val screenW = dm.widthPixels
         val screenH = dm.heightPixels
+        val params = fw.params
 
-        // Container
+        // Container — normal content (titlebar + webview + resize handle)
         val container = object : android.widget.LinearLayout(this) {}.apply {
+            id = BUBBLE_CONTENT_TAG
             orientation = android.widget.LinearLayout.VERTICAL
             setBackgroundResource(android.R.drawable.dialog_holo_light_frame)
             clipToOutline = true
@@ -160,7 +209,7 @@ class FloatingWindowService : Service() {
         }
 
         val titleTv = android.widget.TextView(this).apply {
-            text      = title.take(30)
+            text      = fw.title.take(30)
             textSize  = 13f
             setTextColor(0xFFFFFFFF.toInt())
             layoutParams = android.widget.LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
@@ -172,36 +221,43 @@ class FloatingWindowService : Service() {
         val btnSize = buildIconButton("⊡") {
             val newW: Int
             val newH: Int
-            if (winW < screenW * 0.85f) {
+            if (fw.winW < screenW * 0.85f) {
                 newW = (screenW * 0.90f).toInt()
                 newH = (screenH * 0.80f).toInt()
             } else {
                 newW = (screenW * 0.60f).toInt()
                 newH = (screenH * 0.50f).toInt()
             }
-            winW = newW; winH = newH
-            params.width = winW; params.height = winH
-            clampPosition(screenW, screenH, params)
-            windowManager.updateViewLayout(floatRoot, params)
+            fw.winW = newW; fw.winH = newH
+            params.width = fw.winW; params.height = fw.winH
+            clampPosition(screenW, screenH, params, fw)
+            windowManager.updateViewLayout(fw.floatRoot, params)
         }
 
-        // Open in main browser
+        // Minimize button — WebView destroy না করে ছোট bubble এ shrink করে
+        val btnMinimize = buildIconButton("▬") {
+            showMinimized(fw)
+        }
+
+        // Open in main browser — এই window বন্ধ করে main app এ ঐ page চালু করে
         val btnOpen = buildIconButton("⤤") {
             val i = Intent(this@FloatingWindowService, FamilyBrowserActivity::class.java).apply {
-                data  = android.net.Uri.parse(url)
+                data  = android.net.Uri.parse(fw.url)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
             }
             startActivity(i)
-            stopSelf()
+            removeWindow(fw.id)
+            if (windows.isEmpty()) stopSelf()
         }
 
-        // Close button
+        // Close button — শুধু এই windowId টাই বন্ধ হবে, বাকিগুলো থাকবে
         val btnClose = buildIconButton("✕") {
-            removeWindow()
-            stopSelf()
+            removeWindow(fw.id)
+            if (windows.isEmpty()) stopSelf()
         }
 
         titleBar.addView(titleTv)
+        titleBar.addView(btnMinimize)
         titleBar.addView(btnSize)
         titleBar.addView(btnOpen)
         titleBar.addView(btnClose)
@@ -221,23 +277,21 @@ class FloatingWindowService : Service() {
                     dragStartY = ev.rawY
                     dragParamsX = params.x
                     dragParamsY = params.y
-                    // Drag এর সময় keyboard সরিয়ে দাও
                     params.flags = params.flags or
                         WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                    windowManager.updateViewLayout(floatRoot, params)
+                    windowManager.updateViewLayout(fw.floatRoot, params)
                 }
                 MotionEvent.ACTION_MOVE -> if (dragging) {
                     params.x = dragParamsX + (ev.rawX - dragStartX).toInt()
                     params.y = dragParamsY + (ev.rawY - dragStartY).toInt()
-                    clampPosition(screenW, screenH, params)
-                    windowManager.updateViewLayout(floatRoot, params)
+                    clampPosition(screenW, screenH, params, fw)
+                    windowManager.updateViewLayout(fw.floatRoot, params)
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     dragging = false
-                    // Drag শেষে keyboard আবার আসতে পারবে
                     params.flags = params.flags and
                         WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE.inv()
-                    windowManager.updateViewLayout(floatRoot, params)
+                    windowManager.updateViewLayout(fw.floatRoot, params)
                 }
             }
             true
@@ -260,26 +314,18 @@ class FloatingWindowService : Service() {
                 userAgentString = "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.82 Mobile Safari/537.36"
             }
 
-            // ── WebView focusable — keyboard কাজ করবে ────────────────────
             isFocusable = true
             isFocusableInTouchMode = true
 
             webViewClient = object : WebViewClient() {
 
-                // ── Adult block (shouldInterceptRequest) ──────────────────
-                // Sub-resource silent block, main frame → block page (আগে
-                // empty HTML দিচ্ছিল → white screen হত)
                 override fun shouldInterceptRequest(
                     view: WebView,
                     request: android.webkit.WebResourceRequest
                 ): android.webkit.WebResourceResponse? {
                     val reqUrl = request.url.toString()
-                    // FIX: was domain-only (isAdultSite) — missed adult
-                    // keywords typed into a search box on an otherwise
-                    // non-adult domain. Same FirebaseKeywordSync check the
-                    // full-page browser already has.
-                    val isDomainBlocked  = com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.isAdultSite(reqUrl)
-                    val isKeywordBlocked = com.rasel.RasFocus.selfcontrol.FirebaseKeywordSync.containsAdultKeyword(reqUrl)
+                    val isDomainBlocked  = com.rasel.RasFocus.combo.selfcontrol.familybrowser.AdBlocker.isAdultSite(reqUrl)
+                    val isKeywordBlocked = com.rasel.RasFocus.combo.selfcontrol.FirebaseKeywordSync.containsAdultKeyword(reqUrl)
                     if (isDomainBlocked || isKeywordBlocked) {
                         return if (request.isForMainFrame) {
                             android.webkit.WebResourceResponse(
@@ -293,23 +339,20 @@ class FloatingWindowService : Service() {
                     return super.shouldInterceptRequest(view, request)
                 }
 
-                // ── Adult block + Safe Search (shouldOverrideUrlLoading) ──
                 override fun shouldOverrideUrlLoading(
                     view: WebView,
                     request: android.webkit.WebResourceRequest
                 ): Boolean {
                     val reqUrl = request.url.toString()
 
-                    // Adult site or keyword → block page দেখাও
-                    val isDomainBlocked  = com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.isAdultSite(reqUrl)
-                    val isKeywordBlocked = com.rasel.RasFocus.selfcontrol.FirebaseKeywordSync.containsAdultKeyword(reqUrl)
+                    val isDomainBlocked  = com.rasel.RasFocus.combo.selfcontrol.familybrowser.AdBlocker.isAdultSite(reqUrl)
+                    val isKeywordBlocked = com.rasel.RasFocus.combo.selfcontrol.FirebaseKeywordSync.containsAdultKeyword(reqUrl)
                     if (isDomainBlocked || isKeywordBlocked) {
                         view.loadDataWithBaseURL(null, buildFloatingBlockPage(), "text/html", "UTF-8", null)
                         return true
                     }
 
-                    // Safe Search enforce
-                    val safeUrl = com.rasel.RasFocus.selfcontrol.familybrowser.SafeSearchEnforcer
+                    val safeUrl = com.rasel.RasFocus.combo.selfcontrol.familybrowser.SafeSearchEnforcer
                         .enforceIfNeeded(reqUrl)
                     if (safeUrl != null) {
                         view.loadUrl(safeUrl)
@@ -321,15 +364,13 @@ class FloatingWindowService : Service() {
 
                 override fun onPageFinished(view: WebView, pageUrl: String) {
                     titleTv.text = (view.title ?: pageUrl).take(30)
-                    // FIX: floating mode-এ JS inject হচ্ছিল না — তাই "Open in App"
-                    // banner পুরো screen ঢেকে white screen দেখাত।
                     injectBannerRemover(view)
                     injectFooterRemover(view)
                 }
             }
-            loadUrl(url)
+            loadUrl(fw.url)
         }
-        webView = wv
+        fw.webView = wv
 
         // ── Resize handle (bottom-right corner) ───────────────────────────────
         val resizeHandle = android.widget.TextView(this).apply {
@@ -347,18 +388,18 @@ class FloatingWindowService : Service() {
         resizeHandle.setOnTouchListener { _, ev ->
             when (ev.action) {
                 MotionEvent.ACTION_DOWN -> {
-                    resizeStartW = params.width
-                    resizeStartH = params.height
-                    resizeStartX = ev.rawX
-                    resizeStartY = ev.rawY
+                    fw.resizeStartW = params.width
+                    fw.resizeStartH = params.height
+                    fw.resizeStartX = ev.rawX
+                    fw.resizeStartY = ev.rawY
                 }
                 MotionEvent.ACTION_MOVE -> {
-                    val dX = (ev.rawX - resizeStartX).toInt()
-                    val dY = (ev.rawY - resizeStartY).toInt()
-                    params.width  = max(dp(200), min(screenW, resizeStartW + dX))
-                    params.height = max(dp(150), min(screenH - params.y, resizeStartH + dY))
-                    winW = params.width; winH = params.height
-                    windowManager.updateViewLayout(floatRoot, params)
+                    val dX = (ev.rawX - fw.resizeStartX).toInt()
+                    val dY = (ev.rawY - fw.resizeStartY).toInt()
+                    params.width  = max(dp(200), min(screenW, fw.resizeStartW + dX))
+                    params.height = max(dp(150), min(screenH - params.y, fw.resizeStartH + dY))
+                    fw.winW = params.width; fw.winH = params.height
+                    windowManager.updateViewLayout(fw.floatRoot, params)
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {}
             }
@@ -368,15 +409,75 @@ class FloatingWindowService : Service() {
         container.addView(titleBar)
         container.addView(wv)
         container.addView(resizeHandle)
-        return container
+
+        // ── Bubble icon — minimize করলে এটা visible হয়, ট্যাপ করলে restore, drag করেও সরানো যায় ──
+        var bubbleDragStartX = 0f
+        var bubbleDragStartY = 0f
+        var bubbleParamsX = 0
+        var bubbleParamsY = 0
+        var bubbleDragging = false
+        var bubbleMoved = false
+
+        val bubbleIcon = android.widget.TextView(this).apply {
+            id = BUBBLE_ICON_TAG
+            text = "🌐"
+            textSize = 26f
+            gravity = Gravity.CENTER
+            setBackgroundColor(0xFF2563EB.toInt())
+            visibility = View.GONE
+            layoutParams = android.widget.FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            setOnTouchListener { _, ev ->
+                when (ev.action) {
+                    MotionEvent.ACTION_DOWN -> {
+                        bubbleDragging = true
+                        bubbleMoved = false
+                        bubbleDragStartX = ev.rawX
+                        bubbleDragStartY = ev.rawY
+                        bubbleParamsX = params.x
+                        bubbleParamsY = params.y
+                    }
+                    MotionEvent.ACTION_MOVE -> if (bubbleDragging) {
+                        val dX = (ev.rawX - bubbleDragStartX).toInt()
+                        val dY = (ev.rawY - bubbleDragStartY).toInt()
+                        if (abs(dX) > 8 || abs(dY) > 8) bubbleMoved = true
+                        params.x = bubbleParamsX + dX
+                        params.y = bubbleParamsY + dY
+                        clampPosition(screenW, screenH, params, fw)
+                        windowManager.updateViewLayout(fw.floatRoot, params)
+                    }
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                        bubbleDragging = false
+                        if (!bubbleMoved) restoreFromMinimized(fw)
+                    }
+                }
+                true
+            }
+        }
+
+        // Outer wrapper — content ও bubble icon একই জায়গায় স্ট্যাক করা, প্রয়োজনমতো toggle
+        val outer = android.widget.FrameLayout(this).apply {
+            clipToOutline = true
+            outlineProvider = object : android.view.ViewOutlineProvider() {
+                override fun getOutline(view: View, outline: android.graphics.Outline) {
+                    outline.setRoundRect(0, 0, view.width, view.height, dp(10).toFloat())
+                }
+            }
+        }
+        outer.addView(container)
+        outer.addView(bubbleIcon)
+
+        return outer
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────
 
-    private fun clampPosition(screenW: Int, screenH: Int, p: WindowManager.LayoutParams) {
+    private fun clampPosition(screenW: Int, screenH: Int, p: WindowManager.LayoutParams, fw: FloatWindow) {
         p.x = max(0, min(screenW - p.width,  p.x))
         p.y = max(0, min(screenH - p.height, p.y))
-        posX = p.x; posY = p.y
+        fw.posX = p.x; fw.posY = p.y
     }
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
@@ -390,10 +491,67 @@ class FloatingWindowService : Service() {
             setOnClickListener { onClick() }
         }
 
-    private fun removeWindow() {
-        webView?.destroy(); webView = null
-        floatRoot?.let { runCatching { windowManager.removeView(it) } }
-        floatRoot = null
+    private fun removeWindow(windowId: String) {
+        val fw = windows.remove(windowId) ?: return
+        fw.webView?.destroy(); fw.webView = null
+        fw.floatRoot?.let { runCatching { windowManager.removeView(it) } }
+        fw.floatRoot = null
+    }
+
+    private fun removeAllWindows() {
+        val ids = windows.keys.toList()
+        ids.forEach { removeWindow(it) }
+    }
+
+    // ── Minimize ↔ Restore ──────────────────────────────────────────────────────
+    // WebView destroy না করে window কে ছোট bubble সাইজে shrink করে (YouTube/Facebook
+    // floating এর মতোই আচরণ), bubble ট্যাপ করলে আগের সাইজে ফিরে যায়।
+    private fun showMinimized(fw: FloatWindow) {
+        if (fw.isMinimized) return
+        val root = fw.floatRoot ?: return
+        val params = fw.params
+        val dm = resources.displayMetrics
+
+        fw.expandedW = params.width
+        fw.expandedH = params.height
+        fw.expandedX = params.x
+        fw.expandedY = params.y
+
+        val bubbleSize = dp(64)
+        // Minimized bubble গুলো একটার নিচে একটা stack — কোন windows আগে থেকে
+        // minimized আছে তার সংখ্যা গুনে vertical offset ঠিক করা হয়
+        val minimizedCountBefore = windows.values.count { it !== fw && it.isMinimized }
+        params.width  = bubbleSize
+        params.height = bubbleSize
+        params.x = dm.widthPixels - bubbleSize - dp(16)
+        params.y = dp(140) + minimizedCountBefore * (bubbleSize + dp(12))
+        fw.winW = bubbleSize; fw.winH = bubbleSize
+        fw.posX = params.x; fw.posY = params.y
+
+        root.findViewById<View>(BUBBLE_CONTENT_TAG)?.visibility = View.GONE
+        root.findViewById<View>(BUBBLE_ICON_TAG)?.visibility = View.VISIBLE
+
+        windowManager.updateViewLayout(root, params)
+        fw.isMinimized = true
+    }
+
+    private fun restoreFromMinimized(fw: FloatWindow) {
+        if (!fw.isMinimized) return
+        val root = fw.floatRoot ?: return
+        val params = fw.params
+
+        params.width  = fw.expandedW
+        params.height = fw.expandedH
+        params.x = fw.expandedX
+        params.y = fw.expandedY
+        fw.winW = fw.expandedW; fw.winH = fw.expandedH
+        fw.posX = fw.expandedX; fw.posY = fw.expandedY
+
+        root.findViewById<View>(BUBBLE_CONTENT_TAG)?.visibility = View.VISIBLE
+        root.findViewById<View>(BUBBLE_ICON_TAG)?.visibility = View.GONE
+
+        windowManager.updateViewLayout(root, params)
+        fw.isMinimized = false
     }
 
     // ── Notification ───────────────────────────────────────────────────────────
@@ -406,18 +564,25 @@ class FloatingWindowService : Service() {
         )
         val stopIntent = PendingIntent.getService(
             this, 1,
-            Intent(this, FloatingWindowService::class.java).apply { action = ACTION_DISMISS },
+            Intent(this, FloatingWindowService::class.java).apply { action = ACTION_DISMISS_ALL },
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
+        val count = windows.size
+        val text = if (count > 1) "$count floating tabs active" else "Tap to open browser"
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_menu_view)
-            .setContentTitle("RasBrowser — Floating Tab")
-            .setContentText("Tap to open browser")
+            .setContentTitle("RasBrowser — Floating Tab${if (count > 1) "s" else ""}")
+            .setContentText(text)
             .setContentIntent(openIntent)
-            .addAction(android.R.drawable.ic_delete, "Close", stopIntent)
+            .addAction(android.R.drawable.ic_delete, "Close All", stopIntent)
             .setOngoing(true)
             .setSilent(true)
             .build()
+    }
+
+    private fun updateNotification() {
+        val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        nm.notify(NOTIF_ID, buildNotification())
     }
 
     private fun createNotificationChannel() {
@@ -487,8 +652,6 @@ class FloatingWindowService : Service() {
     }
 
     // ── Facebook footer/bottom-nav layer remove ───────────────────────────
-    // FB mobile-এ নিচে একটা sticky footer থাকে যেটা floating window-এর
-    // ছোট সাইজে content area খেয়ে ফেলে। এটা hide করলে বেশি content দেখা যায়।
     private fun injectFooterRemover(view: android.webkit.WebView) {
         view.evaluateJavascript("""
             (function() {
@@ -496,7 +659,6 @@ class FloatingWindowService : Service() {
                 window.__rasFloatFooterRemoved__ = true;
                 function removeFooter() {
                     try {
-                        // FB mobile bottom nav bar
                         var selectors = [
                             '[role="navigation"]',
                             '[data-sigil="MBackPlaceholder"]',
@@ -512,7 +674,6 @@ class FloatingWindowService : Service() {
                                 }
                             });
                         });
-                        // যেকোনো sticky/fixed bottom element
                         document.querySelectorAll('*').forEach(function(el) {
                             var s = window.getComputedStyle(el);
                             if ((s.position === 'fixed' || s.position === 'sticky') && s.bottom === '0px') {

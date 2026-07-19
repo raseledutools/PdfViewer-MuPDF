@@ -50,6 +50,36 @@ import com.google.firebase.ktx.Firebase
 //  THEME — matches ParentControlScreen.kt's palette so PC control
 //  and Phone control feel like one product.
 // ══════════════════════════════════════════════════════════════
+// ── NEW FEATURE DATA CLASSES ──────────────────────────────────
+data class InstalledApp(
+    val packageName: String,
+    val appName: String,
+    val installTime: Long = 0L
+)
+
+data class BlockedAppEntry(
+    val packageName: String,
+    val appName: String,
+    val lockEnabled: Boolean = false,
+    val timeRangeEnabled: Boolean = false,
+    val startHour: Int = 0,
+    val startMin: Int = 0,
+    val endHour: Int = 23,
+    val endMin: Int = 59,
+    val dailyLimitMinutes: Int = 0,
+    val hourlyLimitMinutes: Int = 0
+)
+
+data class AllowedAppEntry(
+    val packageName: String,
+    val appName: String,
+    val timeRangeEnabled: Boolean = false,
+    val startHour: Int = 0,
+    val startMin: Int = 0,
+    val endHour: Int = 23,
+    val endMin: Int = 59
+)
+
 private val BgDark = Color(0xFF0F172A)
 private val SurfaceCard = Color(0xFF1E293B)
 private val SurfaceDeep = Color(0xFF334155)
@@ -120,7 +150,11 @@ fun ChildPhoneControlScreen(
                     verticalArrangement = Arrangement.spacedBy(18.dp)
                 ) {
                     PhoneHeader(device = device, onBack = onBack)
+                    QuickBlockSection(device = device, viewModel = viewModel) { showToast(it) }
                     QuickActionsRow(device = device, viewModel = viewModel) { showToast(it) }
+                    RealInstalledAppsSection(device = device, viewModel = viewModel) { showToast(it) }
+                    EnhancedBlockListSection(device = device, viewModel = viewModel) { showToast(it) }
+                    AllowListSection(device = device, viewModel = viewModel) { showToast(it) }
                     UninstallProtectionSection(device)
                     AppBlockingSection(device = device, viewModel = viewModel) { showToast(it) }
                     SpecificAppsSection(device = device, viewModel = viewModel, onToast = { showToast(it) })
@@ -718,6 +752,735 @@ private fun AppTimeLimitSection(device: Device, viewModel: MainViewModel, onToas
                                 }
                             )
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  QUICK BLOCK SECTION — one-tap toggles for popular apps
+//  Firebase: children/<deviceId>/commands/quickBlock/<key>
+//  Child phone reads these and blocks instantly via Accessibility.
+// ══════════════════════════════════════════════════════════════
+private data class QuickBlockItem(
+    val key: String,
+    val label: String,
+    val emoji: String,
+    val packageName: String
+)
+
+private val QUICK_BLOCK_ITEMS = listOf(
+    QuickBlockItem("youtube",      "YouTube",      "▶",  "com.google.android.youtube"),
+    QuickBlockItem("facebook",     "Facebook",     "F",  "com.facebook.katana"),
+    QuickBlockItem("fbLite",       "FB Lite",      "f",  "com.facebook.lite"),
+    QuickBlockItem("messenger",    "Messenger",    "M",  "com.facebook.orca"),
+    QuickBlockItem("playStore",    "Play Store",   "▸",  "com.android.vending"),
+    QuickBlockItem("chrome",       "Chrome",       "C",  "com.android.chrome"),
+    QuickBlockItem("adultContent", "Adult Block",  "🔞", "")
+)
+
+@Composable
+private fun QuickBlockSection(device: Device, viewModel: MainViewModel, onToast: (String) -> Unit) {
+    val db = Firebase.database.reference
+    val scope = rememberCoroutineScope()
+
+    // State map: key → isBlocked
+    val blockedMap = remember { mutableStateMapOf<String, Boolean>() }
+
+    // Load from Firebase
+    LaunchedEffect(device.id) {
+        db.child("children/${device.id}/commands/quickBlock")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snap: DataSnapshot) {
+                    QUICK_BLOCK_ITEMS.forEach { item ->
+                        blockedMap[item.key] = snap.child(item.key).getValue(Boolean::class.java) ?: false
+                    }
+                }
+                override fun onCancelled(e: DatabaseError) {}
+            })
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        SectionHeader("⚡", "Quick Block", "One-tap block popular apps on child's phone", Rose)
+        Surface(shape = RoundedCornerShape(16.dp), color = SurfaceCard, border = BorderStroke(1.dp, Border)) {
+            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                QUICK_BLOCK_ITEMS.chunked(2).forEach { row ->
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        row.forEach { item ->
+                            val isBlocked = blockedMap[item.key] ?: false
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (isBlocked) RoseDim else SurfaceDeep,
+                                border = BorderStroke(1.dp, if (isBlocked) Rose.copy(alpha = 0.4f) else BorderMid),
+                                modifier = Modifier.weight(1f)
+                                    .clickable {
+                                        val newVal = !isBlocked
+                                        blockedMap[item.key] = newVal
+                                        scope.launch {
+                                            db.child("children/${device.id}/commands/quickBlock/${item.key}").setValue(newVal)
+                                            onToast("${item.label} ${if (newVal) "blocked ✓" else "unblocked"}")
+                                        }
+                                    }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(item.emoji, fontSize = 14.sp)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(
+                                        item.label, fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (isBlocked) Rose else TextPrimary,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    if (isBlocked) {
+                                        Icon(Icons.Filled.Block, null, tint = Rose, modifier = Modifier.size(14.dp))
+                                    }
+                                }
+                            }
+                        }
+                        // If row has only 1 item, add spacer
+                        if (row.size == 1) Spacer(Modifier.weight(1f))
+                    }
+                    Spacer(Modifier.height(6.dp))
+                }
+            }
+        }
+    }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  REAL INSTALLED APPS — shows apps installed on child's phone
+//  Firebase: children/<deviceId>/installedApps/<package>
+//  Child's RasFocus+ app syncs the list periodically.
+// ══════════════════════════════════════════════════════════════
+@Composable
+private fun RealInstalledAppsSection(device: Device, viewModel: MainViewModel, onToast: (String) -> Unit) {
+    var apps by remember { mutableStateOf<List<InstalledApp>>(emptyList()) }
+    var loading by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) }
+    val db = Firebase.database.reference
+
+    fun load() {
+        loading = true
+        db.child("children/${device.id}/installedApps")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snap: DataSnapshot) {
+                    val list = mutableListOf<InstalledApp>()
+                    snap.children.forEach { child ->
+                        val pkg = child.key ?: return@forEach
+                        val name = child.child("appName").getValue(String::class.java) ?: pkg
+                        val time = child.child("installTime").getValue(Long::class.java) ?: 0L
+                        list.add(InstalledApp(pkg, name, time))
+                    }
+                    apps = list.sortedBy { it.appName }
+                    loading = false
+                }
+                override fun onCancelled(e: DatabaseError) { loading = false }
+            })
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        SectionHeader("📋", "Installed Apps", "Apps currently on child's phone", TealMain)
+        Surface(shape = RoundedCornerShape(16.dp), color = SurfaceCard, border = BorderStroke(1.dp, Border)) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        if (apps.isEmpty() && !loading) "Tap Refresh to load installed apps"
+                        else "${apps.size} apps installed",
+                        fontSize = 13.sp, color = TextSub, modifier = Modifier.weight(1f)
+                    )
+                    OutlinedButton(
+                        onClick = { load() },
+                        border = BorderStroke(1.dp, TealMain.copy(alpha = 0.5f)),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        if (loading) {
+                            CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp, color = TealMain)
+                            Spacer(Modifier.width(6.dp))
+                        } else {
+                            Icon(Icons.Default.Refresh, null, tint = TealMain, modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(6.dp))
+                        }
+                        Text("Refresh", color = TealLight, fontSize = 12.sp)
+                    }
+                }
+
+                if (apps.isNotEmpty()) {
+                    val displayApps = if (expanded) apps else apps.take(8)
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        displayApps.forEach { app ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth()
+                                    .background(BgDark, RoundedCornerShape(8.dp))
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier.size(28.dp).background(TealDim, RoundedCornerShape(6.dp)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(app.appName.take(1).uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TealLight)
+                                }
+                                Spacer(Modifier.width(10.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text(app.appName, fontSize = 13.sp, color = TextPrimary, fontWeight = FontWeight.Medium)
+                                    Text(app.packageName, fontSize = 10.sp, color = TextMuted, fontFamily = FontFamily.Monospace, maxLines = 1)
+                                }
+                                // Quick block button
+                                Icon(
+                                    Icons.Filled.Block, contentDescription = "Block",
+                                    tint = TextMuted, modifier = Modifier.size(18.dp).clickable {
+                                        viewModel.addBlockedApp(device.id, app.packageName, app.appName)
+                                        onToast("${app.appName} added to block list")
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    if (apps.size > 8) {
+                        TextButton(onClick = { expanded = !expanded }, modifier = Modifier.fillMaxWidth()) {
+                            Text(if (expanded) "Show less" else "Show all ${apps.size} apps", color = TealLight, fontSize = 13.sp)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  ENHANCED BLOCK LIST — protita app e: lock, time range,
+//  daily limit, hourly limit
+//  Firebase: children/<deviceId>/enhancedBlockList/<package>
+// ══════════════════════════════════════════════════════════════
+@Composable
+private fun EnhancedBlockListSection(device: Device, viewModel: MainViewModel, onToast: (String) -> Unit) {
+    var pkgInput by remember { mutableStateOf("") }
+    var nameInput by remember { mutableStateOf("") }
+    var entries by remember { mutableStateOf<List<BlockedAppEntry>>(emptyList()) }
+    val db = Firebase.database.reference
+    val scope = rememberCoroutineScope()
+    var expandedEntry by remember { mutableStateOf<String?>(null) } // which entry is expanded
+
+    // Load list from Firebase
+    DisposableEffect(device.id) {
+        val ref = db.child("children/${device.id}/enhancedBlockList")
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snap: DataSnapshot) {
+                val list = mutableListOf<BlockedAppEntry>()
+                snap.children.forEach { child ->
+                    val pkg = child.key ?: return@forEach
+                    list.add(BlockedAppEntry(
+                        packageName = pkg,
+                        appName = child.child("appName").getValue(String::class.java) ?: pkg,
+                        lockEnabled = child.child("lockEnabled").getValue(Boolean::class.java) ?: false,
+                        timeRangeEnabled = child.child("timeRangeEnabled").getValue(Boolean::class.java) ?: false,
+                        startHour = child.child("startHour").getValue(Long::class.java)?.toInt() ?: 0,
+                        startMin = child.child("startMin").getValue(Long::class.java)?.toInt() ?: 0,
+                        endHour = child.child("endHour").getValue(Long::class.java)?.toInt() ?: 23,
+                        endMin = child.child("endMin").getValue(Long::class.java)?.toInt() ?: 59,
+                        dailyLimitMinutes = child.child("dailyLimitMinutes").getValue(Long::class.java)?.toInt() ?: 0,
+                        hourlyLimitMinutes = child.child("hourlyLimitMinutes").getValue(Long::class.java)?.toInt() ?: 0
+                    ))
+                }
+                entries = list.sortedBy { it.appName }
+            }
+            override fun onCancelled(e: DatabaseError) {}
+        }
+        ref.addValueEventListener(listener)
+        onDispose { ref.removeEventListener(listener) }
+    }
+
+    fun saveEntry(entry: BlockedAppEntry) {
+        val ref = db.child("children/${device.id}/enhancedBlockList/${entry.packageName}")
+        scope.launch {
+            ref.setValue(mapOf(
+                "appName" to entry.appName,
+                "lockEnabled" to entry.lockEnabled,
+                "timeRangeEnabled" to entry.timeRangeEnabled,
+                "startHour" to entry.startHour, "startMin" to entry.startMin,
+                "endHour" to entry.endHour, "endMin" to entry.endMin,
+                "dailyLimitMinutes" to entry.dailyLimitMinutes,
+                "hourlyLimitMinutes" to entry.hourlyLimitMinutes
+            ))
+        }
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        SectionHeader("🔒", "Block List", "Block apps with lock, time range & limits", Rose)
+        Surface(shape = RoundedCornerShape(16.dp), color = SurfaceCard, border = BorderStroke(1.dp, Border)) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+
+                // Add new entry
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = nameInput, onValueChange = { nameInput = it },
+                        label = { Text("App name", color = TextMuted, fontSize = 11.sp) },
+                        singleLine = true, modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = TealMain, unfocusedBorderColor = BorderMid,
+                            focusedContainerColor = BgDark, unfocusedContainerColor = BgDark,
+                            focusedTextColor = TextPrimary, unfocusedTextColor = TextPrimary
+                        )
+                    )
+                    OutlinedTextField(
+                        value = pkgInput, onValueChange = { pkgInput = it },
+                        label = { Text("Package", color = TextMuted, fontSize = 11.sp) },
+                        singleLine = true, modifier = Modifier.weight(1.4f),
+                        textStyle = androidx.compose.ui.text.TextStyle(fontFamily = FontFamily.Monospace, fontSize = 12.sp, color = TextPrimary),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = TealMain, unfocusedBorderColor = BorderMid,
+                            focusedContainerColor = BgDark, unfocusedContainerColor = BgDark
+                        )
+                    )
+                }
+                Button(
+                    onClick = {
+                        if (pkgInput.isBlank()) { onToast("Enter package name"); return@Button }
+                        val entry = BlockedAppEntry(pkgInput.trim(), nameInput.ifBlank { pkgInput.trim() })
+                        saveEntry(entry)
+                        onToast("${entry.appName} added to block list")
+                        pkgInput = ""; nameInput = ""
+                    },
+                    modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Rose.copy(alpha = 0.15f)),
+                    border = BorderStroke(1.dp, Rose.copy(alpha = 0.3f))
+                ) {
+                    Icon(Icons.Filled.Block, null, tint = Rose, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Add to Block List", fontWeight = FontWeight.Bold, color = Rose)
+                }
+
+                // Entries list
+                if (entries.isNotEmpty()) {
+                    HorizontalDivider(color = Border)
+                    Text("BLOCKED (${entries.size})", fontSize = 10.sp, color = TextMuted, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        entries.forEach { entry ->
+                            val isExpanded = expandedEntry == entry.packageName
+                            var current by remember(entry) { mutableStateOf(entry) }
+
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = BgDark,
+                                border = BorderStroke(1.dp, if (isExpanded) Rose.copy(alpha = 0.3f) else Border)
+                            ) {
+                                Column {
+                                    // Header row
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth()
+                                            .clickable { expandedEntry = if (isExpanded) null else entry.packageName }
+                                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(Icons.Filled.Block, null, tint = Rose.copy(alpha = 0.7f), modifier = Modifier.size(16.dp))
+                                        Spacer(Modifier.width(8.dp))
+                                        Column(Modifier.weight(1f)) {
+                                            Text(entry.appName, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                                            Text(entry.packageName, fontSize = 10.sp, color = TextMuted, fontFamily = FontFamily.Monospace, maxLines = 1)
+                                        }
+                                        // Lock badge
+                                        if (current.lockEnabled) {
+                                            Surface(shape = RoundedCornerShape(6.dp), color = AmberDim, border = BorderStroke(1.dp, Amber.copy(alpha = 0.3f))) {
+                                                Text("🔐", modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), fontSize = 12.sp)
+                                            }
+                                            Spacer(Modifier.width(4.dp))
+                                        }
+                                        Icon(
+                                            if (isExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                                            null, tint = TextMuted, modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(Modifier.width(4.dp))
+                                        Icon(Icons.Filled.Close, null, tint = TextMuted, modifier = Modifier.size(16.dp).clickable {
+                                            scope.launch {
+                                                db.child("children/${device.id}/enhancedBlockList/${entry.packageName}").removeValue()
+                                                onToast("${entry.appName} removed")
+                                            }
+                                        })
+                                    }
+
+                                    // Expanded controls
+                                    if (isExpanded) {
+                                        HorizontalDivider(color = Border.copy(alpha = 0.5f))
+                                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+
+                                            // Lock toggle
+                                            Row(modifier = Modifier.fillMaxWidth().clickable {
+                                                current = current.copy(lockEnabled = !current.lockEnabled)
+                                                saveEntry(current); onToast("Lock ${if (current.lockEnabled) "enabled" else "disabled"}")
+                                            }, verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(Icons.Filled.Lock, null, tint = Amber, modifier = Modifier.size(16.dp))
+                                                Spacer(Modifier.width(8.dp))
+                                                Text("Lock (prevent unblock)", fontSize = 13.sp, color = TextPrimary, modifier = Modifier.weight(1f))
+                                                Switch(checked = current.lockEnabled, onCheckedChange = {
+                                                    current = current.copy(lockEnabled = it); saveEntry(current)
+                                                    onToast("Lock ${if (it) "enabled" else "disabled"}")
+                                                }, colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = Amber))
+                                            }
+
+                                            // Time range toggle
+                                            Row(modifier = Modifier.fillMaxWidth().clickable {
+                                                current = current.copy(timeRangeEnabled = !current.timeRangeEnabled)
+                                                saveEntry(current)
+                                            }, verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(Icons.Filled.Schedule, null, tint = TealMain, modifier = Modifier.size(16.dp))
+                                                Spacer(Modifier.width(8.dp))
+                                                Text("Block by time range", fontSize = 13.sp, color = TextPrimary, modifier = Modifier.weight(1f))
+                                                Switch(checked = current.timeRangeEnabled, onCheckedChange = {
+                                                    current = current.copy(timeRangeEnabled = it); saveEntry(current)
+                                                }, colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = TealMain))
+                                            }
+                                            if (current.timeRangeEnabled) {
+                                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                    var sh by remember(current) { mutableStateOf(current.startHour.toString().padStart(2,'0')) }
+                                                    var sm by remember(current) { mutableStateOf(current.startMin.toString().padStart(2,'0')) }
+                                                    var eh by remember(current) { mutableStateOf(current.endHour.toString().padStart(2,'0')) }
+                                                    var em by remember(current) { mutableStateOf(current.endMin.toString().padStart(2,'0')) }
+                                                    fun saveTime() {
+                                                        current = current.copy(
+                                                            startHour = sh.toIntOrNull()?.coerceIn(0,23) ?: 0,
+                                                            startMin = sm.toIntOrNull()?.coerceIn(0,59) ?: 0,
+                                                            endHour = eh.toIntOrNull()?.coerceIn(0,23) ?: 23,
+                                                            endMin = em.toIntOrNull()?.coerceIn(0,59) ?: 59
+                                                        )
+                                                        saveEntry(current)
+                                                    }
+                                                    Column(Modifier.weight(1f)) {
+                                                        Text("From", fontSize = 10.sp, color = TextMuted)
+                                                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                            OutlinedTextField(value = sh, onValueChange = { if(it.length<=2){sh=it;saveTime()} }, modifier = Modifier.width(56.dp), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = RoundedCornerShape(8.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = TealMain, unfocusedBorderColor = BorderMid, unfocusedContainerColor = BgDark, focusedContainerColor = BgDark, focusedTextColor = TextPrimary, unfocusedTextColor = TextPrimary), textStyle = androidx.compose.ui.text.TextStyle(textAlign = TextAlign.Center, fontSize = 13.sp, color = TextPrimary))
+                                                            Text(":", color = TextSub, modifier = Modifier.align(Alignment.CenterVertically))
+                                                            OutlinedTextField(value = sm, onValueChange = { if(it.length<=2){sm=it;saveTime()} }, modifier = Modifier.width(56.dp), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = RoundedCornerShape(8.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = TealMain, unfocusedBorderColor = BorderMid, unfocusedContainerColor = BgDark, focusedContainerColor = BgDark, focusedTextColor = TextPrimary, unfocusedTextColor = TextPrimary), textStyle = androidx.compose.ui.text.TextStyle(textAlign = TextAlign.Center, fontSize = 13.sp, color = TextPrimary))
+                                                        }
+                                                    }
+                                                    Column(Modifier.weight(1f)) {
+                                                        Text("To", fontSize = 10.sp, color = TextMuted)
+                                                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                            OutlinedTextField(value = eh, onValueChange = { if(it.length<=2){eh=it;saveTime()} }, modifier = Modifier.width(56.dp), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = RoundedCornerShape(8.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = TealMain, unfocusedBorderColor = BorderMid, unfocusedContainerColor = BgDark, focusedContainerColor = BgDark, focusedTextColor = TextPrimary, unfocusedTextColor = TextPrimary), textStyle = androidx.compose.ui.text.TextStyle(textAlign = TextAlign.Center, fontSize = 13.sp, color = TextPrimary))
+                                                            Text(":", color = TextSub, modifier = Modifier.align(Alignment.CenterVertically))
+                                                            OutlinedTextField(value = em, onValueChange = { if(it.length<=2){em=it;saveTime()} }, modifier = Modifier.width(56.dp), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = RoundedCornerShape(8.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = TealMain, unfocusedBorderColor = BorderMid, unfocusedContainerColor = BgDark, focusedContainerColor = BgDark, focusedTextColor = TextPrimary, unfocusedTextColor = TextPrimary), textStyle = androidx.compose.ui.text.TextStyle(textAlign = TextAlign.Center, fontSize = 13.sp, color = TextPrimary))
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            // Daily limit
+                                            var dailyStr by remember(current) { mutableStateOf(if (current.dailyLimitMinutes > 0) current.dailyLimitMinutes.toString() else "") }
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(Icons.Filled.Today, null, tint = TealMain, modifier = Modifier.size(16.dp))
+                                                Spacer(Modifier.width(8.dp))
+                                                Text("Daily limit (min)", fontSize = 13.sp, color = TextPrimary, modifier = Modifier.weight(1f))
+                                                OutlinedTextField(
+                                                    value = dailyStr,
+                                                    onValueChange = { if (it.length <= 4) dailyStr = it.filter(Char::isDigit) },
+                                                    modifier = Modifier.width(80.dp),
+                                                    singleLine = true,
+                                                    placeholder = { Text("0=off", fontSize = 11.sp, color = TextMuted) },
+                                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                                    shape = RoundedCornerShape(8.dp),
+                                                    colors = OutlinedTextFieldDefaults.colors(
+                                                        focusedBorderColor = TealMain, unfocusedBorderColor = BorderMid,
+                                                        unfocusedContainerColor = BgDark, focusedContainerColor = BgDark,
+                                                        focusedTextColor = TextPrimary, unfocusedTextColor = TextPrimary
+                                                    ),
+                                                    textStyle = androidx.compose.ui.text.TextStyle(textAlign = TextAlign.Center, fontSize = 13.sp, color = TextPrimary)
+                                                )
+                                                Spacer(Modifier.width(6.dp))
+                                                Button(onClick = {
+                                                    val v = dailyStr.toIntOrNull() ?: 0
+                                                    current = current.copy(dailyLimitMinutes = v); saveEntry(current)
+                                                    onToast(if (v > 0) "Daily limit: ${v}m" else "Daily limit removed")
+                                                }, shape = RoundedCornerShape(8.dp), contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                                                    colors = ButtonDefaults.buttonColors(containerColor = TealDim)) {
+                                                    Text("Set", fontSize = 12.sp, color = TealLight)
+                                                }
+                                            }
+
+                                            // Hourly limit
+                                            var hourlyStr by remember(current) { mutableStateOf(if (current.hourlyLimitMinutes > 0) current.hourlyLimitMinutes.toString() else "") }
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(Icons.Filled.HourglassEmpty, null, tint = Amber, modifier = Modifier.size(16.dp))
+                                                Spacer(Modifier.width(8.dp))
+                                                Text("Hourly limit (min)", fontSize = 13.sp, color = TextPrimary, modifier = Modifier.weight(1f))
+                                                OutlinedTextField(
+                                                    value = hourlyStr,
+                                                    onValueChange = { if (it.length <= 2) hourlyStr = it.filter(Char::isDigit) },
+                                                    modifier = Modifier.width(80.dp),
+                                                    singleLine = true,
+                                                    placeholder = { Text("0=off", fontSize = 11.sp, color = TextMuted) },
+                                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                                    shape = RoundedCornerShape(8.dp),
+                                                    colors = OutlinedTextFieldDefaults.colors(
+                                                        focusedBorderColor = TealMain, unfocusedBorderColor = BorderMid,
+                                                        unfocusedContainerColor = BgDark, focusedContainerColor = BgDark,
+                                                        focusedTextColor = TextPrimary, unfocusedTextColor = TextPrimary
+                                                    ),
+                                                    textStyle = androidx.compose.ui.text.TextStyle(textAlign = TextAlign.Center, fontSize = 13.sp, color = TextPrimary)
+                                                )
+                                                Spacer(Modifier.width(6.dp))
+                                                Button(onClick = {
+                                                    val v = hourlyStr.toIntOrNull() ?: 0
+                                                    current = current.copy(hourlyLimitMinutes = v); saveEntry(current)
+                                                    onToast(if (v > 0) "Hourly limit: ${v}m/hr" else "Hourly limit removed")
+                                                }, shape = RoundedCornerShape(8.dp), contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                                                    colors = ButtonDefaults.buttonColors(containerColor = AmberDim)) {
+                                                    Text("Set", fontSize = 12.sp, color = Amber)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  ALLOW LIST — specified apps only allowed, everything else
+//  blocked. Optional time range per allowed app.
+//  Firebase: children/<deviceId>/allowList/<package>
+//            children/<deviceId>/commands/allowListEnabled
+// ══════════════════════════════════════════════════════════════
+@Composable
+private fun AllowListSection(device: Device, viewModel: MainViewModel, onToast: (String) -> Unit) {
+    var enabled by remember { mutableStateOf(false) }
+    var pkgInput by remember { mutableStateOf("") }
+    var nameInput by remember { mutableStateOf("") }
+    var entries by remember { mutableStateOf<List<AllowedAppEntry>>(emptyList()) }
+    var expandedEntry by remember { mutableStateOf<String?>(null) }
+    val db = Firebase.database.reference
+    val scope = rememberCoroutineScope()
+
+    // Load enabled state + entries
+    LaunchedEffect(device.id) {
+        db.child("children/${device.id}/commands/allowListEnabled").get().addOnSuccessListener {
+            enabled = it.getValue(Boolean::class.java) ?: false
+        }
+    }
+    DisposableEffect(device.id) {
+        val ref = db.child("children/${device.id}/allowList")
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snap: DataSnapshot) {
+                val list = mutableListOf<AllowedAppEntry>()
+                snap.children.forEach { child ->
+                    val pkg = child.key ?: return@forEach
+                    list.add(AllowedAppEntry(
+                        packageName = pkg,
+                        appName = child.child("appName").getValue(String::class.java) ?: pkg,
+                        timeRangeEnabled = child.child("timeRangeEnabled").getValue(Boolean::class.java) ?: false,
+                        startHour = child.child("startHour").getValue(Long::class.java)?.toInt() ?: 0,
+                        startMin = child.child("startMin").getValue(Long::class.java)?.toInt() ?: 0,
+                        endHour = child.child("endHour").getValue(Long::class.java)?.toInt() ?: 23,
+                        endMin = child.child("endMin").getValue(Long::class.java)?.toInt() ?: 59
+                    ))
+                }
+                entries = list.sortedBy { it.appName }
+            }
+            override fun onCancelled(e: DatabaseError) {}
+        }
+        ref.addValueEventListener(listener)
+        onDispose { ref.removeEventListener(listener) }
+    }
+
+    fun saveEntry(entry: AllowedAppEntry) {
+        scope.launch {
+            db.child("children/${device.id}/allowList/${entry.packageName}").setValue(mapOf(
+                "appName" to entry.appName,
+                "timeRangeEnabled" to entry.timeRangeEnabled,
+                "startHour" to entry.startHour, "startMin" to entry.startMin,
+                "endHour" to entry.endHour, "endMin" to entry.endMin
+            ))
+        }
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        SectionHeader("✅", "Allow List", "Only these apps allowed — everything else blocked", TealMain)
+        Surface(shape = RoundedCornerShape(16.dp), color = SurfaceCard, border = BorderStroke(1.dp, if (enabled) TealMain.copy(alpha = 0.4f) else Border)) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+
+                // Master toggle
+                Row(modifier = Modifier.fillMaxWidth().clickable {
+                    enabled = !enabled
+                    scope.launch {
+                        db.child("children/${device.id}/commands/allowListEnabled").setValue(enabled)
+                        onToast(if (enabled) "Allow List ON — all other apps blocked ✓" else "Allow List disabled")
+                    }
+                }, verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Security, null, tint = if (enabled) TealMain else TextMuted, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("Enable Allow List", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                        Text(
+                            if (enabled) "ACTIVE — only listed apps can be used"
+                            else "Off — block list rules apply instead",
+                            fontSize = 12.sp, color = if (enabled) TealLight else TextMuted
+                        )
+                    }
+                    Switch(
+                        checked = enabled, onCheckedChange = {
+                            enabled = it
+                            scope.launch {
+                                db.child("children/${device.id}/commands/allowListEnabled").setValue(it)
+                                onToast(if (it) "Allow List ON ✓" else "Allow List disabled")
+                            }
+                        },
+                        colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = TealMain)
+                    )
+                }
+
+                HorizontalDivider(color = Border)
+
+                // Add app to allow list
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = nameInput, onValueChange = { nameInput = it },
+                        label = { Text("App name", color = TextMuted, fontSize = 11.sp) },
+                        singleLine = true, modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = TealMain, unfocusedBorderColor = BorderMid,
+                            focusedContainerColor = BgDark, unfocusedContainerColor = BgDark,
+                            focusedTextColor = TextPrimary, unfocusedTextColor = TextPrimary
+                        )
+                    )
+                    OutlinedTextField(
+                        value = pkgInput, onValueChange = { pkgInput = it },
+                        label = { Text("Package", color = TextMuted, fontSize = 11.sp) },
+                        singleLine = true, modifier = Modifier.weight(1.4f),
+                        textStyle = androidx.compose.ui.text.TextStyle(fontFamily = FontFamily.Monospace, fontSize = 12.sp, color = TextPrimary),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = TealMain, unfocusedBorderColor = BorderMid,
+                            focusedContainerColor = BgDark, unfocusedContainerColor = BgDark
+                        )
+                    )
+                }
+                Button(
+                    onClick = {
+                        if (pkgInput.isBlank()) { onToast("Enter package name"); return@Button }
+                        val entry = AllowedAppEntry(pkgInput.trim(), nameInput.ifBlank { pkgInput.trim() })
+                        saveEntry(entry)
+                        onToast("${entry.appName} added to allow list")
+                        pkgInput = ""; nameInput = ""
+                    },
+                    modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = TealDim),
+                    border = BorderStroke(1.dp, TealMain.copy(alpha = 0.3f))
+                ) {
+                    Icon(Icons.Filled.AddCircle, null, tint = TealLight, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Add to Allow List", fontWeight = FontWeight.Bold, color = TealLight)
+                }
+
+                // Entries
+                if (entries.isNotEmpty()) {
+                    HorizontalDivider(color = Border)
+                    Text("ALLOWED (${entries.size})", fontSize = 10.sp, color = TextMuted, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        entries.forEach { entry ->
+                            val isExpanded = expandedEntry == entry.packageName
+                            var current by remember(entry) { mutableStateOf(entry) }
+
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = BgDark,
+                                border = BorderStroke(1.dp, if (isExpanded) TealMain.copy(alpha = 0.3f) else Border)
+                            ) {
+                                Column {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth()
+                                            .clickable { expandedEntry = if (isExpanded) null else entry.packageName }
+                                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(Icons.Filled.CheckCircle, null, tint = TealMain.copy(alpha = 0.7f), modifier = Modifier.size(16.dp))
+                                        Spacer(Modifier.width(8.dp))
+                                        Column(Modifier.weight(1f)) {
+                                            Text(entry.appName, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                                            Text(entry.packageName, fontSize = 10.sp, color = TextMuted, fontFamily = FontFamily.Monospace, maxLines = 1)
+                                        }
+                                        if (current.timeRangeEnabled) {
+                                            Surface(shape = RoundedCornerShape(6.dp), color = TealDim, border = BorderStroke(1.dp, TealMain.copy(alpha = 0.3f))) {
+                                                Text(
+                                                    "%02d:%02d–%02d:%02d".format(current.startHour, current.startMin, current.endHour, current.endMin),
+                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                    fontSize = 10.sp, color = TealLight, fontFamily = FontFamily.Monospace
+                                                )
+                                            }
+                                            Spacer(Modifier.width(4.dp))
+                                        }
+                                        Icon(if (isExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, null, tint = TextMuted, modifier = Modifier.size(18.dp))
+                                        Spacer(Modifier.width(4.dp))
+                                        Icon(Icons.Filled.Close, null, tint = TextMuted, modifier = Modifier.size(16.dp).clickable {
+                                            scope.launch {
+                                                db.child("children/${device.id}/allowList/${entry.packageName}").removeValue()
+                                                onToast("${entry.appName} removed from allow list")
+                                            }
+                                        })
+                                    }
+
+                                    if (isExpanded) {
+                                        HorizontalDivider(color = Border.copy(alpha = 0.5f))
+                                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                            // Time range toggle
+                                            Row(modifier = Modifier.fillMaxWidth().clickable {
+                                                current = current.copy(timeRangeEnabled = !current.timeRangeEnabled); saveEntry(current)
+                                            }, verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(Icons.Filled.Schedule, null, tint = TealMain, modifier = Modifier.size(16.dp))
+                                                Spacer(Modifier.width(8.dp))
+                                                Text("Allow only in time range", fontSize = 13.sp, color = TextPrimary, modifier = Modifier.weight(1f))
+                                                Switch(checked = current.timeRangeEnabled, onCheckedChange = {
+                                                    current = current.copy(timeRangeEnabled = it); saveEntry(current)
+                                                }, colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = TealMain))
+                                            }
+                                            if (current.timeRangeEnabled) {
+                                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                    var sh by remember(current) { mutableStateOf(current.startHour.toString().padStart(2,'0')) }
+                                                    var sm by remember(current) { mutableStateOf(current.startMin.toString().padStart(2,'0')) }
+                                                    var eh by remember(current) { mutableStateOf(current.endHour.toString().padStart(2,'0')) }
+                                                    var em by remember(current) { mutableStateOf(current.endMin.toString().padStart(2,'0')) }
+                                                    fun st() { current = current.copy(startHour = sh.toIntOrNull()?.coerceIn(0,23) ?: 0, startMin = sm.toIntOrNull()?.coerceIn(0,59) ?: 0, endHour = eh.toIntOrNull()?.coerceIn(0,23) ?: 23, endMin = em.toIntOrNull()?.coerceIn(0,59) ?: 59); saveEntry(current) }
+                                                    Column(Modifier.weight(1f)) {
+                                                        Text("From", fontSize = 10.sp, color = TextMuted)
+                                                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                            OutlinedTextField(value = sh, onValueChange = { if(it.length<=2){sh=it;st()} }, modifier = Modifier.width(56.dp), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = RoundedCornerShape(8.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = TealMain, unfocusedBorderColor = BorderMid, unfocusedContainerColor = BgDark, focusedContainerColor = BgDark, focusedTextColor = TextPrimary, unfocusedTextColor = TextPrimary), textStyle = androidx.compose.ui.text.TextStyle(textAlign = TextAlign.Center, fontSize = 13.sp, color = TextPrimary))
+                                                            Text(":", color = TextSub, modifier = Modifier.align(Alignment.CenterVertically))
+                                                            OutlinedTextField(value = sm, onValueChange = { if(it.length<=2){sm=it;st()} }, modifier = Modifier.width(56.dp), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = RoundedCornerShape(8.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = TealMain, unfocusedBorderColor = BorderMid, unfocusedContainerColor = BgDark, focusedContainerColor = BgDark, focusedTextColor = TextPrimary, unfocusedTextColor = TextPrimary), textStyle = androidx.compose.ui.text.TextStyle(textAlign = TextAlign.Center, fontSize = 13.sp, color = TextPrimary))
+                                                        }
+                                                    }
+                                                    Column(Modifier.weight(1f)) {
+                                                        Text("To", fontSize = 10.sp, color = TextMuted)
+                                                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                            OutlinedTextField(value = eh, onValueChange = { if(it.length<=2){eh=it;st()} }, modifier = Modifier.width(56.dp), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = RoundedCornerShape(8.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = TealMain, unfocusedBorderColor = BorderMid, unfocusedContainerColor = BgDark, focusedContainerColor = BgDark, focusedTextColor = TextPrimary, unfocusedTextColor = TextPrimary), textStyle = androidx.compose.ui.text.TextStyle(textAlign = TextAlign.Center, fontSize = 13.sp, color = TextPrimary))
+                                                            Text(":", color = TextSub, modifier = Modifier.align(Alignment.CenterVertically))
+                                                            OutlinedTextField(value = em, onValueChange = { if(it.length<=2){em=it;st()} }, modifier = Modifier.width(56.dp), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = RoundedCornerShape(8.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = TealMain, unfocusedBorderColor = BorderMid, unfocusedContainerColor = BgDark, focusedContainerColor = BgDark, focusedTextColor = TextPrimary, unfocusedTextColor = TextPrimary), textStyle = androidx.compose.ui.text.TextStyle(textAlign = TextAlign.Center, fontSize = 13.sp, color = TextPrimary))
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    Surface(shape = RoundedCornerShape(10.dp), color = TealDim.copy(alpha = 0.5f)) {
+                        Text(
+                            "No apps in allow list yet. Add apps above that the child can use.",
+                            modifier = Modifier.padding(12.dp), fontSize = 12.sp, color = TextSub, lineHeight = 17.sp
+                        )
                     }
                 }
             }

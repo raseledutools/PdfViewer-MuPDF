@@ -490,33 +490,40 @@ class YoutubeFloatingWindowService : Service() {
                 buildMiniPlayerWindow()
             }
 
-            // Full Floating Launch (আগের behavior — Home press)
+            // Full Floating Launch (Home press / lock press)
             ACTION_LAUNCH -> {
                 val newUrl    = intent.getStringExtra(EXTRA_URL)   ?: "https://m.youtube.com"
                 val newTitle  = intent.getStringExtra(EXTRA_TITLE) ?: "YouTube"
                 val noReload  = intent.getBooleanExtra(EXTRA_NO_RELOAD, false)
 
-                isMiniPlayer = false  // Full floating mode
+                isMiniPlayer = false
 
                 if (webView != null && (fullWindow != null || isMinimized)) {
+                    // Already have a floating window — just update content
                     currentUrl   = newUrl
                     currentTitle = newTitle
                     if (isMinimized) {
+                        // Was bubble → restore to full immediately (smoother than
+                        // staying as bubble when user pressed home)
                         removeBubble()
                         isMinimized = false
                         if (!noReload) webView?.loadUrl(normalizeYoutubeUrl(newUrl))
-                        showMinimized()
+                        showFull()
                     } else {
                         if (!noReload) webView?.loadUrl(normalizeYoutubeUrl(newUrl))
                         updateNotification(newTitle)
                     }
                 } else {
+                    // Fresh launch — build full window directly.
+                    // OPTIMIZED: was showMinimized() (bubble) first → now showFull()
+                    // so user sees the video immediately instead of a bubble they
+                    // have to tap to expand.
                     currentUrl   = newUrl
                     currentTitle = newTitle
                     removeFull()
                     removeBubble()
                     removeMiniWindow()
-                    showMinimized()
+                    showFull()
                 }
             }
         }
@@ -844,11 +851,38 @@ class YoutubeFloatingWindowService : Service() {
             windowManager.updateViewLayout(fullWindow, params)
         }
 
+        // "Open in App" — floating বন্ধ করে YoutubeActivity তে ঐ page চালু করে
+        val btnOpenApp = buildIconBtn("⤤", 0xFF4CAF50.toInt()) {
+            // FIX: আগে FamilyBrowserActivity launch হচ্ছিল (ভুল) →
+            // এখন YoutubeActivity launch করা হচ্ছে, WebView return করে reattach হয়।
+            // pendingWebView এ রেখে দাও যাতে YoutubeActivity re-attach করতে পারে।
+            val wv = webView
+            if (wv != null) {
+                pendingWebView = wv
+                webView = null
+            }
+            val i = Intent(
+                this@YoutubeFloatingWindowService,
+                com.rasel.RasFocus.selfcontrol.familybrowser.YoutubeActivity::class.java
+            ).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+            }
+            startActivity(i)
+            // Window সরাও কিন্তু WebView destroy করো না (pendingWebView এ আছে)
+            removeFull()
+            removeBubble()
+            removeMiniWindow()
+            isIntentionalClose = true
+            stopSelf()
+        }
+
         val btnClose = buildIconBtn("✕", 0xFFFF5555.toInt()) { tearDown(); stopSelf() }
 
         titleBar.addView(ytLogo)
         titleBar.addView(titleTv)
         titleBar.addView(btnMinimize)
+        titleBar.addView(btnOpenApp)
         titleBar.addView(btnSize)
         titleBar.addView(btnClose)
 
@@ -1043,7 +1077,11 @@ class YoutubeFloatingWindowService : Service() {
             cookieManager.setAcceptCookie(true)
             cookieManager.setAcceptThirdPartyCookies(this, true)
 
-            setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null)
+            // FIX: LAYER_TYPE_HARDWARE video render-কে black করে দিচ্ছিল
+            // (audio চলে, screen black) — HTML5 video surface texture-এর
+            // সাথে conflict করে floating window-এ। LAYER_TYPE_NONE ব্যবহার
+            // করলে WebView নিজে সঠিক compositing বেছে নেয়।
+            setLayerType(android.view.View.LAYER_TYPE_NONE, null)
 
             webViewClient = object : WebViewClient() {
 

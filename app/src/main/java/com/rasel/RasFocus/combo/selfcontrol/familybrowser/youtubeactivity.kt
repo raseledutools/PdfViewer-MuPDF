@@ -268,7 +268,16 @@ class YoutubeActivity : ComponentActivity() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
-            setLayerType(View.LAYER_TYPE_HARDWARE, null)
+            // Android version অনুযায়ী সঠিক layer type:
+            // Android 10 (API 29) এ inline <video> TextureView দিয়ে render হয়,
+            // তাই LAYER_TYPE_HARDWARE লাগে — না হলে video frame black থাকে,
+            // শুধু audio চলে। Android 11+ এ Chromium নিজেই SurfaceControl দিয়ে
+            // compositor bypass করে, তাই LAYER_TYPE_NONE সেখানে সঠিক।
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
+                setLayerType(View.LAYER_TYPE_HARDWARE, null)
+            } else {
+                setLayerType(View.LAYER_TYPE_NONE, null)
+            }
             setBackgroundColor(Color.BLACK)
 
             settings.apply {

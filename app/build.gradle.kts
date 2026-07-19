@@ -60,7 +60,7 @@ android {
             useSupportLibrary = true
         }
 
-        // MuPDF native .so libs — all ABIs needed for full flavor
+        // pdfium-android native .so libs — all ABIs needed for full flavor
         ndk {
             abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
         }
@@ -92,7 +92,7 @@ android {
         }
         create("full") {
             dimension = "mode"
-            // MuPDF + pdfium native .so libs এর জন্য
+            // pdfium-android native .so libs এর জন্য
             packaging.jniLibs.useLegacyPackaging = true
         }
     }
@@ -242,6 +242,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
+    implementation("androidx.compose.animation:animation")
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
     // ViewModel + Compose
@@ -319,12 +320,11 @@ dependencies {
     // ✅ PDF — শুধু full flavor-এ include হবে
     "fullImplementation"("com.tom-roush:pdfbox-android:2.0.27.0")
 
-    // ✅ MuPDF — official Artifex viewer SDK (full flavor only)
-    // True vector rendering: sharp at any zoom (re-renders from vectors, not bitmap-stretch)
-    // Supports: PDF, XPS, EPUB, CBZ, MOBI
-    // Maven host: maven.ghostscript.com (only real Maven host for this artifact)
-    // Version: 1.15.+ (floating — Gradle picks the latest 1.15.x that exists on the repo)
-    "fullImplementation"("com.artifex.mupdf:viewer:1.15.+")
+    // ✅ pdfium — MuPDF এর বদলে (lighter, stable, native pdfium engine)
+    // pdfiumandroid: shockwave's Android pdfium binding — battle-tested,
+    // used by barteksc/AndroidPdfViewer under the hood but without the
+    // heavy UI layer. Gives us raw bitmap rendering from a PdfiumCore instance.
+    "fullImplementation"("com.github.barteksc:pdfium-android:1.9.0")
 
     // Testing
     testImplementation("junit:junit:4.13.2")

@@ -135,7 +135,36 @@
 
     </activity>
 
-    <!-- ✅ Text/Code/Markdown Viewer — .txt .kt .md files opened from any file manager -->
+    <!-- Combo module PDF Viewer — explicit in-app launch only, no system intent-filter -->
+    <activity
+        android:name=".combo.selfcontrol.study_tools.PdfViewerActivity"
+        android:label="RasFocus PDF"
+        android:exported="false"
+        android:launchMode="singleTask"
+        android:taskAffinity=""
+        android:hardwareAccelerated="true"
+        android:theme="@style/Theme.RasFocus"
+        android:configChanges="orientation|screenSize|keyboardHidden" />
+
+    <!-- Combo PPTX/DOCX Viewers — in-app launch only -->
+    <activity
+        android:name=".combo.selfcontrol.study_tools.PptxViewerActivity"
+        android:label="RasFocus Presentation"
+        android:exported="false"
+        android:launchMode="singleTask"
+        android:hardwareAccelerated="true"
+        android:theme="@style/Theme.RasFocus"
+        android:configChanges="orientation|screenSize|keyboardHidden" />
+    <activity
+        android:name=".combo.selfcontrol.study_tools.DocxViewerActivity"
+        android:label="RasFocus Document"
+        android:exported="false"
+        android:launchMode="singleTask"
+        android:hardwareAccelerated="true"
+        android:theme="@style/Theme.RasFocus"
+        android:configChanges="orientation|screenSize|keyboardHidden" />
+
+    <!-- Text/Code/Markdown Viewer -->
     <activity
         android:name=".selfcontrol.study_tools.TextViewerActivity"
         android:label="RasFocus Viewer"
@@ -191,6 +220,72 @@
                 android:pathPattern=".*\\.md" />
         </intent-filter>
 
+    </activity>
+
+    <!-- ✅ PPTX Viewer — PowerPoint files opened from file managers -->
+    <activity
+        android:name=".selfcontrol.study_tools.PptxViewerActivity"
+        android:label="RasFocus Presentation"
+        android:exported="true"
+        android:launchMode="singleTask"
+        android:taskAffinity=""
+        android:hardwareAccelerated="true"
+        android:theme="@style/Theme.RasFocus"
+        android:configChanges="orientation|screenSize|keyboardHidden">
+
+        <intent-filter android:priority="100">
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="content"
+                android:mimeType="application/vnd.openxmlformats-officedocument.presentationml.presentation" />
+        </intent-filter>
+        <intent-filter android:priority="100">
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <data android:scheme="file"
+                android:mimeType="application/vnd.openxmlformats-officedocument.presentationml.presentation" />
+        </intent-filter>
+        <!-- .pptx extension fallback for file managers that send */* -->
+        <intent-filter android:priority="90">
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <data android:scheme="content" android:mimeType="*/*"
+                android:pathPattern=".*\\.pptx" />
+        </intent-filter>
+    </activity>
+
+    <!-- ✅ DOCX Viewer — Word documents opened from file managers -->
+    <activity
+        android:name=".selfcontrol.study_tools.DocxViewerActivity"
+        android:label="RasFocus Document"
+        android:exported="true"
+        android:launchMode="singleTask"
+        android:taskAffinity=""
+        android:hardwareAccelerated="true"
+        android:theme="@style/Theme.RasFocus"
+        android:configChanges="orientation|screenSize|keyboardHidden">
+
+        <intent-filter android:priority="100">
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="content"
+                android:mimeType="application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+        </intent-filter>
+        <intent-filter android:priority="100">
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <data android:scheme="file"
+                android:mimeType="application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+        </intent-filter>
+        <!-- .docx extension fallback -->
+        <intent-filter android:priority="90">
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <data android:scheme="content" android:mimeType="*/*"
+                android:pathPattern=".*\\.docx" />
+        </intent-filter>
     </activity>
 
     <!-- ✅ Credential Manager — Google Sign-In এর জন্য required -->
@@ -346,7 +441,7 @@
     <activity
         android:name=".selfcontrol.familybrowser.FacebookActivity"
         android:exported="false"
-        android:theme="@style/Theme.RasFocus"
+        android:theme="@style/Theme.RasFocus.Facebook"
         android:hardwareAccelerated="true"
         android:launchMode="singleTask"
         android:taskAffinity="${applicationId}.facebook"
@@ -457,10 +552,22 @@
         android:hardwareAccelerated="true"
         android:windowSoftInputMode="adjustResize" />
 
+    <!-- FIX: was foregroundServiceType="dataSync" — the required
+         FOREGROUND_SERVICE_DATA_SYNC permission was never declared, so
+         startForeground() in onStartCommand() threw a SecurityException the
+         instant Button Phone Mode started (before showOverlay() ever got a
+         chance to run), crashing the app instead of showing the overlay.
+         Switched to "specialUse" — the permission for that type is already
+         declared above, and it's the same fix already applied to
+         UnifiedBlockerService for the identical problem. -->
     <service
         android:name=".selfcontrol.BpBlockingService"
         android:exported="false"
-        android:foregroundServiceType="dataSync" />
+        android:foregroundServiceType="specialUse">
+        <property
+            android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+            android:value="RasFocus Button Phone Mode — focus-session app blocking overlay" />
+    </service>
 
     <!-- STREAMING_CHUNK:Finalizing receivers and child modules... -->
 

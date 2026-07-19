@@ -40,7 +40,7 @@ class AutoUpdateWorker(appContext: Context, workerParams: WorkerParameters) : Co
             
             val info = AutoUpdater.fetchLatestReleaseInfoSync()
             if (info != null && info.tagName != lastTag) {
-                val success = AutoUpdater.downloadUpdateSync(applicationContext, AutoUpdater.getBestApkVariant(), info.tagName)
+                val success = AutoUpdater.downloadUpdateSync(applicationContext, AutoUpdater.APK_UNIVERSAL, info.tagName)
                 if (success) {
                     AutoUpdater.saveTag(applicationContext, info.tagName)
                     return@withContext Result.success()
@@ -63,19 +63,9 @@ object AutoUpdater {
     const val CHANNEL_ID = "update_channel"
 
     // APK flavors (used as substrings for matching)
-    const val APK_UNIVERSAL   = "universal"
-    const val APK_LIGHT       = "light"
-    const val APK_FULL_SPLIT  = "full-armeabi-v7a"
-
-    /**
-     * Device ABI দেখে সঠিক APK বেছে নেয়:
-     *  - armeabi-v7a (32-bit) → armeabi-v7a split APK
-     *  - arm64-v8a / x86_64 / অন্য  → universal APK (সব ABI সাপোর্ট করে)
-     */
-    fun getBestApkVariant(): String {
-        val abi = android.os.Build.SUPPORTED_ABIS.firstOrNull() ?: ""
-        return if (abi == "armeabi-v7a") APK_FULL_SPLIT else APK_UNIVERSAL
-    }
+    const val APK_UNIVERSAL = "universal"
+    const val APK_LIGHT = "light"
+    const val APK_FULL_SPLIT = "full-armeabi-v7a"
 
     fun setupBackgroundAutoUpdate(context: Context) {
         val constraints = Constraints.Builder()
@@ -136,7 +126,7 @@ object AutoUpdater {
         val lastTag = prefs.getString(LAST_TAG_KEY, "") ?: ""
         fetchLatestReleaseInfo { info ->
             if (info != null && info.tagName != lastTag) {
-                silentDownloadUpdate(context, getBestApkVariant(), info.tagName)
+                silentDownloadUpdate(context, APK_UNIVERSAL, info.tagName)
             }
         }
     }

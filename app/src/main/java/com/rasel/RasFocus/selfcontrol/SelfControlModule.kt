@@ -37,13 +37,9 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.foundation.*
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
@@ -57,6 +53,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.*
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -79,7 +76,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.draw.alpha
 import com.rasel.RasFocus.ui.theme.SoftWhite
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -103,6 +99,13 @@ private val TextGray       = Color(0xFF8A8A9A)
 private val White          = Color(0xFFFFFFFF)
 private val CardBlue       = Color(0xFF3A5FD4)
 private val DarkerCardBlue = Color(0xFF2E4FBE)
+// Local to this file on purpose — StatisticsUI.kt and reels_shorts.kt each
+// have their OWN "private val AccentBlue" with a different hex value; those
+// are file-private and shouldn't be visible here, but the Kotlin compiler's
+// error reporting lists them as ambiguous candidates when this file has no
+// declaration of its own. Declaring it here (matching this file's existing
+// AccentGreen/CardBlue pattern) resolves unambiguously to this line.
+private val AccentBlue     = Color(0xFF4A9EFF)
 
 // Premium Teal Colors
 private val PremiumTealDark = Color(0xFF032220)
@@ -444,7 +447,7 @@ fun TopHeader(navController: NavController? = null, onMenuClick: () -> Unit = {}
                     RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)
                 )
                 .statusBarsPadding()
-                .padding(start = 24.dp, end = 24.dp, top = 20.dp, bottom = 32.dp)
+                .padding(start = 24.dp, end = 24.dp, top = 10.dp, bottom = 32.dp)
         ) {
             Column {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
@@ -483,35 +486,27 @@ fun TopHeader(navController: NavController? = null, onMenuClick: () -> Unit = {}
                 // Adult Block Button
                 Card(
                     modifier = Modifier.weight(1f).clickable { navController.navigate("adult_block") },
-                    shape = RoundedCornerShape(18.dp),
+                    shape = RoundedCornerShape(14.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFF2D0059)),
                     elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
                 ) {
-                    Box(
-                        Modifier.fillMaxWidth()
-                            .background(Brush.verticalGradient(listOf(Color(0xFF6A0DAD), Color(0xFF2D0059))))
-                            .padding(horizontal = 14.dp, vertical = 16.dp)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Brush.horizontalGradient(listOf(Color(0xFF6A0DAD), Color(0xFF2D0059))))
+                            .padding(horizontal = 12.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Column(horizontalAlignment = Alignment.Start) {
-                            Box(
-                                Modifier.size(44.dp).background(White.copy(alpha = 0.15f), RoundedCornerShape(12.dp)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Default.Shield, contentDescription = null, tint = Color(0xFFFF6BFF), modifier = Modifier.size(24.dp))
-                            }
-                            Spacer(Modifier.height(10.dp))
-                            Text("Adult Block", color = White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Text("100% Safe Browsing", color = White.copy(alpha = 0.65f), fontSize = 11.sp)
-                            Spacer(Modifier.height(8.dp))
-                            Row(
-                                Modifier.background(Color(0xFFFF6BFF).copy(alpha = 0.2f), RoundedCornerShape(20.dp))
-                                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(Modifier.size(6.dp).background(Color(0xFF00FF88), CircleShape))
-                                Spacer(Modifier.width(4.dp))
-                                Text("Tap to Enable", color = Color(0xFFFF6BFF), fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
-                            }
+                        Box(
+                            Modifier.size(32.dp).background(White.copy(alpha = 0.15f), RoundedCornerShape(9.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Shield, contentDescription = null, tint = Color(0xFFFF6BFF), modifier = Modifier.size(17.dp))
+                        }
+                        Column {
+                            Text("Adult Block", color = White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                            Text("Safe Browsing", color = White.copy(alpha = 0.6f), fontSize = 10.sp)
                         }
                     }
                 }
@@ -519,35 +514,27 @@ fun TopHeader(navController: NavController? = null, onMenuClick: () -> Unit = {}
                 // Deep Study Button
                 Card(
                     modifier = Modifier.weight(1f).clickable { navController.navigate("deep_study") },
-                    shape = RoundedCornerShape(18.dp),
+                    shape = RoundedCornerShape(14.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFF001A0A)),
                     elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
                 ) {
-                    Box(
-                        Modifier.fillMaxWidth()
-                            .background(Brush.verticalGradient(listOf(Color(0xFF005C3B), Color(0xFF001A0A))))
-                            .padding(horizontal = 14.dp, vertical = 16.dp)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Brush.horizontalGradient(listOf(Color(0xFF005C3B), Color(0xFF001A0A))))
+                            .padding(horizontal = 12.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Column(horizontalAlignment = Alignment.Start) {
-                            Box(
-                                Modifier.size(44.dp).background(White.copy(alpha = 0.15f), RoundedCornerShape(12.dp)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Default.MenuBook, contentDescription = null, tint = Color(0xFF00FFB2), modifier = Modifier.size(24.dp))
-                            }
-                            Spacer(Modifier.height(10.dp))
-                            Text("Deep Study", color = White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Text("Full Focus Mode", color = White.copy(alpha = 0.65f), fontSize = 11.sp)
-                            Spacer(Modifier.height(8.dp))
-                            Row(
-                                Modifier.background(Color(0xFF00FFB2).copy(alpha = 0.2f), RoundedCornerShape(20.dp))
-                                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(Modifier.size(6.dp).background(Color(0xFF00FFB2), CircleShape))
-                                Spacer(Modifier.width(4.dp))
-                                Text("Start Session", color = Color(0xFF00FFB2), fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
-                            }
+                        Box(
+                            Modifier.size(32.dp).background(White.copy(alpha = 0.15f), RoundedCornerShape(9.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.MenuBook, contentDescription = null, tint = Color(0xFF00FFB2), modifier = Modifier.size(17.dp))
+                        }
+                        Column {
+                            Text("Deep Study", color = White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                            Text("Focus Mode", color = White.copy(alpha = 0.6f), fontSize = 10.sp)
                         }
                     }
                 }
@@ -568,119 +555,43 @@ fun TopHeader(navController: NavController? = null, onMenuClick: () -> Unit = {}
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// UI: StudyToolsCard — StudyToolsActivity লঞ্চ করে
+// UI: StudyToolsCard — StudyToolsActivity লঞ্চ করে (compact)
 // ─────────────────────────────────────────────────────────────────────────────
 @Composable
 fun StudyToolsCard(context: Context) {
-    com.rasel.RasFocus.ui.theme.PremiumCard(Modifier.fillMaxWidth().padding(horizontal = 20.dp), onClick = { val intent = Intent(context, com.rasel.RasFocus.selfcontrol.StudyToolsActivity::class.java); intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); context.startActivity(intent) }) {
-        Box(
+    com.rasel.RasFocus.ui.theme.PremiumCard(
+        Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+        onClick = {
+            val intent = Intent(context, com.rasel.RasFocus.selfcontrol.StudyToolsActivity::class.java)
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+        }
+    ) {
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
-                    brush = Brush.horizontalGradient(
-                        listOf(Color(0xFF0D0D1A), Color(0xFF1A1A35))
-                    ),
-                    shape = RoundedCornerShape(22.dp)
+                    brush = Brush.horizontalGradient(listOf(Color(0xFF0D0D1A), Color(0xFF1A1A35))),
+                    shape = RoundedCornerShape(20.dp)
                 )
+                .padding(horizontal = 16.dp, vertical = 13.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // Subtle glow accent top-right
             Box(
                 modifier = Modifier
-                    .size(120.dp)
-                    .align(Alignment.TopEnd)
+                    .size(38.dp)
                     .background(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                Color(0xFF4FACFE).copy(alpha = 0.25f),
-                                Color.Transparent
-                            )
-                        ),
-                        shape = RoundedCornerShape(22.dp)
-                    )
-            )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 20.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Icon box with gradient border effect
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .background(
-                            brush = Brush.linearGradient(
-                                listOf(Color(0xFF4FACFE), Color(0xFF00F2FE))
-                            ),
-                            shape = RoundedCornerShape(16.dp)
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("📚", fontSize = 26.sp)
-                }
-
-                Spacer(Modifier.width(16.dp))
-
-                Column(Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "Study Tools",
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 18.sp,
-                            color = SoftWhite
-                        )
-                        Spacer(Modifier.width(10.dp))
-                        // Badge
-                        Box(
-                            modifier = Modifier
-                                .background(
-                                    brush = Brush.horizontalGradient(
-                                        listOf(Color(0xFF4FACFE), Color(0xFF00F2FE))
-                                    ),
-                                    shape = RoundedCornerShape(50.dp)
-                                )
-                                .padding(horizontal = 10.dp, vertical = 3.dp)
-                        ) {
-                            Text(
-                                "NEW",
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = Color(0xFF0D0D1A),
-                                letterSpacing = 1.sp
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(5.dp))
-                    Text(
-                        "PDF Tools • AI Tools • Diary • Tasks",
-                        fontSize = 12.sp,
-                        color = Color(0xFF4FACFE).copy(alpha = 0.85f),
-                        lineHeight = 16.sp
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    // Mini tool pills
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        listOf("📄 PDF" to Color(0xFFFF6B6B), "🤖 AI" to Color(0xFF4FACFE), "📓 Diary" to Color(0xFFA18CD1), "✅ Tasks" to Color(0xFF43E97B)).forEach { (label, color) ->
-                            Box(
-                                modifier = Modifier
-                                    .background(color.copy(alpha = 0.15f), RoundedCornerShape(20.dp))
-                                    .padding(horizontal = 8.dp, vertical = 3.dp)
-                            ) {
-                                Text(label, fontSize = 10.sp, color = color, fontWeight = FontWeight.SemiBold)
-                            }
-                        }
-                    }
-                }
-
-                Spacer(Modifier.width(8.dp))
-                Icon(
-                    imageVector = Icons.Default.ChevronRight,
-                    contentDescription = null,
-                    tint = Color(0xFF4FACFE).copy(alpha = 0.7f),
-                    modifier = Modifier.size(26.dp)
-                )
+                        brush = Brush.linearGradient(listOf(Color(0xFF4FACFE), Color(0xFF00F2FE))),
+                        shape = RoundedCornerShape(11.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) { Text("📚", fontSize = 19.sp) }
+            Column(Modifier.weight(1f)) {
+                Text("Study Tools", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = SoftWhite)
+                Text("PDF · Calculator · Diary · Scanner", fontSize = 11.sp, color = SoftWhite.copy(alpha = 0.5f))
             }
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color(0xFF4FACFE), modifier = Modifier.size(20.dp))
         }
     }
 }
@@ -766,11 +677,15 @@ fun PermissionRow(icon: ImageVector, label: String, buttonLabel: String, buttonC
             Spacer(Modifier.width(12.dp))
             Text(label, fontSize = 14.sp, color = TextDark, fontWeight = FontWeight.Medium)
         }
-        Button(onClick = onClick,
+        Button(
+            onClick = onClick,
             colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
-            shape = RoundedCornerShape(50.dp),
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp)) {
-            Text(buttonLabel, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.height(48.dp),
+            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
+            elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+        ) {
+            Text(buttonLabel, fontSize = 14.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.3.sp)
         }
     }
 }
@@ -793,17 +708,29 @@ fun AnalyticsSection(navController: NavController? = null) {
         }
         Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Button(onClick = { navController?.navigate("statistics") }, modifier = Modifier.weight(1f).height(48.dp), 
-                colors = ButtonDefaults.buttonColors(containerColor = PremiumTealMid.copy(alpha = 0.15f)),
+            Button(
+                onClick = { navController?.navigate("statistics") },
+                modifier = Modifier.weight(1f).height(56.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF032220)),
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                shape = RoundedCornerShape(12.dp)) {
-                Text("Timeline", color = PremiumTealDark, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                shape = RoundedCornerShape(14.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+            ) {
+                Icon(Icons.Default.Timeline, contentDescription = null, tint = PremiumTealAccent, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Timeline", color = PremiumTealAccent, fontSize = 14.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.3.sp)
             }
-            Button(onClick = { navController?.navigate("statistics") }, modifier = Modifier.weight(1f).height(48.dp), 
-                colors = ButtonDefaults.buttonColors(containerColor = PremiumTealMid.copy(alpha = 0.15f)),
+            Button(
+                onClick = { navController?.navigate("statistics") },
+                modifier = Modifier.weight(1f).height(56.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF032220)),
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                shape = RoundedCornerShape(12.dp)) {
-                Text("Weekly Report", color = PremiumTealDark, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                shape = RoundedCornerShape(14.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+            ) {
+                Icon(Icons.Default.BarChart, contentDescription = null, tint = PremiumTealAccent, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Weekly Report", color = PremiumTealAccent, fontSize = 14.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.3.sp)
             }
         }
     }
@@ -878,40 +805,76 @@ fun QuickActionsSection(viewModel: SelfControlViewModel, navController: NavContr
         }
     }
 
+    // ── Glassmorphism tokens ────────────────────────────────────────────
+    // No real backdrop-blur (needs API 31+ RenderEffect; this app's minSdk
+    // is 24), so the "frosted" look comes from layered translucency + a
+    // soft gradient border + a faint top sheen instead — same trick used
+    // by most glass UIs when they need to support older OS versions.
+    val glassBase = Brush.linearGradient(listOf(Color(0xFF10192E), Color(0xFF161F38), Color(0xFF10192E)))
+    val glassBorder = Brush.linearGradient(listOf(White.copy(alpha = 0.32f), White.copy(alpha = 0.04f), White.copy(alpha = 0.14f)))
+    val rowFrost = White.copy(alpha = 0.035f)
+    val dividerColor = White.copy(alpha = 0.07f)
+
     Column(Modifier.padding(horizontal = 20.dp)) {
         Text("Quick Actions", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = TextGray)
         Spacer(Modifier.height(12.dp))
-        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = CardBlue)) {
+
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .shadow(18.dp, RoundedCornerShape(28.dp), ambientColor = Color.Black.copy(alpha = 0.5f), spotColor = Color.Black.copy(alpha = 0.5f))
+                .clip(RoundedCornerShape(28.dp))
+                .background(glassBase)
+                .border(1.dp, glassBorder, RoundedCornerShape(28.dp))
+        ) {
+            // Faint top sheen — mimics light catching the top edge of glass.
+            // Brush.verticalGradient() with no explicit start/end stretches
+            // to whatever box it's drawn on, so this stays correct at any size.
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(70.dp)
+                    .align(Alignment.TopCenter)
+                    .background(Brush.verticalGradient(listOf(White.copy(alpha = 0.09f), Color.Transparent)))
+            )
+
             Column {
                 QuickActionRow(icon = Icons.Default.MobileOff, label = "Apps Blocked",
-                    value = appsBlockedCount.toString(), bgColor = CardBlue, divider = true,
+                    value = appsBlockedCount.toString(), accentColor = AccentBlue, frost = rowFrost, dividerColor = dividerColor, divider = true,
                     onClick = { navController.navigate("single_apps") })
                 QuickActionRow(icon = Icons.Default.DesktopWindows, label = "Sites Blocked",
-                    value = sitesBlockedCount.toString(), bgColor = DarkerCardBlue, divider = true,
+                    value = sitesBlockedCount.toString(), accentColor = Color(0xFF9B7BFF), frost = rowFrost, dividerColor = dividerColor, divider = true,
                     onClick = { navController.navigate("single_website") })
                 QuickActionRow(icon = Icons.Default.Schedule, label = "Schedule Blocks",
-                    value = "Profiles", bgColor = CardBlue.copy(alpha = 0.85f), divider = true,
+                    value = "Profiles", accentColor = Color(0xFFFFB258), frost = rowFrost, dividerColor = dividerColor, divider = true,
                     onClick = { navController.navigate("schedule_blocks") })
                 QuickActionRow(icon = Icons.Default.Shield, label = "Adult Block",
-                    value = "Safe", bgColor = DarkerCardBlue.copy(alpha = 0.9f), divider = true,
+                    value = "Safe", accentColor = AccentGreen, frost = rowFrost, dividerColor = dividerColor, divider = true,
                     onClick = { navController.navigate("adult_block") })
-                Row(Modifier.fillMaxWidth().background(CardBlue.copy(alpha = 0.6f))
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(42.dp).background(White.copy(alpha = 0.15f), RoundedCornerShape(12.dp)),
-                        contentAlignment = Alignment.Center) {
-                        Text("A|", fontSize = 18.sp, color = White, fontWeight = FontWeight.Bold)
-                    }
-                    Spacer(Modifier.width(14.dp))
+
+                // Keywords toggle row — restyled to match the glass rows above
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .background(rowFrost)
+                        .padding(horizontal = 20.dp, vertical = 20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    GlassIconChip(icon = Icons.Default.Shield, accentColor = Color(0xFF5CD6C0), text = "A|")
+                    Spacer(Modifier.width(16.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(if (keywordsEnabled) "Active" else "Inactive", color = White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                        Text("Keywords Blocked (Shorts/Reels)", color = White.copy(alpha = 0.75f), fontSize = 13.sp)
+                        Text(if (keywordsEnabled) "Active" else "Inactive", color = White, fontWeight = FontWeight.Bold, fontSize = 18.sp, letterSpacing = 0.2.sp)
+                        Spacer(Modifier.height(2.dp))
+                        Text("Keywords Blocked (Shorts/Reels)", color = White.copy(alpha = 0.55f), fontSize = 13.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.1.sp)
                     }
-                    Switch(checked = keywordsEnabled,
+                    Switch(
+                        checked = keywordsEnabled,
                         onCheckedChange = { viewModel.toggleKeywords(it, context) },
-                        colors = SwitchDefaults.colors(checkedThumbColor = White, checkedTrackColor = AccentGreen,
-                            uncheckedThumbColor = White, uncheckedTrackColor = White.copy(alpha = 0.3f)))
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = White, checkedTrackColor = Color(0xFF5CD6C0),
+                            uncheckedThumbColor = White.copy(alpha = 0.8f), uncheckedTrackColor = White.copy(alpha = 0.15f)
+                        )
+                    )
                 }
             }
         }
@@ -919,23 +882,62 @@ fun QuickActionsSection(viewModel: SelfControlViewModel, navController: NavContr
 }
 
 @Composable
-fun QuickActionRow(icon: ImageVector, label: String, value: String, bgColor: Color, divider: Boolean, onClick: () -> Unit) {
-    Column {
-        Row(Modifier.fillMaxWidth().background(bgColor).clickable { onClick() }
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(42.dp).background(White.copy(alpha = 0.15f), RoundedCornerShape(12.dp)),
-                contentAlignment = Alignment.Center) {
-                Icon(icon, contentDescription = null, tint = White, modifier = Modifier.size(22.dp))
+private fun GlassIconChip(icon: ImageVector, accentColor: Color, text: String? = null) {
+    Box(
+        Modifier.size(50.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        // Soft colored glow behind the icon — the accent-per-action touch
+        // that keeps rows visually distinct even though the frost background
+        // is now uniform across all of them.
+        Box(
+            Modifier
+                .size(50.dp)
+                .background(Brush.radialGradient(listOf(accentColor.copy(alpha = 0.35f), Color.Transparent)), CircleShape)
+        )
+        Box(
+            Modifier
+                .size(40.dp)
+                .background(White.copy(alpha = 0.07f), CircleShape)
+                .border(1.dp, White.copy(alpha = 0.12f), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            if (text != null) {
+                Text(text, fontSize = 16.sp, color = accentColor, fontWeight = FontWeight.ExtraBold)
+            } else {
+                Icon(icon, contentDescription = null, tint = accentColor, modifier = Modifier.size(20.dp))
             }
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f)) {
-                Text(value, color = White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                Text(label, color = White.copy(alpha = 0.75f), fontSize = 13.sp)
-            }
-            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = White.copy(alpha = 0.7f), modifier = Modifier.size(22.dp))
         }
-        if (divider) HorizontalDivider(color = White.copy(alpha = 0.1f), thickness = 1.dp)
+    }
+}
+
+@Composable
+fun QuickActionRow(
+    icon: ImageVector,
+    label: String,
+    value: String,
+    accentColor: Color,
+    frost: Color,
+    dividerColor: Color,
+    divider: Boolean,
+    onClick: () -> Unit
+) {
+    Column {
+        Row(
+            Modifier.fillMaxWidth().background(frost).clickable { onClick() }
+                .padding(horizontal = 20.dp, vertical = 18.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            GlassIconChip(icon = icon, accentColor = accentColor)
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f)) {
+                Text(value, color = White, fontWeight = FontWeight.Bold, fontSize = 20.sp, letterSpacing = 0.2.sp)
+                Spacer(Modifier.height(2.dp))
+                Text(label, color = White.copy(alpha = 0.55f), fontSize = 13.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.1.sp)
+            }
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = White.copy(alpha = 0.35f), modifier = Modifier.size(20.dp))
+        }
+        if (divider) HorizontalDivider(color = dividerColor, thickness = 1.dp)
     }
 }
 
@@ -1147,256 +1149,6 @@ private fun AccountRow(
         Text(label, Modifier.weight(1f), fontSize = 14.sp, color = TextDark, fontWeight = FontWeight.Medium)
         if (showArrow) {
             Icon(Icons.Default.ChevronRight, contentDescription = null, tint = TextGray, modifier = Modifier.size(20.dp))
-        }
-    }
-}
-
-@Composable
-fun FamilyBrowserCard(context: Context) {
-    var showChooser by remember { mutableStateOf(false) }
-
-    val gradientStart = Color(0xFF0D47A1)
-    val gradientEnd   = Color(0xFF1565C0)
-
-    com.rasel.RasFocus.ui.theme.PremiumCard(Modifier.fillMaxWidth().padding(horizontal = 20.dp), onClick = { showChooser = true }) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    brush = Brush.horizontalGradient(listOf(gradientStart, gradientEnd)),
-                    shape = RoundedCornerShape(20.dp)
-                )
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 18.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(52.dp)
-                        .background(SoftWhite.copy(alpha = 0.15f), RoundedCornerShape(14.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Language,
-                        contentDescription = null,
-                        tint = SoftWhite,
-                        modifier = Modifier.size(30.dp)
-                    )
-                }
-                Spacer(Modifier.width(16.dp))
-                Column(Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "RasBrowser",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp,
-                            color = SoftWhite
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Box(
-                            modifier = Modifier
-                                .background(SoftWhite.copy(alpha = 0.25f), RoundedCornerShape(50.dp))
-                                .padding(horizontal = 8.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                "SAFE",
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = SoftWhite,
-                                letterSpacing = 1.sp
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(3.dp))
-                    Text(
-                        "Family-safe browser with ad blocking & content filter",
-                        fontSize = 12.sp,
-                        color = SoftWhite.copy(alpha = 0.78f),
-                        lineHeight = 16.sp
-                    )
-                }
-                Icon(
-                    imageVector = Icons.Default.ChevronRight,
-                    contentDescription = null,
-                    tint = SoftWhite.copy(alpha = 0.6f),
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        }
-    }
-
-    // ── Chooser Dialog ──────────────────────────────────────────────────────
-    if (showChooser) {
-        BrowserChooserDialog(
-            context = context,
-            onDismiss = { showChooser = false }
-        )
-    }
-}
-
-// ── Add Home Shortcut — pins RasBrowser + YouTube as two separate homescreen
-// icons that launch straight into each Activity, like standalone apps.
-// Uses ShortcutManagerCompat.requestPinShortcut — the only API Android 8.0+
-// allows for this. It shows the system's own "Add to Home screen?" dialog per
-// icon rather than silently placing them; apps can't silently write to the
-// launcher (OS security restriction), so this can't be made a single
-// no-confirmation tap. Some OEM launchers don't support pin requests at all,
-// hence the isRequestPinShortcutSupported() check before firing.
-fun pinHomeScreenShortcuts(context: Context) {
-    val shortcutManager = context.getSystemService(Context.SHORTCUT_SERVICE)
-        as? android.content.pm.ShortcutManager
-    if (shortcutManager == null || !androidx.core.content.pm.ShortcutManagerCompat.isRequestPinShortcutSupported(context)) {
-        android.widget.Toast.makeText(
-            context,
-            "এই launcher shortcut pin করা support করে না",
-            android.widget.Toast.LENGTH_LONG
-        ).show()
-        return
-    }
-
-    val icon = androidx.core.graphics.drawable.IconCompat.createWithResource(
-        context, com.rasel.RasFocus.R.mipmap.ic_launcher
-    )
-
-    val rasBrowserIntent = Intent(context, FamilyBrowserActivity::class.java).apply {
-        action = Intent.ACTION_MAIN
-        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    }
-    val rasBrowserShortcut = androidx.core.content.pm.ShortcutInfoCompat.Builder(context, "rasbrowser_home_shortcut")
-        .setShortLabel("RasBrowser")
-        .setLongLabel("RasBrowser — Safe Browser")
-        .setIcon(icon)
-        .setIntent(rasBrowserIntent)
-        .build()
-    androidx.core.content.pm.ShortcutManagerCompat.requestPinShortcut(context, rasBrowserShortcut, null)
-
-    val youtubeIntent = Intent(context, com.rasel.RasFocus.selfcontrol.familybrowser.YoutubeActivity::class.java).apply {
-        action = Intent.ACTION_MAIN
-        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    }
-    val youtubeShortcut = androidx.core.content.pm.ShortcutInfoCompat.Builder(context, "youtube_native_home_shortcut")
-        .setShortLabel("YouTube")
-        .setLongLabel("YouTube — RasFocus")
-        .setIcon(icon)
-        .setIntent(youtubeIntent)
-        .build()
-    androidx.core.content.pm.ShortcutManagerCompat.requestPinShortcut(context, youtubeShortcut, null)
-
-    val facebookIntent = Intent(context, com.rasel.RasFocus.selfcontrol.familybrowser.FacebookActivity::class.java).apply {
-        action = Intent.ACTION_MAIN
-        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    }
-    val facebookShortcut = androidx.core.content.pm.ShortcutInfoCompat.Builder(context, "facebook_native_home_shortcut")
-        .setShortLabel("Facebook")
-        .setLongLabel("Facebook — RasFocus")
-        .setIcon(icon)
-        .setIntent(facebookIntent)
-        .build()
-    androidx.core.content.pm.ShortcutManagerCompat.requestPinShortcut(context, facebookShortcut, null)
-}
-
-@Composable
-fun BrowserChooserDialog(context: Context, onDismiss: () -> Unit) {
-    var showSettingsFor by remember { mutableStateOf<String?>(null) }
-
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.6f))
-                .clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) { onDismiss() },
-            contentAlignment = Alignment.BottomCenter
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(indication = null, interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) {}
-                    .background(
-                        color = Color(0xFF0A0A1A),
-                        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-                    )
-                    .padding(horizontal = 24.dp, vertical = 28.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .width(44.dp)
-                        .height(4.dp)
-                        .background(SoftWhite.copy(alpha = 0.18f), RoundedCornerShape(2.dp))
-                        .align(Alignment.CenterHorizontally)
-                )
-                Spacer(Modifier.height(4.dp))
-
-                Text(
-                    "Select App",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = SoftWhite,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-                Spacer(Modifier.height(4.dp))
-
-                BrowserAppRow(
-                    context = context,
-                    icon = Icons.Default.Security,
-                    iconTint = Color(0xFF4FACFE),
-                    title = "RasBrowser",
-                    onLaunch = {
-                        onDismiss()
-                        val intent = Intent(context, FamilyBrowserActivity::class.java)
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        context.startActivity(intent)
-                    },
-                    onSettings = { showSettingsFor = "RasBrowser" },
-                    onAddHome = { pinSingleHomeShortcut(context, "RasBrowser") }
-                )
-
-                BrowserAppRow(
-                    context = context,
-                    icon = Icons.Default.PlayCircle,
-                    iconTint = Color(0xFFE53935),
-                    title = "YouTube Premium",
-                    onLaunch = {
-                        onDismiss()
-                        val intent = Intent(context, com.rasel.RasFocus.selfcontrol.familybrowser.YoutubeActivity::class.java).apply {
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                        context.startActivity(intent)
-                    },
-                    onSettings = { showSettingsFor = "YouTube" },
-                    onAddHome = { pinSingleHomeShortcut(context, "YouTube") }
-                )
-
-                BrowserAppRow(
-                    context = context,
-                    icon = Icons.Default.Groups,
-                    iconTint = Color(0xFF1877F2),
-                    title = "Facebook",
-                    onLaunch = {
-                        onDismiss()
-                        val intent = Intent(context, com.rasel.RasFocus.selfcontrol.familybrowser.FacebookActivity::class.java).apply {
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                        context.startActivity(intent)
-                    },
-                    onSettings = { showSettingsFor = "Facebook" },
-                    onAddHome = { pinSingleHomeShortcut(context, "Facebook") }
-                )
-
-                Spacer(Modifier.height(8.dp))
-            }
-        }
-    }
-
-    if (showSettingsFor != null) {
-        BrowserSettingsDialog(context, appType = showSettingsFor!!) {
-            showSettingsFor = null
         }
     }
 }
@@ -1621,45 +1373,423 @@ fun TakeRestCard() {
     }
 }
 
-// ── Custom Lock Configuration & Manager ──
-data class ToggleLockConfig(
-    val lockMode: String = "none",
-    val selfDays: Int = 0,
-    val selfHours: Int = 0,
-    val selfMinutes: Int = 0,
-    val selfEndTime: Long = 0L,
-    val parentPin: String = "",
-    val customLongText: String = ""
-)
+// ══════════════════════════════════════════════════════════════════════════════
+// FAMILY BROWSER SECTION — Entry card + bottom-sheet chooser
+// ══════════════════════════════════════════════════════════════════════════════
 
-object ToggleLockManager {
-    fun getConfig(context: Context, toggleId: String): ToggleLockConfig {
-        val prefs = context.getSharedPreferences("toggle_locks", Context.MODE_PRIVATE)
-        return ToggleLockConfig(
-            lockMode = prefs.getString("${toggleId}_mode", "none") ?: "none",
-            selfDays = prefs.getInt("${toggleId}_days", 0),
-            selfHours = prefs.getInt("${toggleId}_hours", 0),
-            selfMinutes = prefs.getInt("${toggleId}_minutes", 0),
-            selfEndTime = prefs.getLong("${toggleId}_end", 0L),
-            parentPin = prefs.getString("${toggleId}_pin", "") ?: "",
-            customLongText = prefs.getString("${toggleId}_text", "") ?: ""
-        )
+@Composable
+fun FamilyBrowserCard(context: Context) {
+    var showChooser by remember { mutableStateOf(false) }
+
+    com.rasel.RasFocus.ui.theme.PremiumCard(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+        onClick   = { showChooser = true }
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    brush = Brush.linearGradient(
+                        colors = listOf(Color(0xFF0F2847), Color(0xFF0D2240))
+                    ),
+                    shape = RoundedCornerShape(20.dp)
+                )
+                .padding(horizontal = 18.dp, vertical = 16.dp)
+        ) {
+            Column {
+                // ── Title row ──────────────────────────────────────────────
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .background(Color(0xFF60A5FA).copy(alpha = 0.12f), RoundedCornerShape(13.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Language,
+                            contentDescription = null,
+                            tint = Color(0xFF60A5FA),
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                    Spacer(Modifier.width(14.dp))
+                    Column(Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                "RasBrowser",
+                                fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFFF1F5F9)
+                            )
+                            Spacer(Modifier.width(7.dp))
+                            Box(
+                                modifier = Modifier
+                                    .background(Color(0xFF4ADE80).copy(alpha = 0.18f), RoundedCornerShape(50.dp))
+                                    .padding(horizontal = 7.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    "SAFE",
+                                    fontSize = 9.sp, fontWeight = FontWeight.ExtraBold,
+                                    color = Color(0xFF4ADE80), letterSpacing = 1.sp
+                                )
+                            }
+                        }
+                        Text(
+                            "Family browser · ad blocking · content filter",
+                            fontSize = 11.sp, color = Color(0xFF64748B), lineHeight = 15.sp
+                        )
+                    }
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        tint = Color(0xFF475569),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                // ── Stats row ──────────────────────────────────────────────
+                Spacer(Modifier.height(10.dp))
+                HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
+                Spacer(Modifier.height(10.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                    BrowserStatChip(Icons.Default.Shield,      "Adult filter")
+                    BrowserStatChip(Icons.Default.Block,       "Ads blocked")
+                    BrowserStatChip(Icons.Default.Apps,        "3 apps")
+                }
+            }
+        }
     }
 
-    fun saveConfig(context: Context, toggleId: String, config: ToggleLockConfig) {
-        context.getSharedPreferences("toggle_locks", Context.MODE_PRIVATE).edit().apply {
-            putString("${toggleId}_mode", config.lockMode)
-            putInt("${toggleId}_days", config.selfDays)
-            putInt("${toggleId}_hours", config.selfHours)
-            putInt("${toggleId}_minutes", config.selfMinutes)
-            putLong("${toggleId}_end", config.selfEndTime)
-            putString("${toggleId}_pin", config.parentPin)
-            putString("${toggleId}_text", config.customLongText)
-        }.apply()
+    if (showChooser) {
+        BrowserChooserDialog(context = context, onDismiss = { showChooser = false })
     }
 }
 
-// ── Setting toggle row with optional settings/edit icons ──
+@Composable
+private fun BrowserStatChip(icon: ImageVector, label: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+        Icon(icon, contentDescription = null, tint = Color(0xFF60A5FA), modifier = Modifier.size(13.dp))
+        Text(label, fontSize = 11.sp, color = Color(0xFF475569))
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Chooser Dialog — full-width bottom sheet style
+// ─────────────────────────────────────────────────────────────────────────────
+@Composable
+fun BrowserChooserDialog(context: Context, onDismiss: () -> Unit) {
+    var showSettingsFor by remember { mutableStateOf<String?>(null) }
+
+    // পুরো screen জুড়ে — dialog/overlay কিছু না, independent full page
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF0D1117))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .systemBarsPadding()
+        ) {
+            // Top bar — back button + title
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onDismiss) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Color(0xFFF1F5F9)
+                    )
+                }
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    "Choose App",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFFF1F5F9)
+                )
+                Spacer(Modifier.weight(1f))
+                Text(
+                    "3 available",
+                    fontSize = 12.sp,
+                    color = Color(0xFF475569),
+                    modifier = Modifier.padding(end = 16.dp)
+                )
+            }
+
+            HorizontalDivider(color = Color.White.copy(alpha = 0.07f))
+
+            // App rows
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                BrowserAppRow(
+                    context      = context,
+                    iconVector   = Icons.Default.Security,
+                    iconBgStart  = Color(0xFF1D4ED8),
+                    iconBgEnd    = Color(0xFF3B82F6),
+                    title        = "RasBrowser",
+                    description  = "Safe · Ad-free · Full control",
+                    onLaunch     = {
+                        onDismiss()
+                        val intent = Intent(context, FamilyBrowserActivity::class.java)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        context.startActivity(intent)
+                    },
+                    onSettings   = { showSettingsFor = "RasBrowser" },
+                    onAddHome    = { pinSingleHomeShortcut(context, "RasBrowser") }
+                )
+
+                BrowserAppRow(
+                    context      = context,
+                    iconVector   = Icons.Default.PlayCircle,
+                    iconBgStart  = Color(0xFFB91C1C),
+                    iconBgEnd    = Color(0xFFEF4444),
+                    title        = "YouTube Premium",
+                    description  = "No ads · Shorts blocked",
+                    onLaunch     = {
+                        onDismiss()
+                        val intent = Intent(
+                            context,
+                            com.rasel.RasFocus.selfcontrol.familybrowser.YoutubeActivity::class.java
+                        ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+                        context.startActivity(intent)
+                    },
+                    onSettings   = { showSettingsFor = "YouTube" },
+                    onAddHome    = { pinSingleHomeShortcut(context, "YouTube") }
+                )
+
+                BrowserAppRow(
+                    context      = context,
+                    iconVector   = Icons.Default.Groups,
+                    iconBgStart  = Color(0xFF1D4ED8),
+                    iconBgEnd    = Color(0xFF2563EB),
+                    title        = "Facebook",
+                    description  = "Reels blocked · Filtered",
+                    onLaunch     = {
+                        onDismiss()
+                        val intent = Intent(
+                            context,
+                            com.rasel.RasFocus.selfcontrol.familybrowser.FacebookActivity::class.java
+                        ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+                        context.startActivity(intent)
+                    },
+                    onSettings   = { showSettingsFor = "Facebook" },
+                    onAddHome    = { pinSingleHomeShortcut(context, "Facebook") }
+                )
+            }
+        }
+    }
+
+    if (showSettingsFor != null) {
+        BrowserSettingsDialog(context, appType = showSettingsFor!!) { showSettingsFor = null }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Single app row inside the chooser sheet
+// ─────────────────────────────────────────────────────────────────────────────
+@Composable
+fun BrowserAppRow(
+    context:     Context,
+    iconVector:  ImageVector,
+    iconBgStart: Color,
+    iconBgEnd:   Color,
+    title:       String,
+    description: String,
+    onLaunch:    () -> Unit,
+    onSettings:  () -> Unit,
+    onAddHome:   () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(11.dp)
+    ) {
+        // App icon
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .background(
+                    brush = Brush.linearGradient(listOf(iconBgStart, iconBgEnd)),
+                    shape = RoundedCornerShape(11.dp)
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(iconVector, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+        }
+
+        // Title + description
+        Column(Modifier.weight(1f)) {
+            Text(title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFF1F5F9), maxLines = 1)
+            Text(description, fontSize = 10.sp, color = Color(0xFF475569), maxLines = 1)
+        }
+
+        // Action buttons
+        Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+            // Add to home
+            Box(
+                modifier = Modifier
+                    .size(30.dp)
+                    .background(Color.White.copy(alpha = 0.04f), RoundedCornerShape(8.dp))
+                    .clickable { onAddHome() },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.AddToHomeScreen, null, tint = Color(0xFF64748B), modifier = Modifier.size(15.dp))
+            }
+            // Settings
+            Box(
+                modifier = Modifier
+                    .size(30.dp)
+                    .background(Color.White.copy(alpha = 0.04f), RoundedCornerShape(8.dp))
+                    .clickable { onSettings() },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.Settings, null, tint = Color(0xFF64748B), modifier = Modifier.size(15.dp))
+            }
+            // Open
+            Box(
+                modifier = Modifier
+                    .height(30.dp)
+                    .background(Color(0xFF60A5FA).copy(alpha = 0.12f), RoundedCornerShape(8.dp))
+                    .clickable { onLaunch() }
+                    .padding(horizontal = 10.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    "Open",
+                    fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF60A5FA)
+                )
+            }
+        }
+    }
+    HorizontalDivider(
+        modifier = Modifier.padding(horizontal = 16.dp),
+        color    = Color.White.copy(alpha = 0.04f)
+    )
+}
+
+
+// ── Update Center Section inside dashboard ──
+@Composable
+fun UpdateCenterSection(context: Context) {
+    var releaseInfo by remember { mutableStateOf<com.rasel.RasFocus.ReleaseInfo?>(null) }
+    var checking by remember { mutableStateOf(true) }
+    
+    val prefs = context.getSharedPreferences("AutoUpdaterPrefs", Context.MODE_PRIVATE)
+    val lastTag = prefs.getString(com.rasel.RasFocus.AutoUpdater.LAST_TAG_KEY, "") ?: ""
+
+    LaunchedEffect(Unit) {
+        com.rasel.RasFocus.AutoUpdater.fetchLatestReleaseInfo { info ->
+            releaseInfo = info
+            checking = false
+        }
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = SoftWhite.copy(alpha = 0.05f)),
+        elevation = CardDefaults.cardElevation(0.dp)
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.SystemUpdateAlt, contentDescription = null, tint = Color(0xFF4FACFE), modifier = Modifier.size(28.dp))
+                Spacer(Modifier.width(12.dp))
+                Text("Update Center", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = SoftWhite)
+            }
+            Spacer(Modifier.height(16.dp))
+            
+            if (checking) {
+                Text("Checking for updates...", color = Color.LightGray, fontSize = 14.sp)
+            } else if (releaseInfo != null) {
+                val currentVersion = "v" + com.rasel.RasFocus.BuildConfig.VERSION_NAME
+                val isLatest = releaseInfo!!.tagName == currentVersion
+                if (isLatest) {
+                    Text("Latest version installed ✓", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text("Version: $currentVersion", color = Color.LightGray, fontSize = 12.sp)
+                } else {
+                    Text("Update Available! \uD83C\uDF89", color = Color(0xFF4FACFE), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Spacer(Modifier.height(4.dp))
+                    Text("New version: ${releaseInfo!!.tagName}", color = SoftWhite, fontSize = 14.sp)
+                    Text("Released: ${releaseInfo!!.publishedAt}", color = Color.LightGray, fontSize = 12.sp)
+                    Spacer(Modifier.height(16.dp))
+                    
+                    val downloadedFile = com.rasel.RasFocus.AutoUpdater.getDownloadedUpdateFile(context, releaseInfo!!.tagName)
+                    
+                    if (downloadedFile != null) {
+                        Button(
+                            onClick = { com.rasel.RasFocus.AutoUpdater.installDownloadedUpdate(context, downloadedFile) },
+                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B5E20)),
+                            shape = RoundedCornerShape(14.dp),
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                        ) {
+                            Icon(Icons.Default.DownloadDone, contentDescription = null, tint = Color(0xFF69F0AE), modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Install Update Now", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF69F0AE), letterSpacing = 0.3.sp)
+                        }
+                    } else {
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                            // Universal
+                            OutlinedButton(
+                                onClick = { com.rasel.RasFocus.AutoUpdater.downloadAndInstallUpdate(context, com.rasel.RasFocus.AutoUpdater.APK_UNIVERSAL, releaseInfo!!.tagName) },
+                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF4FACFE).copy(alpha = 0.6f)),
+                                colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFF4FACFE).copy(alpha = 0.08f))
+                            ) {
+                                Icon(Icons.Default.Download, contentDescription = null, tint = Color(0xFF4FACFE), modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Universal APK", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4FACFE))
+                            }
+                            // Light
+                            OutlinedButton(
+                                onClick = { com.rasel.RasFocus.AutoUpdater.downloadAndInstallUpdate(context, com.rasel.RasFocus.AutoUpdater.APK_LIGHT, releaseInfo!!.tagName) },
+                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF4FACFE).copy(alpha = 0.6f)),
+                                colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFF4FACFE).copy(alpha = 0.08f))
+                            ) {
+                                Icon(Icons.Default.Download, contentDescription = null, tint = Color(0xFF4FACFE), modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Light APK", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4FACFE))
+                            }
+                            // Split
+                            OutlinedButton(
+                                onClick = { com.rasel.RasFocus.AutoUpdater.downloadAndInstallUpdate(context, com.rasel.RasFocus.AutoUpdater.APK_FULL_SPLIT, releaseInfo!!.tagName) },
+                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF4FACFE).copy(alpha = 0.6f)),
+                                colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFF4FACFE).copy(alpha = 0.08f))
+                            ) {
+                                Icon(Icons.Default.Download, contentDescription = null, tint = Color(0xFF4FACFE), modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Split APK", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4FACFE))
+                            }
+                        }
+                    }
+                }
+            } else {
+                Text("Could not check for updates. Check internet.", color = Color(0xFFFF3B30), fontSize = 14.sp)
+            }
+        }
+    }
+}
+
+// ── Add Home Shortcut for single app ──
+
+
 @Composable
 fun SettingToggleRow(
     label: String,
@@ -1746,9 +1876,15 @@ fun DomainListSheet(context: Context, mode: String, onDismiss: () -> Unit) {
                                 newDomain = ""
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE))
+                        modifier = Modifier.height(56.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE)),
+                        shape = RoundedCornerShape(12.dp),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
+                        contentPadding = PaddingValues(horizontal = 18.dp)
                     ) {
-                        Text("Add")
+                        Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Add", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 }
                 
@@ -1778,6 +1914,44 @@ fun DomainListSheet(context: Context, mode: String, onDismiss: () -> Unit) {
                 }
             }
         }
+    }
+}
+
+// ── Custom Lock Configuration & Manager ──
+data class ToggleLockConfig(
+    val lockMode: String = "none",
+    val selfDays: Int = 0,
+    val selfHours: Int = 0,
+    val selfMinutes: Int = 0,
+    val selfEndTime: Long = 0L,
+    val parentPin: String = "",
+    val customLongText: String = ""
+)
+
+object ToggleLockManager {
+    fun getConfig(context: Context, toggleId: String): ToggleLockConfig {
+        val prefs = context.getSharedPreferences("toggle_locks", Context.MODE_PRIVATE)
+        return ToggleLockConfig(
+            lockMode = prefs.getString("${toggleId}_mode", "none") ?: "none",
+            selfDays = prefs.getInt("${toggleId}_days", 0),
+            selfHours = prefs.getInt("${toggleId}_hours", 0),
+            selfMinutes = prefs.getInt("${toggleId}_minutes", 0),
+            selfEndTime = prefs.getLong("${toggleId}_end", 0L),
+            parentPin = prefs.getString("${toggleId}_pin", "") ?: "",
+            customLongText = prefs.getString("${toggleId}_text", "") ?: ""
+        )
+    }
+
+    fun saveConfig(context: Context, toggleId: String, config: ToggleLockConfig) {
+        context.getSharedPreferences("toggle_locks", Context.MODE_PRIVATE).edit().apply {
+            putString("${toggleId}_mode", config.lockMode)
+            putInt("${toggleId}_days", config.selfDays)
+            putInt("${toggleId}_hours", config.selfHours)
+            putInt("${toggleId}_minutes", config.selfMinutes)
+            putLong("${toggleId}_end", config.selfEndTime)
+            putString("${toggleId}_pin", config.parentPin)
+            putString("${toggleId}_text", config.customLongText)
+        }.apply()
     }
 }
 
@@ -1957,11 +2131,22 @@ fun LockVerificationDialog(
                         Spacer(Modifier.height(16.dp))
                         Text("Time remaining: ${hours}h ${mins}m", color = Color(0xFFFF3B30), fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(24.dp))
-                        Button(onClick = onCancel, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE))) { Text("OK") }
+                        Button(
+                            onClick = onCancel,
+                            modifier = Modifier.fillMaxWidth().height(46.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A1A35)),
+                            shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF4FACFE).copy(alpha = 0.5f))
+                        ) { Text("OK", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4FACFE)) }
                     } else {
                         Text("Time lock has expired.", color = Color.LightGray)
                         Spacer(Modifier.height(16.dp))
-                        Button(onClick = onSuccess, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE))) { Text("Proceed") }
+                        Button(
+                            onClick = onSuccess,
+                            modifier = Modifier.fillMaxWidth().height(46.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE)),
+                            shape = RoundedCornerShape(12.dp)
+                        ) { Text("Proceed", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White) }
                     }
                 } else if (isPasswordLock) {
                     Text("Enter Parental/Self Control Password:", color = Color.LightGray, fontSize = 14.sp)
@@ -1974,19 +2159,31 @@ fun LockVerificationDialog(
                             focusedTextColor = SoftWhite, unfocusedTextColor = SoftWhite,
                             focusedBorderColor = Color(0xFF4FACFE), unfocusedBorderColor = Color.Gray
                         ),
-                        singleLine = true
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
                     )
                     if (showError) {
                         Text("Incorrect password", color = Color.Red, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
                     }
-                    Spacer(Modifier.height(24.dp))
-                    Row {
-                        TextButton(onClick = onCancel) { Text("Cancel", color = Color.LightGray) }
-                        Spacer(Modifier.width(16.dp))
-                        Button(onClick = {
-                            if (passwordInput == lockConfig.parentPin) onSuccess()
-                            else showError = true
-                        }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE))) { Text("Unlock") }
+                    Spacer(Modifier.height(20.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        OutlinedButton(
+                            onClick = onCancel,
+                            modifier = Modifier.weight(1f).height(46.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color.Gray.copy(alpha = 0.4f)),
+                            colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.Transparent)
+                        ) { Text("Cancel", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color.LightGray) }
+                        Button(
+                            onClick = { if (passwordInput == lockConfig.parentPin) onSuccess() else showError = true },
+                            modifier = Modifier.weight(1f).height(46.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE)),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Default.Lock, contentDescription = null, tint = Color.White, modifier = Modifier.size(15.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Unlock", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        }
                     }
                 } else if (isTextLock) {
                     val targetText = lockConfig.customLongText
@@ -2001,22 +2198,38 @@ fun LockVerificationDialog(
                             focusedTextColor = SoftWhite, unfocusedTextColor = SoftWhite,
                             focusedBorderColor = Color(0xFF4FACFE), unfocusedBorderColor = Color.Gray
                         ),
-                        modifier = Modifier.height(120.dp)
+                        modifier = Modifier.fillMaxWidth().height(120.dp)
                     )
                     if (showError) {
                         Text("Text does not match", color = Color.Red, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
                     }
-                    Spacer(Modifier.height(24.dp))
-                    Row {
-                        TextButton(onClick = onCancel) { Text("Cancel", color = Color.LightGray) }
-                        Spacer(Modifier.width(16.dp))
-                        Button(onClick = {
-                            if (textInput.trim() == targetText.trim()) onSuccess()
-                            else showError = true
-                        }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE))) { Text("Unlock") }
+                    Spacer(Modifier.height(20.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        OutlinedButton(
+                            onClick = onCancel,
+                            modifier = Modifier.weight(1f).height(46.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color.Gray.copy(alpha = 0.4f)),
+                            colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.Transparent)
+                        ) { Text("Cancel", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color.LightGray) }
+                        Button(
+                            onClick = { if (textInput.trim() == targetText.trim()) onSuccess() else showError = true },
+                            modifier = Modifier.weight(1f).height(46.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE)),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Default.Lock, contentDescription = null, tint = Color.White, modifier = Modifier.size(15.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Unlock", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        }
                     }
                 } else {
-                    Button(onClick = onSuccess, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE))) { Text("Proceed") }
+                    Button(
+                        onClick = onSuccess,
+                        modifier = Modifier.fillMaxWidth().height(46.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE)),
+                        shape = RoundedCornerShape(12.dp)
+                    ) { Text("Proceed", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White) }
                 }
             }
         }
@@ -2024,6 +2237,7 @@ fun LockVerificationDialog(
 }
 
 // ── Settings Dialog Composable ──
+
 @Composable
 fun BrowserSettingsDialog(context: Context, appType: String, onDismiss: () -> Unit) {
     val prefs = context.getSharedPreferences("browser_settings", Context.MODE_PRIVATE)
@@ -2212,159 +2426,6 @@ fun BrowserSettingsDialog(context: Context, appType: String, onDismiss: () -> Un
     }
 }
 
-// ── App row inside chooser ──
-@Composable
-fun BrowserAppRow(
-    context: Context,
-    icon: ImageVector,
-    iconTint: Color,
-    title: String,
-    onLaunch: () -> Unit,
-    onSettings: () -> Unit,
-    onAddHome: () -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Card(
-            modifier = Modifier
-                .weight(1f)
-                .clickable { onLaunch() },
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = SoftWhite.copy(alpha = 0.05f))
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(24.dp))
-                Spacer(Modifier.width(12.dp))
-                Text(title, color = SoftWhite, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-            }
-        }
-
-        Spacer(Modifier.width(12.dp))
-
-        Card(
-            modifier = Modifier.clickable { onAddHome() },
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = SoftWhite.copy(alpha = 0.05f))
-        ) {
-            Box(modifier = Modifier.padding(14.dp), contentAlignment = Alignment.Center) {
-                Icon(Icons.Default.AddToHomeScreen, contentDescription = "Add Home", tint = Color.LightGray, modifier = Modifier.size(22.dp))
-            }
-        }
-
-        Spacer(Modifier.width(12.dp))
-
-        Card(
-            modifier = Modifier.clickable { onSettings() },
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = SoftWhite.copy(alpha = 0.05f))
-        ) {
-            Box(modifier = Modifier.padding(14.dp), contentAlignment = Alignment.Center) {
-                Icon(Icons.Default.Settings, contentDescription = "Settings", tint = Color.LightGray, modifier = Modifier.size(22.dp))
-            }
-        }
-    }
-}
-
-// ── Update Center Section inside dashboard ──
-@Composable
-fun UpdateCenterSection(context: Context) {
-    var releaseInfo by remember { mutableStateOf<com.rasel.RasFocus.ReleaseInfo?>(null) }
-    var checking by remember { mutableStateOf(true) }
-    
-    val prefs = context.getSharedPreferences("AutoUpdaterPrefs", Context.MODE_PRIVATE)
-    val lastTag = prefs.getString(com.rasel.RasFocus.AutoUpdater.LAST_TAG_KEY, "") ?: ""
-
-    LaunchedEffect(Unit) {
-        com.rasel.RasFocus.AutoUpdater.fetchLatestReleaseInfo { info ->
-            releaseInfo = info
-            checking = false
-        }
-    }
-
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = SoftWhite.copy(alpha = 0.05f)),
-        elevation = CardDefaults.cardElevation(0.dp)
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.SystemUpdateAlt, contentDescription = null, tint = Color(0xFF4FACFE), modifier = Modifier.size(28.dp))
-                Spacer(Modifier.width(12.dp))
-                Text("Update Center", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = SoftWhite)
-            }
-            Spacer(Modifier.height(16.dp))
-            
-            if (checking) {
-                Text("Checking for updates...", color = Color.LightGray, fontSize = 14.sp)
-            } else if (releaseInfo != null) {
-                val currentVersion = "v" + com.rasel.RasFocus.BuildConfig.VERSION_NAME
-                val isLatest = releaseInfo!!.tagName == currentVersion
-                if (isLatest) {
-                    Text("Latest version installed ✓", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                    Text("Version: $currentVersion", color = Color.LightGray, fontSize = 12.sp)
-                } else {
-                    Text("Update Available! \uD83C\uDF89", color = Color(0xFF4FACFE), fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Spacer(Modifier.height(4.dp))
-                    Text("New version: ${releaseInfo!!.tagName}", color = SoftWhite, fontSize = 14.sp)
-                    Text("Released: ${releaseInfo!!.publishedAt}", color = Color.LightGray, fontSize = 12.sp)
-                    Spacer(Modifier.height(16.dp))
-                    
-                    val downloadedFile = com.rasel.RasFocus.AutoUpdater.getDownloadedUpdateFile(context, releaseInfo!!.tagName)
-                    
-                    if (downloadedFile != null) {
-                        Button(
-                            onClick = { com.rasel.RasFocus.AutoUpdater.installDownloadedUpdate(context, downloadedFile) },
-                            modifier = Modifier.fillMaxWidth().height(50.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Icon(Icons.Default.DownloadDone, contentDescription = null, tint = SoftWhite)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Install Update Now", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = SoftWhite)
-                        }
-                    } else {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                            Button(
-                                onClick = { com.rasel.RasFocus.AutoUpdater.downloadAndInstallUpdate(context, com.rasel.RasFocus.AutoUpdater.APK_UNIVERSAL, releaseInfo!!.tagName) },
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE)),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text("Universal", fontSize = 12.sp, maxLines = 1)
-                            }
-                            Button(
-                                onClick = { com.rasel.RasFocus.AutoUpdater.downloadAndInstallUpdate(context, com.rasel.RasFocus.AutoUpdater.APK_LIGHT, releaseInfo!!.tagName) },
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE)),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text("Light", fontSize = 12.sp, maxLines = 1)
-                            }
-                            Button(
-                                onClick = { com.rasel.RasFocus.AutoUpdater.downloadAndInstallUpdate(context, com.rasel.RasFocus.AutoUpdater.APK_FULL_SPLIT, releaseInfo!!.tagName) },
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE)),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text("Split", fontSize = 12.sp, maxLines = 1)
-                            }
-                        }
-                    }
-                }
-            } else {
-                Text("Could not check for updates. Check internet.", color = Color(0xFFFF3B30), fontSize = 14.sp)
-            }
-        }
-    }
-}
-
-// ── Add Home Shortcut for single app ──
 fun pinSingleHomeShortcut(context: Context, appType: String) {
     val shortcutManager = context.getSystemService(Context.SHORTCUT_SERVICE) as? android.content.pm.ShortcutManager
     if (shortcutManager == null || !androidx.core.content.pm.ShortcutManagerCompat.isRequestPinShortcutSupported(context)) {

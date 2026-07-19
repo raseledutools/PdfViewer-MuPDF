@@ -331,7 +331,7 @@ private fun BpSetupDialog(onDismiss: () -> Unit, onSessionStart: () -> Unit) {
     var lockModeExpanded by remember { mutableStateOf(false) }
     var days by remember { mutableStateOf("0") }
     var hours by remember { mutableStateOf("0") }
-    var minutes by remember { mutableStateOf("30") }
+    var minutes by remember { mutableStateOf("0") }  // FIX: was "30" — caused 2min→30min bug
     var parentPass by remember { mutableStateOf("") }
     var confirmPass by remember { mutableStateOf("") }
     var blockInternet by remember { mutableStateOf(false) }
@@ -557,7 +557,7 @@ private fun BpSetupDialog(onDismiss: () -> Unit, onSessionStart: () -> Unit) {
                         }
 
                         val totalMs = if (lockMode != BpLockMode.SELF_CONTROL) 100L * 365 * 24 * 3600 * 1000 // Indefinite
-                            else (days.toLongOrNull() ?: 0L) * 86_400_000L + (hours.toLongOrNull() ?: 0L) * 3_600_000L + (minutes.toLongOrNull() ?: 30L) * 60_000L
+                            else (days.toLongOrNull() ?: 0L) * 86_400_000L + (hours.toLongOrNull() ?: 0L) * 3_600_000L + (minutes.toLongOrNull() ?: 0L) * 60_000L  // FIX: was ?: 30L
                         val endTime = System.currentTimeMillis() + totalMs
                         
                         val finalPkgs = (if (phoneOption == BpPhoneOption.COMPLETE) BpC.DEFAULT_ALLOWED else allowedPkgs + BpC.DEFAULT_ALLOWED).toSet()
