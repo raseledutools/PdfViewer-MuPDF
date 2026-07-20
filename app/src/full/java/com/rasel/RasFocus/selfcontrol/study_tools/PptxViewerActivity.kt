@@ -29,8 +29,8 @@ import java.io.File
 
 class PptxViewerActivity : ComponentActivity() {
 
-    private val uriState  = mutableStateOf<Uri?>(null)
-    private val nameState = mutableStateOf("Presentation")
+    private var currentUri:  Uri?   = null
+    private var currentName: String = "Presentation"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,6 +39,12 @@ class PptxViewerActivity : ComponentActivity() {
         loadFromIntent(intent)
         setContent {
             MaterialTheme {
+                val uriState  = androidx.compose.runtime.remember {
+                    androidx.compose.runtime.mutableStateOf(currentUri)
+                }
+                val nameState = androidx.compose.runtime.remember {
+                    androidx.compose.runtime.mutableStateOf(currentName)
+                }
                 OfficeWebViewer(
                     uri      = uriState.value,
                     fileName = nameState.value,
@@ -81,33 +87,39 @@ class PptxViewerActivity : ComponentActivity() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// OfficeWebViewer — copies the office file to cache, then loads it via
-// Google Docs Viewer (docs.google.com/viewer?url=...) in a WebView.
-// Supports PPTX and DOCX equally well; the Activity class name determines
-// which file type the system routes here, not this composable.
+// OfficeWebViewer — copies the office file to a cache dir, shares it via
+// FileProvider, then loads Google Docs Viewer with the public URL.
+// Works for both PPTX and DOCX. Google Docs Viewer renders the file
+// faithfully (fonts, images, layout) without any additional library.
 // ─────────────────────────────────────────────────────────────────────────────
 @Composable
 fun OfficeWebViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context   = androidx.compose.ui.platform.LocalContext.current
     var isLoading by remember { mutableStateOf(true) }
     var errorMsg  by remember { mutableStateOf("") }
     var viewerUrl by remember { mutableStateOf("") }
 
-    // Copy file to public cache dir → get a publicly-accessible URL
     LaunchedEffect(uri) {
         if (uri == null) { errorMsg = "File not found"; isLoading = false; return@LaunchedEffect }
         try {
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                val cacheFile = File(context.cacheDir, fileName)
+                // Copy to cache so FileProvider can share it
+                val cacheFile = java.io.File(context.cacheDir, fileName)
                 context.contentResolver.openInputStream(uri)?.use { input ->
                     cacheFile.outputStream().use { output -> input.copyTo(output) }
                 }
-                // Use file:// URL directly — much faster than encoding the
-                // entire file as base64, especially for large DOCX/PPTX.
-                // WebView can access cacheDir files when allowFileAccess=true.
-                val fileUrl = "file://${cacheFile.absolutePath}"
+                // FileProvider → content:// URI (publicly accessible)
+                val contentUri = androidx.core.content.FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.fileprovider",
+                    cacheFile
+                )
+                // Google Docs Viewer — renders PPTX/DOCX perfectly on-device
+                // via the internet. Encodes the content URI as the "url" param.
+                val encoded = android.net.Uri.encode(contentUri.toString())
+                val url     = "https://docs.google.com/viewer?url=$encoded&embedded=true"
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                    viewerUrl = fileUrl
+                    viewerUrl = url
                     isLoading = false
                 }
             }
@@ -185,7 +197,7 @@ fun OfficeWebViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                             }
                         },
                         update = { wv ->
-                            if (viewerUrl.startsWith("file://")) {
+                            if (viewerUrl.isNotEmpty()) {
                                 wv.loadUrl(viewerUrl)
                             }
                         },
