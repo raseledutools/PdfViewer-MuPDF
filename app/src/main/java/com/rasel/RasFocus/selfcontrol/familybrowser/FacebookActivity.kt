@@ -196,7 +196,7 @@ class FacebookActivity : ComponentActivity() {
                 allowContentAccess                = true
                 loadsImagesAutomatically          = true
                 mixedContentMode                  = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
-                cacheMode                         = WebSettings.LOAD_DEFAULT
+                cacheMode                         = WebSettings.LOAD_CACHE_ELSE_NETWORK  // offline scroll support
                 userAgentString                   = FB_USER_AGENT
                 setSupportZoom(true)
             }
@@ -230,22 +230,35 @@ class FacebookActivity : ComponentActivity() {
                     view.alpha = 1f
                     flushCookies()
 
-                    // ★ Adult keyword block — Facebook SPA তে shouldOverrideUrlLoading
-                    // fire করে না, তাই onPageFinished এও check করতে হবে
+                    // Last URL save করো — recovery + instant open এর জন্য
+                    if (url.startsWith("http") && url.contains("facebook.com")) {
+                        getSharedPreferences("fb_float_recovery", Context.MODE_PRIVATE)
+                            .edit()
+                            .putString("last_url", url)
+                            .putBoolean("was_open", true)
+                            .apply()
+                    }
+
+                    // Adult keyword block
                     val adultHtml = checkAdultSearchKeyword(url)
                     if (adultHtml != null) {
                         view.loadDataWithBaseURL(null, adultHtml, "text/html", "UTF-8", null)
                         return
                     }
 
-                    // ★ Settings toggles — hide reels, hide videos, text-only, grayscale
                     injectSettingsRemover(view)
                     injectRemoveOpenInAppButton(view)
                     injectFooterRemover(view)
                     adBlocker.injectContentScanner(view)
 
-                    // ★ Facebook SPA navigation — URL change ধরো MutationObserver দিয়ে
-                    // যাতে page navigate হলেও settings আবার apply হয়
+                    // Screenshot নাও — পরের open এ instant splash হিসেবে দেখাবে
+                    // delay দিয়ে নাও কারণ page fully render হতে সামান্য সময় লাগে
+                    view.postDelayed({
+                        try {
+                            saveScreenshot(view)
+                        } catch (_: Exception) {}
+                    }, 800)
+
                     view.evaluateJavascript("""
                         (function() {
                             if (window.__rasFbUrlWatcher__) return;
@@ -254,7 +267,6 @@ class FacebookActivity : ComponentActivity() {
                             new MutationObserver(function() {
                                 if (location.href !== lastUrl) {
                                     lastUrl = location.href;
-                                    // নতুন URL এ adult check এর জন্য Android কে জানাও
                                     if (window.RasFbBlockBridge) {
                                         RasFbBlockBridge.onUrlChanged(location.href);
                                     }
@@ -481,6 +493,42 @@ class FacebookActivity : ComponentActivity() {
     private fun flushCookies() {
         try {
             CookieManager.getInstance().flush()
+        } catch (_: Exception) {}
+    }
+
+    /** Page এর screenshot নিয়ে internal storage এ save করো */
+    private fun saveScreenshot(view: WebView) {
+        try {
+            val bmp = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.RGB_565)
+            val canvas = android.graphics.Canvas(bmp)
+            view.draw(canvas)
+            val file = java.io.File(cacheDir, "fb_snapshot.jpg")
+            file.outputStream().use { out ->
+                bmp.compress(Bitmap.CompressFormat.JPEG, 70, out)
+            }
+            bmp.recycle()
+        } catch (_: Exception) {}
+    }
+
+    /** আগের snapshot থেকে instant splash দেখাও যতক্ষণ WebView load হচ্ছে */
+    private fun showInstantSplash(rootFrame: android.widget.FrameLayout) {
+        val file = java.io.File(cacheDir, "fb_snapshot.jpg")
+        if (!file.exists()) return
+        try {
+            val bmp = android.graphics.BitmapFactory.decodeFile(file.absolutePath) ?: return
+            val splash = android.widget.ImageView(this).apply {
+                setImageBitmap(bmp)
+                scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
+            }
+            rootFrame.addView(splash, android.widget.FrameLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+            ))
+            // WebView load হলে splash সরিয়ে দাও
+            rootFrame.postDelayed({
+                rootFrame.removeView(splash)
+                bmp.recycle()
+            }, 1200)
         } catch (_: Exception) {}
     }
 
