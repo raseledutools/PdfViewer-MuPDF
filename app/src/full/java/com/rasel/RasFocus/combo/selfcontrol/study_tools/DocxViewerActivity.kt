@@ -68,8 +68,8 @@ data class DocxParagraph(
 
 class DocxViewerActivity : ComponentActivity() {
 
-    private val uriState  = mutableStateOf<Uri?>(null)
-    private val nameState = mutableStateOf("Document")
+    private var currentUri:  Uri?   = null
+    private var currentName: String = "Document"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -102,7 +102,7 @@ class DocxViewerActivity : ComponentActivity() {
                 )
             } catch (_: SecurityException) {}
         }
-        uriState.value  = uri
+        currentUri  = uri
         nameState.value = uri?.let { getFileName(it) } ?: "Document"
     }
 

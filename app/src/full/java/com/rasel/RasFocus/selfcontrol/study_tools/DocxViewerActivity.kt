@@ -11,8 +11,9 @@ import androidx.core.view.WindowCompat
 
 class DocxViewerActivity : ComponentActivity() {
 
-    private val uriState  = mutableStateOf<Uri?>(null)
-    private val nameState = mutableStateOf("Document")
+    // Plain vars — updated before setContent recomposition
+    private var currentUri:  Uri?   = null
+    private var currentName: String = "Document"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -20,9 +21,14 @@ class DocxViewerActivity : ComponentActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         loadFromIntent(intent)
         setContent {
+            // Compose reads from State; wrap vars in remember+mutableStateOf here
+            val uriState  = androidx.compose.runtime.remember {
+                androidx.compose.runtime.mutableStateOf(currentUri)
+            }
+            val nameState = androidx.compose.runtime.remember {
+                androidx.compose.runtime.mutableStateOf(currentName)
+            }
             MaterialTheme {
-                // Reuses the same WebView-based OfficeWebViewer composable
-                // as PptxViewerActivity — supports DOCX, PPTX, XLSX equally
                 OfficeWebViewer(
                     uri      = uriState.value,
                     fileName = nameState.value,
@@ -46,8 +52,8 @@ class DocxViewerActivity : ComponentActivity() {
                 )
             } catch (_: SecurityException) {}
         }
-        uriState.value  = uri
-        nameState.value = uri?.let { getFileName(it) } ?: "Document.docx"
+        currentUri  = uri
+        currentName = uri?.let { getFileName(it) } ?: "Document.docx"
     }
 
     private fun getFileName(uri: Uri): String {
