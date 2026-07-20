@@ -1,12 +1,24 @@
 === KOTLIN/KAPT ERRORS ===
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/FacebookActivity.kt:502:23 Unresolved reference: Bitmap
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/FacebookActivity.kt:502:68 Unresolved reference: Bitmap
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/FacebookActivity.kt:507:30 Unresolved reference: Bitmap
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/SelfControlModule.kt:1276:86 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/SelfControlModule.kt:1379:74 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/SelfControlModule.kt:2410:94 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/service/YoutubeFloatingWindowService.kt:705:58 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/youtubeactivity.kt:28:7 Redeclaration: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/SelfControlModule.kt:1569:74 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/SelfControlModule.kt:2471:94 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/service/YoutubeFloatingWindowService.kt:749:58 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/service/YoutubeFloatingWindowService.kt:866:62 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/youtubeactivity.kt:28:7 Redeclaration: YoutubeActivity
 
 === UNRESOLVED / TYPE ERRORS ===
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/FacebookActivity.kt:502:23 Unresolved reference: Bitmap
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/FacebookActivity.kt:502:68 Unresolved reference: Bitmap
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/FacebookActivity.kt:507:30 Unresolved reference: Bitmap
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/SelfControlModule.kt:1276:86 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/SelfControlModule.kt:1379:74 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/SelfControlModule.kt:2410:94 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/service/YoutubeFloatingWindowService.kt:705:58 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/SelfControlModule.kt:1569:74 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/SelfControlModule.kt:2471:94 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/service/YoutubeFloatingWindowService.kt:749:58 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/service/YoutubeFloatingWindowService.kt:866:62 Unresolved reference: YoutubeActivity
 
 === KAPT / MODULE ERRORS ===
    > Compilation error. See log for more details
@@ -17,20 +29,13 @@ e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/
 > Task :app:compileFullReleaseKotlin FAILED
 * What went wrong:
 Execution failed for task ':app:compileFullReleaseKotlin'.
-BUILD FAILED in 3m 4s
+BUILD FAILED in 3m 14s
 
 === LAST 50 LINES ===
-> Task :app:compressFullReleaseAssets FROM-CACHE
-> Task :app:mergeFullReleaseNativeLibs
-> Task :app:collectFullReleaseDependencies
-
-> Task :app:stripFullReleaseDebugSymbols
-Unable to strip the following libraries, packaging them as they are: libbarhopper_v3.so, libimage_processing_util_jni.so, libpdfium.so, libpdfiumandroid.so.
-
 > Task :app:extractFullReleaseNativeSymbolTables FROM-CACHE
 > Task :app:mergeFullReleaseNativeDebugMetadata NO-SOURCE
-> Task :app:mergeFullReleaseResources FROM-CACHE
 > Task :app:sdkFullReleaseDependencyData
+> Task :app:mergeFullReleaseResources FROM-CACHE
 > Task :app:processFullReleaseMainManifest
 > Task :app:processFullReleaseManifest
 > Task :app:processFullReleaseManifestForPackage
@@ -41,12 +46,19 @@ note: generating mipmap/ic_launcher_round with config "anydpi-v33" for round ico
 > Task :app:processFullReleaseResources
 > Task :app:kspFullReleaseKotlin
 > Task :app:compileFullReleaseKotlin
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/FacebookActivity.kt:502:23 Unresolved reference: Bitmap
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/FacebookActivity.kt:502:68 Unresolved reference: Bitmap
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/FacebookActivity.kt:507:30 Unresolved reference: Bitmap
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/SelfControlModule.kt:1276:86 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/SelfControlModule.kt:1379:74 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/SelfControlModule.kt:2410:94 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/service/YoutubeFloatingWindowService.kt:705:58 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/youtubeactivity.kt:28:7 Redeclaration: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/SelfControlModule.kt:1569:74 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/SelfControlModule.kt:2471:94 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/service/YoutubeFloatingWindowService.kt:749:58 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/service/YoutubeFloatingWindowService.kt:866:62 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/youtubeactivity.kt:28:7 Redeclaration: YoutubeActivity
 
 > Task :app:compileFullReleaseKotlin FAILED
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784549385425.json
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784568088740.json
 
 FAILURE: Build failed with an exception.
 
@@ -67,6 +79,6 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.9/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 3m 4s
+BUILD FAILED in 3m 14s
 32 actionable tasks: 22 executed, 10 from cache
 Configuration cache entry stored.
