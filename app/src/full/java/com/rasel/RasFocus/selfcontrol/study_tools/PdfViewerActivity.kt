@@ -197,6 +197,8 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
         val bmp = Bitmap.createBitmap(bmpW, bmpH, Bitmap.Config.ARGB_8888)
         bmp.eraseColor(AColor.WHITE)
         pdfCore.renderPageBitmap(doc, bmp, pageIndex, 0, 0, bmpW, bmpH, true)
+        // FIX: must close after every openPage to free native pdfium resources
+        try { pdfCore.closePage(doc, pageIndex) } catch (_: Exception) {}
         return bmp
     }
 
@@ -247,6 +249,13 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
 
                     if (i == 0) {
                         val bmp = renderPage(doc, 0, bmpW, bmpH)
+                        // FIX: renderPage calls openPage internally — close it
+                        // after rendering so pdfium doesn't accumulate open
+                        // page handles (each openPage allocates native memory;
+                        // not closing them causes a native crash on any PDF
+                        // with more than a handful of pages when opened from
+                        // the file manager/folder).
+                        try { pdfCore.closePage(doc, 0) } catch (_: Exception) {}
                         bitmapCache.put(0, bmp)
                         withContext(Dispatchers.Main) {
                             pages[0]  = PageData(pageIndex = 0, widthPx = bmpW, heightPx = bmpH,
@@ -254,6 +263,10 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                             isLoading = false
                         }
                     } else {
+                        // Close the metadata-read page immediately — we only
+                        // needed the dimensions; actual rendering happens
+                        // lazily when the page scrolls into view.
+                        try { pdfCore.closePage(doc, i) } catch (_: Exception) {}
                         withContext(Dispatchers.Main) {
                             if (i < pages.size)
                                 pages[i] = PageData(pageIndex = i, widthPx = bmpW, heightPx = bmpH)
