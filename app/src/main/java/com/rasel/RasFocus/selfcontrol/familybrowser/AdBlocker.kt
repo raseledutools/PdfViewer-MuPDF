@@ -1,4 +1,4 @@
-package com.rasel.RasFocus.selfcontrol.familybrowser
+package com.rasel.RasFocus.combo.selfcontrol.familybrowser
 
 import android.content.Context
 import android.content.SharedPreferences
@@ -9,7 +9,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
-import com.rasel.RasFocus.selfcontrol.FirebaseKeywordSync
+import com.rasel.RasFocus.combo.selfcontrol.FirebaseKeywordSync
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -652,132 +652,145 @@ data class Quadruple<A, B, C, D>(val first: A, val second: B, val third: C, val 
 
 // ─── ৪. YouTube Ad Pruner — uBlock Origin json-prune approach ────────────────
 /**
- * YouTubeAdPruner
+ * YouTubeAdPruner — uBlock Origin এর json-prune এর exact equivalent
  *
- * uBlock Origin এর exact approach:
- *   youtube.com##+js(json-prune, playerResponse.adPlacements playerResponse.playerAds adPlacements playerAds adSlots)
+ * Layer 1: shouldInterceptRequest → POST body read করে ad fields prune
+ * Layer 2: JS inject → fetch()/XHR intercept (page-side, real-time)
  *
- * এটা YouTube এর /youtubei/v1/player API response থেকে ad fields সরিয়ে দেয়।
- * YouTube player তখন মনে করে কোনো ad নেই — ad request-ই যায় না।
- *
- * দুই layer:
- *   1. shouldInterceptRequest → POST response intercept (background thread)
- *   2. JS inject → fetch/XHR intercept (page-side, real-time)
+ * YouTube এর /youtubei/v1/player POST response থেকে adPlacements, playerAds
+ * ইত্যাদি delete করলে YouTube player মনে করে ad নেই — request-ই পাঠায় না।
  */
 object YouTubeAdPruner {
 
-    // YouTube player API endpoints যেগুলো ad data বহন করে
     private val YT_PLAYER_ENDPOINTS = listOf(
         "/youtubei/v1/player",
         "/youtubei/v1/next",
-        "/youtubei/v1/browse"
+        "/youtubei/v1/browse",
+        "/youtubei/v1/reel/reel_watch_sequence"
     )
 
-    // uBlock Origin এর exact field list — json-prune target
+    // uBlock Origin এর exact field list + নতুন fields (2024-2025 YouTube)
     private val AD_FIELDS = listOf(
         "adPlacements",
         "playerAds",
         "adSlots",
         "adBreakHeartbeatParams",
-        "auxiliaryUi",          // overlay ad
+        "auxiliaryUi",
         "adMessagingConfig",
-        "adVideoId"
+        "adVideoId",
+        "adBreakParams",
+        "adClientInfoExtension",
+        "adCpnExtension",
+        "adDurationRemaining",
+        "adLayoutLoggingData",
+        "adMetadataRenderer",
+        "adPlacementConfig",
+        "adRendererType",
+        "adResponseDecoder",
+        "adSurvey",
+        "adSystem",
+        "adTimeOffset",
+        "adVideoDuration",
+        "companionData",
+        "instreamVideoAdRenderer",
+        "linearAdSequenceRenderer",
+        "fullyAdFree",         // premium indicator — ওরা hide করে রাখে
+        "promotedSparkles"
     )
 
     /**
      * shouldInterceptRequest এ call করো।
-     * YouTube player URL হলে response fetch করে ad fields prune করে return করে।
-     * অন্য URL হলে null return করে (normal flow চলে)।
+     * YouTube /player এ POST করে — body read করে prune করে ফিরিয়ে দাও।
      */
     fun interceptPlayerResponse(
         request: android.webkit.WebResourceRequest
     ): android.webkit.WebResourceResponse? {
         val url = request.url?.toString() ?: return null
-
-        // YouTube player endpoint কিনা দেখো
-        val isPlayerEndpoint = YT_PLAYER_ENDPOINTS.any { url.contains(it) }
-        if (!isPlayerEndpoint) return null
+        if (YT_PLAYER_ENDPOINTS.none { url.contains(it) }) return null
 
         return try {
             val connection = java.net.URL(url).openConnection() as java.net.HttpURLConnection
 
-            // Original headers copy — cookie, auth সব দরকার
+            // Original headers copy — cookie, auth, X-Goog-* সব দরকার
             request.requestHeaders.forEach { (key, value) ->
                 try { connection.setRequestProperty(key, value) } catch (_: Exception) {}
             }
 
-            // YouTube mostly GET করে player endpoint এ
-            connection.requestMethod = "GET"
+            // YouTube /player endpoint এ POST করে — GET fallback নয়
+            val method = request.method ?: "POST"
+            connection.requestMethod = method
+            connection.doOutput = method == "POST"
+            connection.doInput = true
             connection.connectTimeout = 8000
-            connection.readTimeout = 8000
+            connection.readTimeout = 10000
+            connection.useCaches = false
+
+            // POST body — WebResourceRequest এ body নেই (Android limitation)
+            // তাই POST body ছাড়াই connect করি — YouTube 400 দেবে না, partial response দেবে
+            // আসল body JS-side fetch intercept ধরবে
             connection.connect()
 
-            if (connection.responseCode != 200) return null
+            if (connection.responseCode !in 200..299) return null
 
             val body = connection.inputStream.bufferedReader(Charsets.UTF_8).readText()
+            if (body.isBlank() || !body.trimStart().startsWith("{")) return null
+
             val pruned = pruneAdFields(body)
 
             android.webkit.WebResourceResponse(
-                connection.contentType ?: "application/json",
+                connection.contentType ?: "application/json; charset=UTF-8",
                 "UTF-8",
+                200,
+                "OK",
+                mapOf(
+                    "Content-Type" to "application/json; charset=UTF-8",
+                    "Access-Control-Allow-Origin" to "*"
+                ),
                 pruned.byteInputStream(Charsets.UTF_8)
             )
-        } catch (_: Exception) {
-            // Network error বা JSON parse fail — normal load হতে দাও
-            null
-        }
+        } catch (_: Exception) { null }
     }
 
-    /**
-     * JSON string থেকে ad-related fields সরিয়ে দাও।
-     * uBlock Origin এর json-prune scriptlet এর exact equivalent।
-     */
     fun pruneAdFields(json: String): String {
         if (json.isBlank()) return json
         return try {
             val obj = org.json.JSONObject(json)
             removeAdFields(obj)
             obj.toString()
-        } catch (_: Exception) {
-            json // parse fail হলে original দাও
-        }
+        } catch (_: Exception) { json }
     }
 
     private fun removeAdFields(obj: org.json.JSONObject) {
-        // Top-level fields সরাও
-        AD_FIELDS.forEach { field -> obj.remove(field) }
-
-        // Nested playerResponse এ সরাও
+        AD_FIELDS.forEach { obj.remove(it) }
         obj.optJSONObject("playerResponse")?.let { pr ->
-            AD_FIELDS.forEach { field -> pr.remove(field) }
+            AD_FIELDS.forEach { pr.remove(it) }
         }
-
-        // contents array তে sponsored items সরাও
-        obj.optJSONObject("contents")?.let { contents ->
-            pruneContents(contents)
+        // streamingData এ আর ad segment থাকলে সরাও
+        obj.optJSONObject("streamingData")?.remove("adTimingDataByAdPodId")
+        // contents tree তে sponsored items সরাও
+        obj.optJSONObject("contents")?.let { pruneContents(it) }
+        // nested objects recursive
+        obj.keys().forEach { key ->
+            when (val v = obj.opt(key)) {
+                is org.json.JSONObject -> removeAdFields(v)
+                is org.json.JSONArray  -> pruneArray(v)
+            }
         }
     }
 
     private fun pruneContents(obj: org.json.JSONObject) {
-        // twoColumnBrowseResultsRenderer → tabs → tabRenderer → content
-        // এর মধ্যে promotedVideoRenderer, searchPyvRenderer সরাও
         val sponsoredKeys = listOf(
-            "promotedVideoRenderer",
-            "searchPyvRenderer",
-            "promotedSparklesWebRenderer",
-            "adSlotRenderer"
+            "promotedVideoRenderer", "searchPyvRenderer",
+            "promotedSparklesWebRenderer", "adSlotRenderer",
+            "compactPromotedVideoRenderer", "universalWatchCardRenderer"
         )
-
         val iter = obj.keys()
         while (iter.hasNext()) {
             val key = iter.next()
-            if (sponsoredKeys.contains(key)) {
-                iter.remove()
-                continue
-            }
-            when (val value = obj.opt(key)) {
-                is org.json.JSONObject -> pruneContents(value)
-                is org.json.JSONArray -> pruneArray(value)
+            if (key in sponsoredKeys) { iter.remove(); continue }
+            when (val v = obj.opt(key)) {
+                is org.json.JSONObject -> pruneContents(v)
+                is org.json.JSONArray  -> pruneArray(v)
             }
         }
     }
@@ -792,74 +805,73 @@ object YouTubeAdPruner {
     }
 
     /**
-     * JS inject করার script — page load এ একবার inject করলেই হয়।
+     * JS inject script — page load এ একবার inject হলেই চলে।
      *
-     * এটা fetch() এবং XMLHttpRequest দুটোই intercept করে।
-     * YouTube যখন /player endpoint এ call করে, response এর আগেই
-     * ad fields সরিয়ে দেওয়া হয়।
-     *
-     * uBlock Origin এর json-prune + nano-setInterval-logger approach।
+     * ৩ layer:
+     *   1. fetch() intercept → /player response prune
+     *   2. XHR intercept → same
+     *   3. ytInitialPlayerResponse patch (inline JSON)
      */
     fun getJsInjectScript(): String = """
 (function() {
-    if (window.__rasAdPrunerInstalled) return;
-    window.__rasAdPrunerInstalled = true;
+    if (window.__rasAdPrunerInstalled__) return;
+    window.__rasAdPrunerInstalled__ = true;
 
-    // Ad fields যেগুলো সরাতে হবে — uBlock এর exact list
     var AD_FIELDS = [
-        'adPlacements', 'playerAds', 'adSlots',
-        'adBreakHeartbeatParams', 'auxiliaryUi',
-        'adMessagingConfig', 'adVideoId'
+        'adPlacements','playerAds','adSlots','adBreakHeartbeatParams',
+        'auxiliaryUi','adMessagingConfig','adVideoId','adBreakParams',
+        'adClientInfoExtension','adCpnExtension','adDurationRemaining',
+        'adLayoutLoggingData','adMetadataRenderer','adPlacementConfig',
+        'adRendererType','adSurvey','adSystem','adTimeOffset',
+        'adVideoDuration','companionData','instreamVideoAdRenderer',
+        'linearAdSequenceRenderer','promotedSparkles'
     ];
-
-    function pruneAdFields(json) {
-        try {
-            var obj = JSON.parse(json);
-            removeFields(obj);
-            return JSON.stringify(obj);
-        } catch(e) {
-            return json;
-        }
-    }
 
     function removeFields(obj) {
         if (!obj || typeof obj !== 'object') return;
         AD_FIELDS.forEach(function(f) { delete obj[f]; });
-        // nested playerResponse
         if (obj.playerResponse) {
             AD_FIELDS.forEach(function(f) { delete obj.playerResponse[f]; });
         }
-        // array items
-        Object.keys(obj).forEach(function(key) {
-            var val = obj[key];
-            if (Array.isArray(val)) {
-                val.forEach(function(item) { removeFields(item); });
-            } else if (val && typeof val === 'object') {
-                removeFields(val);
+        if (obj.streamingData) {
+            delete obj.streamingData.adTimingDataByAdPodId;
+        }
+        Object.keys(obj).forEach(function(k) {
+            var v = obj[k];
+            if (Array.isArray(v)) {
+                v.forEach(function(item) { removeFields(item); });
+            } else if (v && typeof v === 'object') {
+                removeFields(v);
             }
         });
     }
 
+    function pruneJson(text) {
+        try {
+            var obj = JSON.parse(text);
+            removeFields(obj);
+            return JSON.stringify(obj);
+        } catch(e) { return text; }
+    }
+
     function isPlayerUrl(url) {
-        return url && (
-            url.includes('/youtubei/v1/player') ||
-            url.includes('/youtubei/v1/next') ||
-            url.includes('/youtubei/v1/browse')
-        );
+        if (!url) return false;
+        return url.indexOf('/youtubei/v1/player') !== -1 ||
+               url.indexOf('/youtubei/v1/next') !== -1 ||
+               url.indexOf('/youtubei/v1/browse') !== -1 ||
+               url.indexOf('/youtubei/v1/reel/reel_watch_sequence') !== -1;
     }
 
     // ── 1. fetch() intercept ──────────────────────────────────────────────────
     var origFetch = window.fetch;
     window.fetch = function(input, init) {
         var url = (typeof input === 'string') ? input : (input && input.url) || '';
-        return origFetch.call(this, input, init).then(function(response) {
-            if (!isPlayerUrl(url)) return response;
-            return response.clone().text().then(function(text) {
-                var pruned = pruneAdFields(text);
+        if (!isPlayerUrl(url)) return origFetch.call(this, input, init);
+        return origFetch.call(this, input, init).then(function(resp) {
+            return resp.clone().text().then(function(text) {
+                var pruned = pruneJson(text);
                 return new Response(pruned, {
-                    status: response.status,
-                    statusText: response.statusText,
-                    headers: response.headers
+                    status: resp.status, statusText: resp.statusText, headers: resp.headers
                 });
             });
         });
@@ -868,55 +880,56 @@ object YouTubeAdPruner {
     // ── 2. XMLHttpRequest intercept ───────────────────────────────────────────
     var origOpen = XMLHttpRequest.prototype.open;
     var origSend = XMLHttpRequest.prototype.send;
-
-    XMLHttpRequest.prototype.open = function(method, url) {
-        this._rasUrl = url;
+    XMLHttpRequest.prototype.open = function(m, url) {
+        this._rasUrl__ = url;
         return origOpen.apply(this, arguments);
     };
-
     XMLHttpRequest.prototype.send = function() {
-        if (isPlayerUrl(this._rasUrl)) {
+        if (isPlayerUrl(this._rasUrl__)) {
             var xhr = this;
-            var origOnReadyStateChange = xhr.onreadystatechange;
-            Object.defineProperty(xhr, 'responseText', {
-                get: function() {
-                    var raw = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, 'responseText');
-                    var text = raw ? raw.get.call(xhr) : '';
-                    if (xhr.readyState === 4 && isPlayerUrl(xhr._rasUrl)) {
-                        return pruneAdFields(text);
-                    }
-                    return text;
-                },
-                configurable: true
+            this.addEventListener('readystatechange', function() {
+                if (xhr.readyState === 4) {
+                    try {
+                        var desc = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, 'responseText');
+                        Object.defineProperty(xhr, 'responseText', {
+                            get: function() {
+                                var raw = desc ? desc.get.call(xhr) : '';
+                                return pruneJson(raw);
+                            },
+                            configurable: true
+                        });
+                    } catch(e) {}
+                }
             });
         }
         return origSend.apply(this, arguments);
     };
 
-    // ── 3. Skip ad button auto-click (backup) ─────────────────────────────────
-    function skipAds() {
-        var skip = document.querySelector('.ytp-skip-ad-button, .ytp-ad-skip-button, .ytp-ad-skip-button-modern');
-        if (skip) { skip.click(); return; }
+    // ── 3. ytInitialPlayerResponse patch (inline JSON in page HTML) ───────────
+    // YouTube page HTML এ window.ytInitialPlayerResponse = {...} inline থাকে।
+    // এটাও patch করতে হবে।
+    try {
+        Object.defineProperty(window, 'ytInitialPlayerResponse', {
+            get: function() { return this.__ytIPR__; },
+            set: function(val) {
+                if (val && typeof val === 'object') removeFields(val);
+                this.__ytIPR__ = val;
+            },
+            configurable: true
+        });
+    } catch(e) {}
 
-        var video = document.querySelector('video');
-        var adShowing = document.querySelector('.ad-showing, .ad-interrupting');
-        if (video && adShowing && !video.paused) {
-            video.currentTime = video.duration || 9999;
-        }
+    // ── 4. yt.setConfig / ytcfg patch ────────────────────────────────────────
+    // YouTube runtime config এও ad data থাকে
+    var origSetConfig = window.yt && window.yt.setConfig;
+    if (origSetConfig) {
+        window.yt.setConfig = function(cfg) {
+            try { removeFields(cfg); } catch(e) {}
+            return origSetConfig.call(this, cfg);
+        };
     }
 
-    // MutationObserver দিয়ে DOM change track করো
-    var observer = new MutationObserver(function() {
-        skipAds();
-    });
-    if (document.body) {
-        observer.observe(document.body, { childList: true, subtree: true });
-    }
-
-    // Interval backup
-    setInterval(skipAds, 500);
-
-    console.log('[RasBrowser] YouTube ad pruner installed');
+    console.log('[RasFocus] YouTubeAdPruner v2 installed — 4 layers active');
 })();
 """.trimIndent()
 }
