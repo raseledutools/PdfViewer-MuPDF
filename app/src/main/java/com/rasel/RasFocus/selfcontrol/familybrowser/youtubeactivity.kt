@@ -1,19 +1,15 @@
-package com.rasel.RasFocus.selfcontrol.familybrowser
+package com.rasel.RasFocus.combo.selfcontrol.familybrowser
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.app.PictureInPictureParams
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.res.Configuration
 import android.graphics.Color
-import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
-import android.util.Rational
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -46,22 +42,8 @@ class YoutubeActivity : ComponentActivity() {
     // onPageFinished এর দ্বিতীয় check স্কিপ করে দেয়।
     private var adultBlockAlreadyShownForThisLoad = false
 
-    // Mini player চালু আছে কিনা track করার জন্য (পুরনো overlay-permission-based
-    // floating service path — screen lock এ এখনো এটাই ব্যবহার হয়)
+    // Mini player চালু আছে কিনা track করার জন্য
     private var isMiniPlayerActive = false
-
-    // ── System Picture-in-Picture (Android native PiP) ──────────────────────
-    // isMiniPlayerActive থেকে আলাদা রাখা হলো ইচ্ছাকৃতভাবে — দুটো সম্পূর্ণ আলাদা
-    // mechanism। isMiniPlayerActive = নিজস্ব overlay service (screen lock এ
-    // ব্যবহার হয়, overlay permission লাগে)। isInSystemPip = Android-এর built-in
-    // PiP API (home button/recent-apps এ ব্যবহার হয়, কোনো extra permission লাগে
-    // না)। দুটো একসাথে active হলে conflict হবে, তাই home-button path এ শুধু
-    // একটাই বেছে নেওয়া হয় (দেখুন onUserLeaveHint)।
-    private var isInSystemPip = false
-
-    // Video-র actual aspect ratio ধরে রাখি যাতে PiP window সঠিক shape এ খোলে
-    // (16:9 hardcode না করে — vertical Shorts এ mismatch হতো)
-    private var lastKnownVideoAspectRatio: Rational = Rational(16, 9)
 
     // ── LAYER 2: Wake Lock ─────────────────────────────────────────────────────
     private var wakeLock: PowerManager.WakeLock? = null
@@ -178,22 +160,6 @@ class YoutubeActivity : ComponentActivity() {
 
         injectVisibilitySpoofBeforeLeave(wv)
 
-        // ★ FIX: title/videoId BEFORE webView=null — evaluateJavascript
-        // needs a live webView reference. Grab everything synchronously
-        // from the WebView object we still hold, then null it out.
-        val capturedTitle   = wv.title?.removeSuffix(" - YouTube")
-                                       ?.removeSuffix(" – YouTube")?.trim()
-                               ?: "YouTube — Playing"
-        val capturedUrl     = wv.url ?: currentUrl
-        val capturedVideoId = try {
-            val uri = android.net.Uri.parse(capturedUrl)
-            uri.getQueryParameter("v")
-                ?: if (uri.host?.contains("youtu.be") == true) uri.pathSegments.firstOrNull()
-                else uri.pathSegments.firstOrNull { it.length == 11 }
-        } catch (_: Exception) { null }
-        val capturedThumb   = if (capturedVideoId != null)
-            "https://img.youtube.com/vi/$capturedVideoId/hqdefault.jpg" else null
-
         // WebView service এ দাও — reload হবে না
         com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView = wv
         com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.launchNoReload(
@@ -206,22 +172,7 @@ class YoutubeActivity : ComponentActivity() {
         // Activity কে background এ পাঠাও
         moveTaskToBack(true)
 
-        // ★ FIX: start service with captured values (webView is null now,
-        // old evaluateJavascript-based path silently did nothing after null)
-        val svc = Intent(
-            this,
-            com.rasel.RasFocus.selfcontrol.familybrowser.service.BackgroundAudioService::class.java
-        ).apply {
-            putExtra(com.rasel.RasFocus.selfcontrol.familybrowser.service.BackgroundAudioService.EXTRA_TITLE, capturedTitle)
-            putExtra("extra_video_url", capturedUrl)
-            if (capturedThumb  != null) putExtra("extra_thumb_url", capturedThumb)
-            if (capturedVideoId != null) putExtra("extra_video_id", capturedVideoId)
-        }
-        try {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O)
-                startForegroundService(svc)
-            else startService(svc)
-        } catch (_: Exception) {}
+        startBgAudioService()
     }
 
     companion object {
@@ -360,7 +311,6 @@ class YoutubeActivity : ComponentActivity() {
                 ),
                 "RasBlockBridge"
             )
-            addJavascriptInterface(PipAspectBridge(), "RasPipAspectBridge")
 
             webViewClient = object : WebViewClient() {
                 override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
@@ -377,7 +327,6 @@ class YoutubeActivity : ComponentActivity() {
                     injectAdBlocker(view)
                     injectSettingsRemover(view)
                     adBlocker.injectContentScanner(view)
-                    injectVideoAspectRatioTracker(view)
 
                     // FIX: এই navigation এ shouldOverrideUrlLoading/shouldInterceptRequest
                     // এ URL-level check করে ইতিমধ্যে একবার block page দেখানো হয়ে থাকলে,
@@ -602,32 +551,38 @@ class YoutubeActivity : ComponentActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         if (isMiniPlayerActive) {
+            // ★ FIX: Lock → Floating → Unlock flow
+            // isMiniPlayerActive = true মানে WebView এখন floating service এ আছে
+            // Service বন্ধ করলে onDestroy() এ WebView pendingWebView এ রাখবে
             isMiniPlayerActive = false
             stopBgAudioService()
 
-            // OPTIMIZED: grab pendingWebView BEFORE stopping service —
-            // service onDestroy() sets it too but that's async.
-            // If caller (Open App button) already set pendingWebView, we get it
-            // immediately without any delay. stopService() then cleans up.
-            val rootFrame = getRootFrame()
-            val immediateWv = com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView
-            if (immediateWv != null) {
-                // Got it instantly — reattach now, stop service in parallel
-                com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView = null
-                reattachWebView(immediateWv, rootFrame)
-                try {
-                    stopService(Intent(this, com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService::class.java))
-                } catch (_: Exception) {}
-            } else {
-                // WebView still in service — stop it, wait for onDestroy to set pendingWebView
-                try {
-                    stopService(Intent(this, com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService::class.java))
-                } catch (_: Exception) {}
-                if (webView == null) {
+            // Floating service বন্ধ করো — onDestroy() এ pendingWebView set হবে
+            try {
+                stopService(Intent(
+                    this,
+                    com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService::class.java
+                ))
+            } catch (_: Exception) {}
+
+            if (webView == null) {
+                // ★ FIX: Service synchronous হয় না, তাই postDelayed দিয়ে WebView নাও
+                // pendingWebView set হতে সামান্য সময় লাগে
+                val rootFrame = getRootFrame()
+
+                // প্রথমে immediately চেষ্টা করো
+                val immediateWv = com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView
+                if (immediateWv != null) {
+                    reattachWebView(immediateWv, rootFrame)
+                } else {
+                    // Fallback: একটু অপেক্ষা করো — service onDestroy() সময় নিচ্ছে
                     rootFrame?.postDelayed({
                         val pendingWv = com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView
-                        if (pendingWv != null) reattachWebView(pendingWv, rootFrame)
-                    }, 120) // reduced from 200ms → 120ms
+                        if (pendingWv != null) {
+                            reattachWebView(pendingWv, rootFrame)
+                        }
+                        // পুরোপুরি fail হলে: নতুন করে YouTube load করো (worst case)
+                    }, 200)
                 }
             }
             return
@@ -668,9 +623,9 @@ class YoutubeActivity : ComponentActivity() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
-            // Keep black background while WebView surface re-attaches
+            // ★ FIX: Black screen → WebView আগে invisible রাখো, content load হলে visible করো
             returnedWv.visibility = View.INVISIBLE
-            returnedWv.alpha = 0f
+            returnedWv.alpha = 1f
             rootFrame.setBackgroundColor(android.graphics.Color.BLACK)
             rootFrame.addView(returnedWv)
             rootFrame.bringToFront()
@@ -682,45 +637,34 @@ class YoutubeActivity : ComponentActivity() {
         injectVisibilitySpoof(returnedWv)
         injectYoutubeHacksForced(returnedWv)
 
-        // OPTIMIZED TRANSITION: single 80ms pass — layout must settle first.
-        // Then JS poll every 60ms (1 frame) until video surface is ready
-        // (readyState >= 2 = HAVE_CURRENT_DATA), show immediately.
-        // Hard fallback: 400ms so worst-case blank is halved vs old 600ms.
-        var shown = false
-        fun showWebView() {
-            if (shown) return
-            shown = true
+        // ★ FIX: 150ms পরে visible করো — WebView render হওয়ার পরে
+        // এতে black flash দেখা যাবে না
+        returnedWv.postDelayed({
             returnedWv.visibility = View.VISIBLE
             returnedWv.alpha = 1f
             returnedWv.bringToFront()
-            // Unmute + resume play in same pass — no extra postDelayed needed
+            returnedWv.invalidate()
+        }, 150)
+
+        // ★ FIX: Video unmute + play ensure
+        returnedWv.postDelayed({
+            injectVisibilitySpoof(returnedWv)
             returnedWv.evaluateJavascript("""
-                (function(){
+                (function() {
                     try {
-                        var vs = document.querySelectorAll('video');
-                        for(var i=0;i<vs.length;i++){
-                            vs[i].muted = false;
-                            if(vs[i].paused && !vs[i].ended) vs[i].play().catch(function(){});
+                        var videos = document.querySelectorAll('video');
+                        for (var i = 0; i < videos.length; i++) {
+                            try {
+                                videos[i].muted = false;
+                                if (videos[i].paused && !videos[i].ended) {
+                                    videos[i].play().catch(function(){});
+                                }
+                            } catch(e) {}
                         }
-                    } catch(e){}
-                })()
+                    } catch(e) {}
+                })();
             """.trimIndent(), null)
-        }
-        // Hard fallback at 400ms
-        returnedWv.postDelayed({ showWebView() }, 400)
-        // Poll every 60ms starting at 80ms — show as soon as surface ready
-        fun pollReady(attempt: Int) {
-            returnedWv.postDelayed({
-                returnedWv.evaluateJavascript("""
-                    (function(){try{var v=document.querySelector('video');return v?String(v.readyState):'0';}catch(e){return '0';}})()"
-                """.trimIndent()) { rs ->
-                    val ready = rs?.trim('"')?. toIntOrNull() ?: 0
-                    if (ready >= 2) showWebView()
-                    else if (attempt < 5) pollReady(attempt + 1) // max 5 polls = 380ms
-                }
-            }, (80 + attempt * 60).toLong())
-        }
-        pollReady(0)
+        }, 300)
     }
 
     private fun injectVisibilitySpoofBeforeLeave(wv: WebView) {
@@ -731,10 +675,6 @@ class YoutubeActivity : ComponentActivity() {
                     Object.defineProperty(document, 'visibilityState', { get: function(){ return 'visible'; }, configurable: true });
                     Object.defineProperty(document, 'webkitHidden', { get: function(){ return false; }, configurable: true });
                     Object.defineProperty(document, 'webkitVisibilityState', { get: function(){ return 'visible'; }, configurable: true });
-                    // Reset user-pause flag when leaving to floating/background
-                    // so the keep-alive interval resumes force-play on lock screen.
-                    // (If the user had paused before locking, injectYoutubeHacksForced
-                    //  checks this flag separately and still won't force-play.)
                 } catch(e) {}
             })();
         """.trimIndent(), null)
@@ -763,20 +703,14 @@ class YoutubeActivity : ComponentActivity() {
     override fun onPause() {
         webView?.resumeTimers()
         webView?.onResume()
-        webView?.let { injectVisibilitySpoof(it) }
-        super.onPause()
-
-        // FIX AUDIO-ON-LOCK: screenOffReceiver's ACTION_SCREEN_OFF already calls
-        // launchFloatingOnLock() which starts BackgroundAudioService with correct
-        // title/thumb metadata. If we also call startBgAudioService() here, it runs
-        // BEFORE the floating launch captures the WebView, so evaluateJavascript gets
-        // a null/wrong webView → notification shows wrong title, and the double-start
-        // can cause the service to restart mid-stream, killing audio for ~1s.
-        // Solution: skip service start here if a floating/lock transition is in progress
-        // (isMiniPlayerActive is set by launchFloatingOnLock before onPause fires).
-        if (!isMiniPlayerActive) {
-            startBgAudioService()
+        webView?.let {
+            injectVisibilitySpoof(it)
+            injectYoutubeHacksForced(it)
         }
+        super.onPause()
+        
+        // অ্যাপ থেকে অন্য কোথাও গেলে অডিও প্লে হবে
+        startBgAudioService()
         if (wakeLock?.isHeld == false) wakeLock?.acquire()
     }
 
@@ -788,13 +722,7 @@ class YoutubeActivity : ComponentActivity() {
     override fun onStop() {
         webView?.resumeTimers()
         super.onStop()
-        // FIX: onUserLeaveHint → launchFloatingOnLock → onPause → onStop sequential.
-        // onPause already skips service start when isMiniPlayerActive, but onStop
-        // was still calling it — causing a second service start that restarted the
-        // foreground service mid-stream and cut audio for ~1s on home press.
-        if (webView != null && !isFinishing && !isMiniPlayerActive) {
-            startBgAudioService()
-        }
+        if (webView != null && !isFinishing) startBgAudioService()
     }
 
     override fun onDestroy() {
@@ -838,44 +766,10 @@ class YoutubeActivity : ComponentActivity() {
 
                     if (!window.__rasVideoKeepAlive__) {
                         window.__rasVideoKeepAlive__ = true;
-
-                        // Track whether the user manually paused — if so,
-                        // the keep-alive interval must NOT force-play.
-                        // Reset to false when user explicitly hits play.
-                        if (typeof window.__rasUserPaused__ === 'undefined') {
-                            window.__rasUserPaused__ = false;
-                        }
-
-                        // Listen to the video element's own pause/play events
-                        // to distinguish user intent from system-initiated pauses.
-                        var _attachPauseListeners = function(video) {
-                            if (video.__rasListenersAttached__) return;
-                            video.__rasListenersAttached__ = true;
-                            video.addEventListener('pause', function() {
-                                // Only mark as user-paused if the video still
-                                // has content — a mid-ad pause or buffering stall
-                                // should not lock out the keep-alive.
-                                if (!video.ended && video.readyState > 1) {
-                                    window.__rasUserPaused__ = true;
-                                }
-                            });
-                            video.addEventListener('play', function() {
-                                window.__rasUserPaused__ = false;
-                            });
-                            video.addEventListener('playing', function() {
-                                window.__rasUserPaused__ = false;
-                            });
-                        };
-
                         setInterval(function() {
                             try {
                                 var v = document.querySelector('video');
-                                if (!v) return;
-                                // Attach listeners to any newly created video element
-                                _attachPauseListeners(v);
-                                // Only force-play if user has NOT manually paused
-                                if (v.paused && !v.ended && v.readyState > 1
-                                        && !window.__rasUserPaused__) {
+                                if (v && v.paused && !v.ended && v.readyState > 1) {
                                     v.play().catch(function(){});
                                 }
                             } catch(e) {}
@@ -982,86 +876,124 @@ class YoutubeActivity : ComponentActivity() {
     private fun injectAdBlocker(view: WebView) {
         view.evaluateJavascript("""
             (function() {
-                // FIX (speed bug): আগে guard ছাড়া প্রতিবার onPageFinished এ (YouTube
-                // SPA navigation এ বারবার fire হয়) নতুন setInterval যোগ হতো, কখনো
-                // clear হতো না — কিছুক্ষণ ব্যবহার করলে ডজন ডজন interval জমে DOM
-                // scan করতেই থাকতো, এটাই মূল slow-hওয়ার কারণ ছিল। এখন একটাই
-                // interval সারাজীবন চলবে (page যতবারই reload/navigate হোক না কেন)।
+                // Guard: একটাই interval সারাজীবন চলবে।
                 if (window.__rasAdBlockerActive__) return;
                 window.__rasAdBlockerActive__ = true;
+
+                // ── BLACK SCREEN ROOT CAUSE ──────────────────────────────────────────
+                // YouTube ad চলার সময় DOM এ দুইটা <video> থাকে:
+                //   [0] = ad video  (src = googlevideo.com/videoplayback?...&oad=...)
+                //   [1] = main video (src = googlevideo.com/videoplayback?...&id=...)
+                // আগের fix: player.querySelector('video') — এটা [0] ধরতো, ঠিকই ad
+                // skip করতো, কিন্তু YouTube এর player state machine তখনও ad-mode এ
+                // থাকে — transition এ compositor নতুন surface allocate করার আগেই
+                // পুরনো surface release করে দেয়, ফলে main video decode শুরু হওয়ার
+                // আগ পর্যন্ত screen blank থাকে।
+                //
+                // ── FIX STRATEGY ────────────────────────────────────────────────────
+                // 1. সব video element নিই (querySelectorAll)
+                // 2. ad video = src তে "ctier=A" বা "oad=" আছে এমন
+                //    main video = ad video না হলেই main
+                // 3. ad skip করার সাথে সাথে main video কে:
+                //    a. muted=false করি (YouTube sometimes mutes it during ad)
+                //    b. visibility/display force করি
+                //    c. play() call দিই — renderer surface জেগে ওঠে
+                // 4. 300ms পরে আবার play() — transition delay cover করতে
+                // ────────────────────────────────────────────────────────────────────
+
+                function isAdVideo(v) {
+                    try {
+                        var src = v.src || '';
+                        // YouTube ad videoplayback URL এ এই params থাকে
+                        return src.indexOf('ctier=A') !== -1 ||
+                               src.indexOf('&oad=') !== -1 ||
+                               src.indexOf('&adformat=') !== -1 ||
+                               (v.closest ? !!v.closest('.ad-showing') : false);
+                    } catch(e) { return false; }
+                }
+
+                function wakeMainVideo(player) {
+                    try {
+                        var allVideos = player.querySelectorAll('video');
+                        var mainVideo = null;
+                        for (var i = 0; i < allVideos.length; i++) {
+                            if (!isAdVideo(allVideos[i])) { mainVideo = allVideos[i]; break; }
+                        }
+                        // fallback: যদি identify করতে না পারি, সবচেয়ে শেষের video নাও
+                        if (!mainVideo && allVideos.length > 1) {
+                            mainVideo = allVideos[allVideos.length - 1];
+                        }
+                        if (!mainVideo) return;
+
+                        // Surface wake: visibility + mute fix + play
+                        mainVideo.style.visibility = 'visible';
+                        mainVideo.style.display    = 'block';
+                        mainVideo.style.opacity    = '1';
+                        if (mainVideo.muted) mainVideo.muted = false;
+                        mainVideo.play().catch(function(){});
+
+                        // Double-tap 300ms পরে — transition buffer
+                        setTimeout(function() {
+                            try {
+                                mainVideo.style.visibility = 'visible';
+                                if (mainVideo.paused) mainVideo.play().catch(function(){});
+                            } catch(e) {}
+                        }, 300);
+                    } catch(e) {}
+                }
+
+                var wasAdShowing = false;
+
                 setInterval(function() {
-                    var skipBtn = document.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button');
-                    if (skipBtn) { skipBtn.click(); }
-                    var ads = document.querySelectorAll('.ytp-ad-overlay-container, ytm-promoted-video-renderer, .ad-showing');
-                    ads.forEach(function(ad) { ad.style.display = 'none'; });
-                    // ★ FIX (black screen after ad-block): আগে এখানে ad চলাকালীন
-                    // video.currentTime = video.duration সেট করে জোর করে ad শেষ
-                    // করা হতো। কিন্তু YouTube ad ও main video একই <video> element
-                    // শেয়ার করে — HTML5 API দিয়ে সরাসরি currentTime জোর করে
-                    // পাল্টালে YouTube-এর নিজস্ব player state machine-এর সাথে
-                    // real <video> element-এর state desync হয়ে যেত। এর ফলে audio
-                    // pipeline ঠিক চলতো (আলাদা track), কিন্তু video renderer/surface
-                    // নতুন frame নিতে ব্যর্থ হতো — তাই ad block হওয়ার পরপরই স্ক্রিন
-                    // কালো থেকে যেত। skipBtn.click() (উপরে) YouTube-এর নিজের player
-                    // এর মাধ্যমেই properly skip করে, তাই এই forced-seek hack টা
-                    // সম্পূর্ণ সরিয়ে দেওয়া হলো।
-                }, 500);
+                    try {
+                        // ── 1. Skip button ক্লিক (সবচেয়ে safe) ──
+                        var skipBtn = document.querySelector(
+                            '.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button'
+                        );
+                        if (skipBtn) { skipBtn.click(); return; }
+
+                        // ── 2. Banner / overlay ads hide করো ──
+                        document.querySelectorAll(
+                            '.ytp-ad-overlay-container, ytm-promoted-video-renderer, ' +
+                            '.ytp-ad-text-overlay, .ytp-ad-image-overlay'
+                        ).forEach(function(ad) { ad.style.display = 'none'; });
+
+                        // ── 3. Video ad skip + black screen fix ──
+                        var player = document.querySelector('#movie_player, .html5-video-player');
+                        if (!player) return;
+
+                        var isAdShowing = player.classList.contains('ad-showing');
+
+                        if (isAdShowing) {
+                            wasAdShowing = true;
+                            var adVideo = player.querySelector('video');
+                            if (adVideo && adVideo.duration > 0 && !adVideo.ended) {
+                                adVideo.currentTime = adVideo.duration;
+                            }
+                        } else if (wasAdShowing) {
+                            // ── ad সবে শেষ হলো — এটাই black screen moment ──
+                            // player.classList থেকে 'ad-showing' উঠে গেছে মানে
+                            // transition শুরু হয়েছে — এখনই main video wake করো
+                            wasAdShowing = false;
+                            wakeMainVideo(player);
+                        }
+
+                    } catch(e) {}
+                }, 300);
             })();
         """.trimIndent(), null)
     }
 
     private fun injectYoutubeHacksForced(view: WebView) {
-        // Called on lock / home-button / re-attach.
-        // Only force-plays if user did NOT manually pause (__rasUserPaused__).
-        // FIX SLOW: re-registers the keep-alive setInterval each time this was called
-        // (injectYoutubeHacks guard __rasBgAudioInjected__ is on the OTHER function,
-        // this one had no guard so repeated calls stacked up multiple intervals).
-        // Now just does a one-shot play attempt + visibility spoof — the interval
-        // lives in injectYoutubeHacks which IS guarded.
         view.evaluateJavascript("""
             (function() {
                 try {
                     Object.defineProperty(document, 'hidden', { get: function(){ return false; }, configurable: true });
-                    Object.defineProperty(document, 'visibilityState', { get: function(){ return 'visible'; }, configurable: true });
                     var videos = document.querySelectorAll('video');
                     for (var i = 0; i < videos.length; i++) {
-                        try {
-                            if (videos[i].paused && !window.__rasUserPaused__) {
-                                videos[i].play().catch(function(){});
-                            }
-                        } catch(e) {}
+                        try { if (videos[i].paused) videos[i].play().catch(function(){}); } catch(e) {}
                     }
                 } catch(e) {}
-            })();
-        """.trimIndent(), null)
-    }
-
-    /**
-     * System PiP window খোলার সময় সঠিক aspect ratio ব্যবহার করার জন্য video-র
-     * videoWidth/videoHeight periodically পড়ে RasPipAspectBridge দিয়ে Kotlin
-     * এ পাঠায়। guard flag দিয়ে single interval নিশ্চিত করা হয়েছে (অন্য
-     * injectXxx function গুলোর মতো একই pattern) — না হলে YouTube এর SPA
-     * navigation এ প্রতিবার onPageFinished fire হওয়ায় interval জমতে থাকতো।
-     */
-    private fun injectVideoAspectRatioTracker(view: WebView) {
-        view.evaluateJavascript("""
-            (function() {
-                if (window.__rasPipAspectTrackerActive__) return;
-                window.__rasPipAspectTrackerActive__ = true;
-                var lastW = 0, lastH = 0;
-                setInterval(function() {
-                    try {
-                        var v = document.querySelector('video');
-                        if (!v || !v.videoWidth || !v.videoHeight) return;
-                        // মান একই থাকলে বৃথা bridge call এড়িয়ে যাও
-                        if (v.videoWidth === lastW && v.videoHeight === lastH) return;
-                        lastW = v.videoWidth;
-                        lastH = v.videoHeight;
-                        if (window.RasPipAspectBridge) {
-                            window.RasPipAspectBridge.onVideoDimensions(v.videoWidth, v.videoHeight);
-                        }
-                    } catch(e) {}
-                }, 1000);
             })();
         """.trimIndent(), null)
     }
@@ -1109,33 +1041,6 @@ class YoutubeActivity : ComponentActivity() {
         }
     }
 
-    /**
-     * System PiP window সঠিক shape এ খোলার জন্য video-র actual
-     * videoWidth/videoHeight দরকার — নাহলে vertical Shorts এও 16:9 PiP
-     * window খুলে video-টা squeezed/letterboxed দেখাতো। JS periodically
-     * এই bridge কল করে সর্বশেষ dimension পাঠায়; আমরা শুধু ratio টা মনে
-     * রাখি (aspectRatioUpdated), actual PiP entry-র সময় ব্যবহার করবো।
-     */
-    inner class PipAspectBridge {
-        @android.webkit.JavascriptInterface
-        fun onVideoDimensions(width: Int, height: Int) {
-            if (width <= 0 || height <= 0) return
-            runOnUiThread {
-                // PictureInPictureParams.setAspectRatio() এর সীমা: ratio টা
-                // 2.39:1 থেকে 1:2.39 এর মধ্যে থাকতে হবে (Android spec) —
-                // এর বাইরে গেলে system IllegalArgumentException ছুঁড়ে।
-                // অতিরিক্ত লম্বা/চ্যাপ্টা কোনো edge-case video তে crash
-                // এড়াতে clamp করে রাখলাম।
-                val clampedW = width.coerceAtMost(height * 239 / 100)
-                val clampedH = height.coerceAtMost(width * 239 / 100)
-                lastKnownVideoAspectRatio = Rational(
-                    if (width > height * 239 / 100) clampedW else width,
-                    if (height > width * 239 / 100) clampedH else height
-                )
-            }
-        }
-    }
-
     private fun startBgAudioService() {
         webView?.evaluateJavascript("(function() { return document.title; })();") { titleResult ->
             val rawTitle = titleResult?.replace("\"", "")?.takeIf { it.isNotBlank() && it != "null" } ?: webView?.title ?: "YouTube — Playing"
@@ -1179,54 +1084,49 @@ class YoutubeActivity : ComponentActivity() {
 
     private fun injectSettingsRemover(view: WebView) {
         val prefs = getSharedPreferences("browser_settings", Context.MODE_PRIVATE)
-        val hideShorts   = prefs.getBoolean("yt_hide_shorts", false)
+        val hideShorts = prefs.getBoolean("yt_hide_shorts", false)
         val hideComments = prefs.getBoolean("yt_hide_comments", false)
-        val grayscale    = prefs.getBoolean("yt_grayscale", false)
-
-        // ★ FIX BUG 3a: Always run — no window guard. Previously the guard
-        // prevented re-application after the user toggled a setting mid-session.
-        // We clear any old interval ourselves before installing a new one.
+        val grayscale = prefs.getBoolean("yt_grayscale", false)
+        
+        if (!hideShorts && !hideComments && !grayscale) return
+        
         val js = """
             (function() {
-                // Clear previous interval if settings were changed
-                if (window.__rasYtSettingsInterval__) {
-                    clearInterval(window.__rasYtSettingsInterval__);
-                    window.__rasYtSettingsInterval__ = null;
+                if (window.__rasYtSettingsRemover__) return;
+                window.__rasYtSettingsRemover__ = true;
+                
+                if ($grayscale) {
+                    document.documentElement.style.filter = 'grayscale(100%)';
                 }
-
-                // ★ FIX BUG 3b: Apply OR remove grayscale based on current pref
-                document.documentElement.style.filter = ${if (grayscale) "'grayscale(100%)'" else "''"}; 
-
+                
                 function applySettings() {
                     try {
-                        // ── Shorts ──────────────────────────────────────────
-                        var shortsTabs = document.querySelectorAll('ytm-pivot-bar-item-renderer');
-                        shortsTabs.forEach(function(tab) {
-                            var text = (tab.innerText || '').toLowerCase();
-                            if (text.indexOf('shorts') !== -1)
-                                tab.style.display = ${if (hideShorts) "'none'" else "''"}; 
-                        });
-                        var shelves = document.querySelectorAll(
-                            'ytm-rich-section-renderer, ytm-reel-shelf-renderer');
-                        shelves.forEach(function(shelf) {
-                            var text = (shelf.innerText || '').toLowerCase();
-                            if (text.indexOf('shorts') !== -1)
-                                shelf.style.display = ${if (hideShorts) "'none'" else "''"}; 
-                        });
-
-                        // ── Comments ─────────────────────────────────────────
-                        var comments = document.querySelectorAll(
-                            'ytm-item-section-renderer[section-identifier="comment-item-section"],' +
-                            'ytm-comments-entry-point-header-renderer');
-                        comments.forEach(function(c) {
-                            c.style.display = ${if (hideComments) "'none'" else "''"}; 
-                        });
+                        if ($hideShorts) {
+                            // Remove Shorts bottom navigation tab
+                            var shortsTabs = document.querySelectorAll('ytm-pivot-bar-item-renderer');
+                            shortsTabs.forEach(function(tab) {
+                                var text = (tab.innerText || '').toLowerCase();
+                                if (text.indexOf('shorts') !== -1) tab.style.display = 'none';
+                            });
+                            
+                            // Remove Shorts shelf in home feed
+                            var shelves = document.querySelectorAll('ytm-rich-section-renderer, ytm-reel-shelf-renderer');
+                            shelves.forEach(function(shelf) {
+                                var text = (shelf.innerText || '').toLowerCase();
+                                if (text.indexOf('shorts') !== -1) shelf.style.display = 'none';
+                            });
+                        }
+                        
+                        if ($hideComments) {
+                            var comments = document.querySelectorAll('ytm-item-section-renderer[section-identifier="comment-item-section"], ytm-comments-entry-point-header-renderer');
+                            comments.forEach(function(comment) {
+                                comment.style.display = 'none';
+                            });
+                        }
                     } catch(e) {}
                 }
-
                 applySettings();
-                // Store interval id so next call can cancel it
-                window.__rasYtSettingsInterval__ = setInterval(applySettings, 800);
+                setInterval(applySettings, 1000);
             })();
         """.trimIndent()
         view.evaluateJavascript(js, null)
