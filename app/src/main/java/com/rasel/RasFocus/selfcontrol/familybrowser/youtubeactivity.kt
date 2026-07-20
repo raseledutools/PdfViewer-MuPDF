@@ -1,4 +1,4 @@
-package com.rasel.RasFocus.combo.selfcontrol.familybrowser
+package com.rasel.RasFocus.selfcontrol.familybrowser
 
 import android.annotation.SuppressLint
 import android.app.Activity
