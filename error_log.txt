@@ -3,16 +3,10 @@ e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/DocxViewerActivity.kt:15:29 Unresolved reference: mutableStateOf
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/DocxViewerActivity.kt:49:18 Variable expected
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/DocxViewerActivity.kt:50:19 Variable expected
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfViewerActivity.kt:201:23 Unresolved reference: closePage
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfViewerActivity.kt:258:39 Unresolved reference: closePage
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfViewerActivity.kt:269:39 Unresolved reference: closePage
 
 === UNRESOLVED / TYPE ERRORS ===
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/DocxViewerActivity.kt:14:29 Unresolved reference: mutableStateOf
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/DocxViewerActivity.kt:15:29 Unresolved reference: mutableStateOf
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfViewerActivity.kt:201:23 Unresolved reference: closePage
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfViewerActivity.kt:258:39 Unresolved reference: closePage
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfViewerActivity.kt:269:39 Unresolved reference: closePage
 
 === KAPT / MODULE ERRORS ===
    > Compilation error. See log for more details
@@ -23,15 +17,18 @@ e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/
 > Task :app:compileFullReleaseKotlin FAILED
 * What went wrong:
 Execution failed for task ':app:compileFullReleaseKotlin'.
-BUILD FAILED in 3m 13s
+BUILD FAILED in 3m 4s
 
 === LAST 50 LINES ===
+> Task :app:mergeFullReleaseNativeLibs
+> Task :app:collectFullReleaseDependencies
 
 > Task :app:stripFullReleaseDebugSymbols
 Unable to strip the following libraries, packaging them as they are: libbarhopper_v3.so, libc++_shared.so, libimage_processing_util_jni.so, libjniPdfium.so, libmodft2.so, libmodpdfium.so, libmodpng.so.
 
 > Task :app:extractFullReleaseNativeSymbolTables FROM-CACHE
 > Task :app:mergeFullReleaseNativeDebugMetadata NO-SOURCE
+> Task :app:mergeFullReleaseResources FROM-CACHE
 > Task :app:sdkFullReleaseDependencyData
 > Task :app:processFullReleaseMainManifest
 > Task :app:processFullReleaseManifest
@@ -47,12 +44,9 @@ e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/DocxViewerActivity.kt:15:29 Unresolved reference: mutableStateOf
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/DocxViewerActivity.kt:49:18 Variable expected
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/DocxViewerActivity.kt:50:19 Variable expected
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfViewerActivity.kt:201:23 Unresolved reference: closePage
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfViewerActivity.kt:258:39 Unresolved reference: closePage
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfViewerActivity.kt:269:39 Unresolved reference: closePage
 
 > Task :app:compileFullReleaseKotlin FAILED
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784530261526.json
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784530532901.json
 
 FAILURE: Build failed with an exception.
 
@@ -73,6 +67,6 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.9/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 3m 13s
+BUILD FAILED in 3m 4s
 32 actionable tasks: 22 executed, 10 from cache
 Configuration cache entry stored.
