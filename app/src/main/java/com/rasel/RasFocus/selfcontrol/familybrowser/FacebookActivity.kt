@@ -532,139 +532,74 @@ class FacebookActivity : ComponentActivity() {
         val grayscale       = prefs.getBoolean("fb_grayscale",        false)
         val textOnly        = prefs.getBoolean("fb_text_only",        false)
 
-        // CSS rules build করি — href দিয়ে nav button target করা সবচেয়ে reliable
-        // m.facebook.com এর bottom nav: <a href="/reels/"> টাইপের links
-        val cssRules = buildString {
-            if (hideReels) {
-                // Bottom nav Reels button — href="/reels/" বা "/reel"
-                append("""
-                    a[href*="/reels"],
-                    a[href*="/reel/"],
-                    a[data-sigil*="reels"] { display: none !important; }
-                """.trimIndent())
-            }
-            if (hideVideo) {
-                // Bottom nav Watch/Video button
-                append("""
-                    a[href*="/watch"],
-                    a[href="/video/"],
-                    a[data-sigil*="watch"] { display: none !important; }
-                """.trimIndent())
-            }
-            if (hideMarketplace) {
-                // Bottom nav Marketplace button
-                append("""
-                    a[href*="/marketplace"],
-                    a[data-sigil*="marketplace"] { display: none !important; }
-                """.trimIndent())
-            }
-            if (textOnly) {
-                append("""
-                    img, video, source, svg, canvas,
-                    [role="img"],
-                    [data-visualcompletion="media-vc-image"],
-                    [data-visualcompletion="ignore"],
-                    ._5rgt, ._3chq { display: none !important; }
-                """.trimIndent())
-            }
-        }
-
         val js = """
             (function() {
-                // পুরনো interval clear করো — YouTube এর মতো
                 if (window.__rasFbSettingsInterval__) {
                     clearInterval(window.__rasFbSettingsInterval__);
                     window.__rasFbSettingsInterval__ = null;
                 }
 
-                // ── Grayscale ────────────────────────────────────────────────
                 document.documentElement.style.filter = ${if (grayscale) "'grayscale(100%)'" else "''"};
-
-                // ── CSS inject/remove (Reels, Video, Marketplace, Text-only) ─
-                var existing = document.getElementById('__ras_fb_css__');
-                if (existing) existing.remove();
-
-                var cssText = ${"`$cssRules`"};
-                if (cssText.trim().length > 0) {
-                    var style = document.createElement('style');
-                    style.id = '__ras_fb_css__';
-                    style.textContent = cssText;
-                    (document.head || document.documentElement).appendChild(style);
-                }
 
                 function applySettings() {
                     try {
-                        // ── CSS style এখনো আছে কিনা নিশ্চিত করো ────────────
-                        // (SPA navigation এ head reload হলে আবার inject করো)
-                        if (cssText.trim().length > 0 && !document.getElementById('__ras_fb_css__')) {
-                            var s = document.createElement('style');
-                            s.id = '__ras_fb_css__';
-                            s.textContent = cssText;
-                            (document.head || document.documentElement).appendChild(s);
-                        }
+                        // Text-only CSS
+                        var styleId = '__ras_fb_css__';
+                        var existing = document.getElementById(styleId);
+                        if (existing) existing.remove();
+                        var css = '';
+                        if ($textOnly) css += 'img,video,source,svg,canvas,[role="img"]{display:none!important;}';
+                        if (css) { var s=document.createElement('style'); s.id=styleId; s.textContent=css; (document.head||document.documentElement).appendChild(s); }
 
-                        // ── JS দিয়ে text-based nav button hide ───────────────
-                        // CSS href selector miss করলে backup হিসেবে কাজ করবে
-                        document.querySelectorAll('a[href]').forEach(function(a) {
+                        // Top nav + bottom nav buttons — target by href + aria-label
+                        document.querySelectorAll('a[href],[role="tab"],[role="button"]').forEach(function(el) {
                             try {
-                                var href = a.getAttribute('href') || '';
-                                var txt = (a.innerText || a.getAttribute('aria-label') || '').toLowerCase().trim();
+                                var href  = (el.getAttribute('href') || '').toLowerCase();
+                                var label = (el.getAttribute('aria-label') || el.title || '').toLowerCase();
+                                var txt   = (el.innerText || '').toLowerCase().trim();
+                                var all   = href + ' ' + label + ' ' + txt;
 
-                                var isReels = href.indexOf('/reel') !== -1
-                                    || txt === 'reels' || txt === 'রিলস';
-                                var isWatch = href.indexOf('/watch') !== -1
-                                    || txt === 'watch' || txt === 'video';
-                                var isMarket = href.indexOf('/marketplace') !== -1
-                                    || txt === 'marketplace' || txt === 'মার্কেটপ্লেস';
+                                var isWatch  = /\/watch/.test(href) || /^watch$|^video$|ভিডিও/.test(label) || /^watch$/.test(txt);
+                                var isReels  = /\/reel/.test(href)  || /^reels?$|রিলস/.test(label) || /^reels?$/.test(txt);
+                                var isMarket = /\/marketplace/.test(href) || /marketplace|মার্কেটপ্লেস/.test(label);
 
-                                // nav item = closest <li> বা parent যেটা nav এর মধ্যে
-                                var navItem = a.closest('li')
-                                    || a.closest('[role="listitem"]')
-                                    || (a.parentElement && a.parentElement.tagName === 'DIV' ? a.parentElement : null);
+                                var navItem = el.closest('li,[role="listitem"],[role="tab"],._1ild') || el;
 
-                                if (isReels && navItem) navItem.style.setProperty('display', ${if (hideReels) "'none'" else "''"}, 'important');
-                                if (isWatch && navItem) navItem.style.setProperty('display', ${if (hideVideo) "'none'" else "''"}, 'important');
-                                if (isMarket && navItem) navItem.style.setProperty('display', ${if (hideMarketplace) "'none'" else "''"}, 'important');
+                                if (isWatch)  navItem.style.setProperty('display', $hideVideo  ? 'none' : '', 'important');
+                                if (isReels)  navItem.style.setProperty('display', $hideReels  ? 'none' : '', 'important');
+                                if (isMarket) navItem.style.setProperty('display', $hideMarketplace ? 'none' : '', 'important');
                             } catch(e2) {}
                         });
 
-                        // ── Feed Reels section hide ───────────────────────────
+                        // Feed: Reels horizontal strip
                         if ($hideReels) {
-                            document.querySelectorAll('[data-mcomponent="MHorizontalScrollSection"]').forEach(function(el) {
-                                var txt = (el.innerText || '').toLowerCase();
-                                if (txt.indexOf('reel') !== -1 || txt.indexOf('রিল') !== -1) {
-                                    el.style.setProperty('display', 'none', 'important');
-                                }
+                            document.querySelectorAll('[data-mcomponent="MHorizontalScrollSection"],[data-sigil="scroll-area"]').forEach(function(el) {
+                                if ((el.innerText||'').toLowerCase().indexOf('reel') !== -1)
+                                    el.style.setProperty('display','none','important');
                             });
                         }
 
-                        // ── Feed Video posts hide ─────────────────────────────
+                        // Feed: video posts
                         if ($hideVideo) {
                             document.querySelectorAll('video').forEach(function(v) {
-                                var post = v.closest('[role="article"]')
-                                    || v.closest('[data-mcomponent="MStory"]')
-                                    || v.closest('[data-mcomponent="MContainer"]');
-                                if (post) post.style.setProperty('display', 'none', 'important');
+                                var post = v.closest('[role="article"],[data-mcomponent="MStory"],[data-mcomponent="MContainer"]');
+                                if (post) post.style.setProperty('display','none','important');
                             });
                         }
 
-                        // ── Newsfeed articles hide ────────────────────────────
+                        // Feed: all articles
                         if ($hideNewsfeed) {
                             document.querySelectorAll('[role="article"],[data-mcomponent="MStory"]').forEach(function(el) {
-                                if (!el.closest('header') && !el.closest('[role="banner"]')) {
-                                    el.style.setProperty('display', 'none', 'important');
-                                }
+                                if (!el.closest('header,[role="banner"]'))
+                                    el.style.setProperty('display','none','important');
                             });
                         }
 
-                        // ── Page redirect (URL check) ─────────────────────────
+                        // Redirect if on blocked page
                         var url = window.location.href.toLowerCase();
-                        if ($hideReels && url.indexOf('/reel') !== -1)
-                            window.location.replace('https://m.facebook.com/');
-                        if ($hideVideo && url.indexOf('/watch') !== -1)
-                            window.location.replace('https://m.facebook.com/');
-                        if ($hideMarketplace && url.indexOf('/marketplace') !== -1)
-                            window.location.replace('https://m.facebook.com/');
+                        if ($hideReels  && url.indexOf('/reel') !== -1) window.location.replace('https://m.facebook.com/');
+                        if ($hideVideo  && url.indexOf('/watch') !== -1) window.location.replace('https://m.facebook.com/');
+                        if ($hideMarketplace && url.indexOf('/marketplace') !== -1) window.location.replace('https://m.facebook.com/');
 
                     } catch(e) {}
                 }
