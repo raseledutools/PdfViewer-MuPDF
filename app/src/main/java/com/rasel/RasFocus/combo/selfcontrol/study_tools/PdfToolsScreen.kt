@@ -632,9 +632,14 @@ private fun WpsRecentRow(
                 // URI থেকে directly PdfViewerActivity open করো — super fast, no base64
                 val uri = item.uri
                 if (uri != null) {
+                    val openUri = if (item.path.isNotBlank()) {
+                        android.net.Uri.fromFile(java.io.File(item.path))
+                    } else {
+                        uri
+                    }
                     val intent = android.content.Intent(context, PdfViewerActivity::class.java).apply {
                         action = android.content.Intent.ACTION_VIEW
-                        setDataAndType(uri, "application/pdf")
+                        setDataAndType(openUri, "application/pdf")
                         addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
                         addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
                     }

@@ -630,9 +630,19 @@ private fun WpsRecentRow(
                 // URI থেকে directly PdfViewerActivity open করো — super fast, no base64
                 val uri = item.uri
                 if (uri != null) {
+                    // content://media/external/file/ID URI গুলো Android 10+ এ
+                    // pdfium openFileDescriptor দিয়ে directly open হয় না —
+                    // "Failed to load: content provider lookup" error দেয়।
+                    // তাই file path থাকলে সেটা দিয়ে file:// URI বানাও,
+                    // না থাকলে content URI দিয়ে চেষ্টা করো।
+                    val openUri = if (item.path.isNotBlank()) {
+                        android.net.Uri.fromFile(java.io.File(item.path))
+                    } else {
+                        uri
+                    }
                     val intent = android.content.Intent(context, PdfViewerActivity::class.java).apply {
                         action = android.content.Intent.ACTION_VIEW
-                        setDataAndType(uri, "application/pdf")
+                        setDataAndType(openUri, "application/pdf")
                         addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
                         addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
                     }
