@@ -393,10 +393,16 @@ class FacebookFloatingWindowService : Service() {
 
         val btnMinimize = buildIconBtn("▬", 0xFFFFFFFF.toInt()) { showMinimized() }
 
-        // "Open in App" — floating বন্ধ করে main app এ ঐ page চালু করে
+        // "Open in App" — floating বন্ধ করে FacebookActivity তে ফিরে যায়
+        // BUG FIX: আগে FamilyBrowserActivity (RasBrowser) open হতো
         val btnOpenApp = buildIconBtn("⤤", 0xFFE8F5E9.toInt()) {
-            val i = Intent(this@FacebookFloatingWindowService, FamilyBrowserActivity::class.java).apply {
-                data  = android.net.Uri.parse(currentUrl)
+            // WebView টা pendingWebView এ রেখে দাও — FacebookActivity.onResume() এ re-attach হবে
+            pendingWebView = webView
+            webView = null
+            val i = Intent(
+                this@FacebookFloatingWindowService,
+                com.rasel.RasFocus.selfcontrol.familybrowser.FacebookActivity::class.java
+            ).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
             }
             startActivity(i)
