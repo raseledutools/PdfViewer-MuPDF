@@ -185,8 +185,9 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
     var selectedColor by remember { mutableStateOf(HL_YELLOW) }
 
     // pdfium document handle — kept alive until dispose
-    var pdfDoc by remember { mutableStateOf<com.shockwave.pdfium.PdfDocument?>(null) }
-    var pdfPfd by remember { mutableStateOf<ParcelFileDescriptor?>(null) }
+    var pdfDoc   by remember { mutableStateOf<com.shockwave.pdfium.PdfDocument?>(null) }
+    var pdfPfd   by remember { mutableStateOf<ParcelFileDescriptor?>(null) }
+    var pdfTemp  by remember { mutableStateOf<java.io.File?>(null) }
 
     val listState = rememberLazyListState()
     val screenW   = context.resources.displayMetrics.widthPixels
@@ -197,6 +198,11 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
         val bmp = Bitmap.createBitmap(bmpW, bmpH, Bitmap.Config.ARGB_8888)
         bmp.eraseColor(AColor.WHITE)
         pdfCore.renderPageBitmap(doc, bmp, pageIndex, 0, 0, bmpW, bmpH, true)
+        // NOTE: barteksc PdfiumCore 1.9.0 has NO closePage() method —
+        // pages are closed automatically when closeDocument() is called.
+        // The correct way to avoid excessive memory use is to call
+        // getPageSize() (added in 1.8.0) for dimension-only reads since
+        // it does NOT require openPage() at all.
         return bmp
     }
 
@@ -215,19 +221,28 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                 val pfd: ParcelFileDescriptor
                 val doc: com.shockwave.pdfium.PdfDocument
 
-                when (uri.scheme) {
-                    "file" -> {
-                        val file = java.io.File(uri.path ?: throw IllegalStateException("Bad file URI"))
-                        pfd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+                // pdfium native layer এ content:// URI directly দিলে
+                // "Failed to load: content provider lookup" error আসে।
+                // file:// URI Android 10+ scoped storage এ permission fail করে।
+                // Safest cross-version approach: URI থেকে InputStream খুলে
+                // cache dir এ temp file copy করো, সেটা দিয়ে pdfium চালাও।
+                val tempFile = java.io.File(context.cacheDir, "pdf_preview_${System.currentTimeMillis()}.pdf")
+                try {
+                    val inputStream = when (uri.scheme) {
+                        "file" -> java.io.FileInputStream(uri.path ?: throw IllegalStateException("Bad file URI"))
+                        else   -> context.contentResolver.openInputStream(uri)
+                                    ?: throw IllegalStateException("Cannot open stream: $uri")
                     }
-                    else -> {
-                        pfd = context.contentResolver.openFileDescriptor(uri, "r")
-                            ?: throw IllegalStateException("Cannot open: $uri")
+                    inputStream.use { input ->
+                        tempFile.outputStream().use { output -> input.copyTo(output) }
                     }
+                    pfd = ParcelFileDescriptor.open(tempFile, ParcelFileDescriptor.MODE_READ_ONLY)
+                } catch (e: Exception) {
+                    tempFile.delete()
+                    throw e
                 }
                 doc = pdfCore.newDocument(pfd)
-
-                withContext(Dispatchers.Main) { pdfDoc = doc; pdfPfd = pfd }
+                withContext(Dispatchers.Main) { pdfDoc = doc; pdfPfd = pfd; pdfTemp = tempFile }
 
                 val count = pdfCore.getPageCount(doc)
                 withContext(Dispatchers.Main) {
@@ -238,9 +253,13 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                 }
 
                 for (i in 0 until count) {
-                    pdfCore.openPage(doc, i)
-                    val origW = pdfCore.getPageWidthPoint(doc, i).toFloat().coerceAtLeast(1f)
-                    val origH = pdfCore.getPageHeightPoint(doc, i).toFloat().coerceAtLeast(1f)
+                    // getPageSize() (added in barteksc 1.8.0) reads dimensions
+                    // WITHOUT calling openPage() — so no native page handles
+                    // accumulate, and closePage() (which doesn't exist in
+                    // this version) is not needed at all.
+                    val size  = pdfCore.getPageSize(doc, i)
+                    val origW = size.width.toFloat().coerceAtLeast(1f)
+                    val origH = size.height.toFloat().coerceAtLeast(1f)
                     val baseS = screenW.toFloat() / origW
                     val bmpW  = screenW
                     val bmpH  = (origH * baseS).roundToInt().coerceAtLeast(1)
@@ -274,9 +293,11 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
         val doc = pdfDoc ?: return
         withContext(Dispatchers.IO) {
             try {
-                pdfCore.openPage(doc, pageIndex)
-                val origW = pdfCore.getPageWidthPoint(doc, pageIndex).toFloat().coerceAtLeast(1f)
-                val origH = pdfCore.getPageHeightPoint(doc, pageIndex).toFloat().coerceAtLeast(1f)
+                // Use getPageSize() — no openPage() needed for dimensions,
+                // then openPage() inside renderPage() only when actually rendering.
+                val _sz   = pdfCore.getPageSize(doc, pageIndex)
+                val origW = _sz.width.toFloat().coerceAtLeast(1f)
+                val origH = _sz.height.toFloat().coerceAtLeast(1f)
                 val baseS = screenW.toFloat() / origW
                 var bmpW  = (screenW * targetScale).roundToInt()
                 var bmpH  = (origH * baseS * targetScale).roundToInt().coerceAtLeast(1)
@@ -316,6 +337,7 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
             bitmapCache.evictAll()
             try { pdfDoc?.let { pdfCore.closeDocument(it) } } catch (_: Exception) {}
             try { pdfPfd?.close() } catch (_: Exception) {}
+            try { pdfTemp?.delete() } catch (_: Exception) {}
         }
     }
 
