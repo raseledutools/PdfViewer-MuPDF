@@ -229,6 +229,39 @@ class FacebookActivity : ComponentActivity() {
                     super.onPageFinished(view, url)
                     view.alpha = 1f
                     flushCookies()
+
+                    // ★ Adult keyword block — Facebook SPA তে shouldOverrideUrlLoading
+                    // fire করে না, তাই onPageFinished এও check করতে হবে
+                    val adultHtml = checkAdultSearchKeyword(url)
+                    if (adultHtml != null) {
+                        view.loadDataWithBaseURL(null, adultHtml, "text/html", "UTF-8", null)
+                        return
+                    }
+
+                    // ★ Settings toggles — hide reels, hide videos, text-only, grayscale
+                    injectSettingsRemover(view)
+                    injectRemoveOpenInAppButton(view)
+                    injectFooterRemover(view)
+                    adBlocker.injectContentScanner(view)
+
+                    // ★ Facebook SPA navigation — URL change ধরো MutationObserver দিয়ে
+                    // যাতে page navigate হলেও settings আবার apply হয়
+                    view.evaluateJavascript("""
+                        (function() {
+                            if (window.__rasFbUrlWatcher__) return;
+                            window.__rasFbUrlWatcher__ = true;
+                            var lastUrl = location.href;
+                            new MutationObserver(function() {
+                                if (location.href !== lastUrl) {
+                                    lastUrl = location.href;
+                                    // নতুন URL এ adult check এর জন্য Android কে জানাও
+                                    if (window.RasFbBlockBridge) {
+                                        RasFbBlockBridge.onUrlChanged(location.href);
+                                    }
+                                }
+                            }).observe(document, {subtree: true, childList: true});
+                        })();
+                    """.trimIndent(), null)
                 }
 
                 override fun shouldInterceptRequest(
@@ -321,6 +354,22 @@ class FacebookActivity : ComponentActivity() {
             this, currentUrl, currentTitle
         )
 
+        // ★ FIX: Start BackgroundAudioService so Facebook video/audio keeps
+        // playing after home/lock. Capture title before webView=null because
+        // evaluateJavascript won't work on a detached WebView.
+        val capturedTitle = wv.title?.trim()?.takeIf { it.isNotBlank() } ?: "Facebook"
+        val svcFb = Intent(
+            this,
+            com.rasel.RasFocus.selfcontrol.familybrowser.service.BackgroundAudioService::class.java
+        ).apply {
+            putExtra(com.rasel.RasFocus.selfcontrol.familybrowser.service.BackgroundAudioService.EXTRA_TITLE, capturedTitle)
+        }
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O)
+                startForegroundService(svcFb)
+            else startService(svcFb)
+        } catch (_: Exception) {}
+
         webView = null
         isFloatingActive = true
 
@@ -362,6 +411,11 @@ class FacebookActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Stop background audio service — user is back in the app, WebView plays directly
+        try {
+            stopService(Intent(this,
+                com.rasel.RasFocus.selfcontrol.familybrowser.service.BackgroundAudioService::class.java))
+        } catch (_: Exception) {}
         if (isFloatingActive) {
             // Floating থেকে ফিরে এলে service বন্ধ করো — WebView pendingWebView এ চলে আসবে,
             // পরের onCreate/recreate এ সেটাই re-attach হবে। যদি activity ইতিমধ্যে
@@ -471,68 +525,100 @@ class FacebookActivity : ComponentActivity() {
 
     private fun injectSettingsRemover(view: WebView) {
         val prefs = getSharedPreferences("browser_settings", Context.MODE_PRIVATE)
-        val hideVideo = prefs.getBoolean("fb_hide_videos", false)
-        val hideReels = prefs.getBoolean("fb_hide_reels", false)
+        val hideVideo    = prefs.getBoolean("fb_hide_videos",   false)
+        val hideReels    = prefs.getBoolean("fb_hide_reels",    false)
         val hideNewsfeed = prefs.getBoolean("fb_hide_newsfeed", false)
-        val grayscale = prefs.getBoolean("fb_grayscale", false)
-        val textOnly = prefs.getBoolean("fb_text_only", false)
-        
+        val grayscale    = prefs.getBoolean("fb_grayscale",     false)
+        val textOnly     = prefs.getBoolean("fb_text_only",     false)
+
         if (!hideVideo && !hideReels && !hideNewsfeed && !grayscale && !textOnly) return
-        
+
         val js = """
             (function() {
-                if (window.__rasFbSettingsRemover__) return;
-                window.__rasFbSettingsRemover__ = true;
-                
+                // ── Grayscale ────────────────────────────────────────────────
                 if ($grayscale) {
                     document.documentElement.style.filter = 'grayscale(100%)';
                 }
-                
+
+                // ── Text-only: সব img/video/svg লুকাও ───────────────────────
                 if ($textOnly) {
-                    var style = document.createElement('style');
-                    style.innerHTML = 'img, video, svg, i { display: none !important; }';
-                    document.head.appendChild(style);
+                    var s = document.getElementById('__ras_text_only__');
+                    if (!s) {
+                        s = document.createElement('style');
+                        s.id = '__ras_text_only__';
+                        s.textContent = 'img,video,source,svg,canvas,[role="img"],[data-visualcompletion="media-vc-image"]{display:none!important}';
+                        (document.head || document.documentElement).appendChild(s);
+                    }
                 }
-                
-                function applySettings() {
+
+                // ── Reels + Video hide ───────────────────────────────────────
+                function applyHide() {
                     try {
-                        var hideVideo = $hideVideo;
-                        var hideReels = $hideReels;
-                        var hideNewsfeed = $hideNewsfeed;
-                        
-                        if (hideVideo || hideReels) {
-                            var tabBars = document.querySelectorAll('[role="tablist"] [role="tab"]');
-                            tabBars.forEach(function(tab) {
-                                var href = tab.getAttribute('href') || '';
-                                if (hideVideo && href.indexOf('/watch') !== -1) tab.style.display = 'none';
-                                if (hideReels && href.indexOf('/reels') !== -1) tab.style.display = 'none';
+                        // ১. Bottom nav এর Reels/Watch tab লুকাও
+                        document.querySelectorAll('a[href]').forEach(function(a) {
+                            var href = (a.getAttribute('href') || '').toLowerCase();
+                            if ($hideReels && (href.indexOf('/reel') !== -1 || href === '/reels/' || href === '/reels')) {
+                                var item = a.closest('li') || a.closest('[role="listitem"]') || a;
+                                item.style.setProperty('display','none','important');
+                            }
+                            if ($hideVideo && (href.indexOf('/watch') !== -1)) {
+                                var item = a.closest('li') || a.closest('[role="listitem"]') || a;
+                                item.style.setProperty('display','none','important');
+                            }
+                        });
+
+                        // ২. Feed এ Reels card/section লুকাও
+                        if ($hideReels) {
+                            document.querySelectorAll('div,section').forEach(function(el) {
+                                var txt = (el.innerText || '').trim();
+                                // "Reels" হেডার সহ block — childCount কম থাকলে exact match
+                                if ((txt === 'Reels' || txt === 'রিলস') && el.childElementCount <= 2) {
+                                    var card = el.closest('[data-mcomponent]') ||
+                                               el.parentElement?.parentElement?.parentElement;
+                                    if (card) card.style.setProperty('display','none','important');
+                                }
                             });
-                        }
-                        
-                        if (hideReels) {
-                            // Hide Reels section in feed by finding the text "Reels"
-                            document.querySelectorAll('span, div').forEach(function(el) {
+                            // data-mcomponent="Story" / Reels carousel
+                            document.querySelectorAll('[data-mcomponent="MHorizontalScrollSection"]').forEach(function(el) {
                                 var txt = (el.innerText || '').toLowerCase();
-                                if (txt.trim() === 'reels' && el.childElementCount === 0) {
-                                    var parent = el.closest('[data-mcomponent]') || el.closest('div[style*="background"]');
-                                    if (parent) parent.style.display = 'none';
+                                if (txt.indexOf('reel') !== -1 || txt.indexOf('রিল') !== -1) {
+                                    el.style.setProperty('display','none','important');
                                 }
                             });
                         }
-                        
-                        if (hideNewsfeed) {
-                            // Hide main feed articles
-                            document.querySelectorAll('div[data-mcomponent="MContainer"], article, [role="article"]').forEach(function(el) {
-                                // Exclude header/nav elements
+
+                        // ৩. Video autoplay posts লুকাও
+                        if ($hideVideo) {
+                            document.querySelectorAll('video').forEach(function(v) {
+                                var card = v.closest('[data-mcomponent]') ||
+                                           v.closest('[role="article"]') ||
+                                           v.parentElement?.parentElement;
+                                if (card) card.style.setProperty('display','none','important');
+                            });
+                        }
+
+                        // ৪. Newsfeed articles লুকাও
+                        if ($hideNewsfeed) {
+                            document.querySelectorAll('[role="article"],[data-mcomponent="MContainer"]').forEach(function(el) {
                                 if (!el.closest('header') && !el.closest('[role="banner"]')) {
-                                    el.style.display = 'none';
+                                    el.style.setProperty('display','none','important');
                                 }
                             });
                         }
                     } catch(e) {}
                 }
-                applySettings();
-                setInterval(applySettings, 1000);
+
+                applyHide();
+
+                // Page load + SPA navigation এ আবার apply করো
+                if (!window.__rasSettingsObserver__) {
+                    window.__rasSettingsObserver__ = true;
+                    setInterval(applyHide, 1500);
+                    new MutationObserver(applyHide).observe(
+                        document.body || document.documentElement,
+                        {childList: true, subtree: true}
+                    );
+                }
             })();
         """.trimIndent()
         view.evaluateJavascript(js, null)
@@ -620,6 +706,17 @@ class FacebookActivity : ComponentActivity() {
         @android.webkit.JavascriptInterface
         fun onGoHome() {
             runOnUiThread { wv.loadUrl("https://m.facebook.com/") }
+        }
+
+        // ★ Facebook SPA navigation এ URL change detect করে adult keyword check
+        @android.webkit.JavascriptInterface
+        fun onUrlChanged(url: String) {
+            val adultHtml = checkAdultSearchKeyword(url)
+            if (adultHtml != null) {
+                runOnUiThread {
+                    wv.loadDataWithBaseURL(null, adultHtml, "text/html", "UTF-8", null)
+                }
+            }
         }
     }
 }
