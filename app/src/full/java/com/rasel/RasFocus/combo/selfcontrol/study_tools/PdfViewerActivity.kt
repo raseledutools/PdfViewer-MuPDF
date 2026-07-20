@@ -1,21 +1,28 @@
 package com.rasel.RasFocus.combo.selfcontrol.study_tools
 
 import android.app.Activity
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color as AColor
+import android.graphics.PointF
 import android.graphics.RectF
 import android.net.Uri
 import android.os.Bundle
-import android.os.ParcelFileDescriptor
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.*
-import androidx.compose.foundation.*
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,9 +32,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.*
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -41,7 +50,9 @@ import androidx.compose.ui.unit.*
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import com.shockwave.pdfium.PdfiumCore
+import io.legere.pdfiumandroid.PdfDocument
+import io.legere.pdfiumandroid.PdfTextPage
+import io.legere.pdfiumandroid.PdfiumCore
 import kotlinx.coroutines.*
 import kotlin.math.roundToInt
 
@@ -57,28 +68,44 @@ private val VA_WHITE   = Color(0xFFF0EFFF)
 private val VA_INDIGO  = Color(0xFF6C63FF)
 private val VA_INDIGO2 = Color(0xFF8B83FF)
 private val VA_RED     = Color(0xFFFF5C5C)
+private val VA_AMBER   = Color(0xFFFFB347)
 
+// Highlight colors
 private val HL_YELLOW  = Color(0xAAFFE066)
 private val HL_GREEN   = Color(0xAA4AE08A)
 private val HL_BLUE    = Color(0xAA4DA6FF)
 private val HL_PINK    = Color(0xAAFF6B9D)
 
-private const val MAX_RENDER_DIM = 4096
-
 // ─────────────────────────────────────────────────────────────────────────────
 // DATA
 // ─────────────────────────────────────────────────────────────────────────────
+// Hard ceiling on any single rendered page bitmap's width/height, regardless
+// of zoom level — protects against OOM on an extreme zoom + a huge PDF page
+// (e.g. a poster-sized page) combination. 4096px is the same safe ceiling
+// most Android GPUs/bitmap handling comfortably supports.
+private const val MAX_RENDER_DIM = 4096
+
 data class PageData(
-    val textPage:        Any?   = null,
-    val pageIndex:       Int,
-    val widthPx:         Int,
-    val heightPx:        Int,
-    val renderedAtScale: Float  = 1f,
-    val bitmap:          Bitmap? = null
+    val textPage:  PdfTextPage?,
+    val pageIndex: Int,
+    val widthPx:   Int,
+    val heightPx:  Int,
+    val renderedAtScale: Float = 1f,
+    val bitmap:    Bitmap? = null
+)
+
+data class TextSelection(
+    val pageIndex: Int,
+    val charStart: Int,
+    val charEnd:   Int,
+    val text:      String,
+    val rects:     List<RectF>,       // in bitmap coords
 )
 
 data class Highlight(
     val pageIndex: Int,
+    val charStart: Int,
+    val charEnd:   Int,
     val rects:     List<RectF>,
     val color:     Color,
 )
@@ -88,19 +115,22 @@ data class Highlight(
 // ─────────────────────────────────────────────────────────────────────────────
 class PdfViewerActivity : ComponentActivity() {
 
-    private val uriState      = mutableStateOf<Uri?>(null)
+    // FIX: uri/fileName held as Compose state (not local onCreate vals) so onNewIntent()
+    // can push a new PDF into this same instance — singleTask means Android reuses this
+    // Activity (instead of creating a new one) whenever another "open PDF" intent arrives
+    // while it's already on top, e.g. tapping a 2nd PDF from Drive/Files.
+    private val uriState = mutableStateOf<Uri?>(null)
     private val fileNameState = mutableStateOf("PDF")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Keep screen on while reading
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
         loadFromIntent(intent)
+
         setContent {
-            NativePdfViewer(
-                uri      = uriState.value,
-                fileName = fileNameState.value,
-                onClose  = { finish() }
-            )
+            NativePdfViewer(uri = uriState.value, fileName = fileNameState.value, onClose = { finish() })
         }
     }
 
@@ -118,14 +148,26 @@ class PdfViewerActivity : ComponentActivity() {
                 Uri.parse(intent.getStringExtra("pdf_uri"))
             else -> null
         }
+
+        // FIX: a content:// grant delivered with this Intent only lives as long as this
+        // process does. If the OS kills the process later (common on low-RAM devices)
+        // and the user reopens this task from Recents, Android replays this same Intent
+        // but the read grant is gone — contentResolver calls below then throw
+        // SecurityException, which shows up as "PDF loads forever, then the app dies"
+        // specifically for PDFs opened from another app (Drive/Files/etc).
         if (uri != null && uri.scheme == "content") {
             try {
                 contentResolver.takePersistableUriPermission(
-                    uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    uri,
+                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
                 )
-            } catch (_: SecurityException) {}
+            } catch (_: SecurityException) {
+                // Source app didn't offer a persistable grant — nothing more we can do,
+                // but this must never crash the activity.
+            }
         }
-        uriState.value      = uri
+
+        uriState.value = uri
         fileNameState.value = uri?.let { getFileNameFromUri(it) } ?: "PDF"
     }
 
@@ -148,136 +190,117 @@ class PdfViewerActivity : ComponentActivity() {
 // ─────────────────────────────────────────────────────────────────────────────
 @Composable
 fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
-    val context   = LocalContext.current
-    val scope     = rememberCoroutineScope()
-    val density   = LocalDensity.current
+    val context       = LocalContext.current
+    val scope         = rememberCoroutineScope()
+    val density       = LocalDensity.current
 
-    // pdfium core — one instance per composable lifecycle
-    val pdfCore = remember { PdfiumCore(context) }
-
-    val pages       = remember { mutableStateListOf<PageData?>() }
-    val bitmapCache = remember {
-        object : android.util.LruCache<Int, Bitmap>(4) {
-            override fun entryRemoved(evicted: Boolean, key: Int, old: Bitmap, new: Bitmap?) {
-                if (evicted) scope.launch(Dispatchers.Main) {
-                    val cur = pages.getOrNull(key)
-                    if (cur?.bitmap === old) pages[key] = cur.copy(bitmap = null, renderedAtScale = 1f)
-                    delay(200)
-                    if (!old.isRecycled) old.recycle()
+    // Pages
+    val pages         = remember { mutableStateListOf<PageData?>() }
+    val bitmapCache   = remember {
+        object : android.util.LruCache<Int, Bitmap>(4) { // 4 pages max in memory
+            override fun entryRemoved(evicted: Boolean, key: Int, oldBitmap: Bitmap, newBitmap: Bitmap?) {
+                if (evicted) {
+                    scope.launch(Dispatchers.Main) {
+                        val current = pages.getOrNull(key)
+                        if (current?.bitmap === oldBitmap) {
+                            pages[key] = current.copy(bitmap = null, renderedAtScale = 1f)
+                        }
+                        kotlinx.coroutines.delay(200) // Wait for Compose to drop the reference
+                        if (!oldBitmap.isRecycled) oldBitmap.recycle()
+                    }
                 }
             }
         }
     }
+    var totalPages    by remember { mutableIntStateOf(0) }
+    var currentPage   by remember { mutableIntStateOf(1) }
+    var isLoading     by remember { mutableStateOf(true) }
+    var errorMsg      by remember { mutableStateOf("") }
 
-    var totalPages      by remember { mutableIntStateOf(0) }
-    var currentPage     by remember { mutableIntStateOf(1) }
-    var isLoading       by remember { mutableStateOf(true) }
-    var errorMsg        by remember { mutableStateOf("") }
-    var controlsVisible by remember { mutableStateOf(true) }
+    // Controls visibility — starts HIDDEN so the reading screen is completely
+    // clean the moment a PDF opens (WPS/Adobe-style). A single tap reveals the
+    // top bar for a few seconds; it auto-hides again if untouched.
+    var controlsVisible by remember { mutableStateOf(false) }
+    var autoHideJob     by remember { mutableStateOf<Job?>(null) }
 
-    // zoom state — shared across all pages (not per-page)
+    // FIX: shared, document-level zoom state — previously scale/offsetX/offsetY
+    // lived INSIDE PdfPageItem (one remember{} per page item), so every page had
+    // its own independent zoom that reset back to 1x the moment you scrolled to
+    // a different page. Every real PDF viewer treats zoom as one state shared
+    // across the whole document; pinching in on page 3 and scrolling to page 4
+    // should show page 4 at the same zoom level, not reset it.
     var scale   by remember { mutableFloatStateOf(1f) }
     var offsetX by remember { mutableFloatStateOf(0f) }
+    var offsetY by remember { mutableFloatStateOf(0f) }
 
-    // highlights
-    val highlights    = remember { mutableStateListOf<Highlight>() }
-    var showToolbar   by remember { mutableStateOf(false) }
-    var selectedColor by remember { mutableStateOf(HL_YELLOW) }
+    // Selection & highlight
+    var selection       by remember { mutableStateOf<TextSelection?>(null) }
+    val highlights      = remember { mutableStateListOf<Highlight>() }
+    var showToolbar     by remember { mutableStateOf(false) }
+    var selectedColor   by remember { mutableStateOf(HL_YELLOW) }
 
-    // pdfium document handle — kept alive until dispose
-    var pdfDoc   by remember { mutableStateOf<com.shockwave.pdfium.PdfDocument?>(null) }
-    var pdfPfd   by remember { mutableStateOf<ParcelFileDescriptor?>(null) }
-    var pdfTemp  by remember { mutableStateOf<java.io.File?>(null) }
+    // PdfiumCore instance
+    val pdfCore  = remember { PdfiumCore(context) }
+    var pdfDoc   by remember { mutableStateOf<PdfDocument?>(null) }
 
     val listState = rememberLazyListState()
     val screenW   = context.resources.displayMetrics.widthPixels
 
-    // ── Render one page to bitmap using pdfium ───────────────────────────────
-    fun renderPage(doc: com.shockwave.pdfium.PdfDocument, pageIndex: Int, bmpW: Int, bmpH: Int): Bitmap {
-        pdfCore.openPage(doc, pageIndex)
-        val bmp = Bitmap.createBitmap(bmpW, bmpH, Bitmap.Config.ARGB_8888)
-        bmp.eraseColor(AColor.WHITE)
-        pdfCore.renderPageBitmap(doc, bmp, pageIndex, 0, 0, bmpW, bmpH, true)
-        // NOTE: barteksc PdfiumCore 1.9.0 has NO closePage() method —
-        // pages are closed automatically when closeDocument() is called.
-        // The correct way to avoid excessive memory use is to call
-        // getPageSize() (added in 1.8.0) for dimension-only reads since
-        // it does NOT require openPage() at all.
-        return bmp
+    // ── Auto-hide helper ────────────────────────────────────────────────────
+    fun scheduleAutoHide() {
+        autoHideJob?.cancel()
+        controlsVisible = true
+        autoHideJob = scope.launch {
+            delay(3_500)
+            controlsVisible = false
+        }
     }
 
-    // ── Load PDF ─────────────────────────────────────────────────────────────
+    // Tap toggles: hidden → show briefly, visible → hide immediately.
+    fun toggleControls() {
+        if (controlsVisible) {
+            autoHideJob?.cancel()
+            controlsVisible = false
+        } else {
+            scheduleAutoHide()
+        }
+    }
+
+    // ── Load PDF ────────────────────────────────────────────────────────────
     LaunchedEffect(uri) {
         if (uri == null) { isLoading = false; errorMsg = "PDF পাওয়া যায়নি"; return@LaunchedEffect }
         isLoading = true
         withContext(Dispatchers.IO) {
-            try { pdfDoc?.let { pdfCore.closeDocument(it) } } catch (_: Exception) {}
-            try { pdfPfd?.close() } catch (_: Exception) {}
-        }
-        pdfDoc = null; pdfPfd = null
-
-        withContext(Dispatchers.IO) {
             try {
-                val pfd: ParcelFileDescriptor
-                val doc: com.shockwave.pdfium.PdfDocument
+                val pfd = context.contentResolver.openFileDescriptor(uri, "r")
+                    ?: throw IllegalStateException("File খুলতে পারিনি")
+                val doc = pdfCore.newDocument(pfd)
+                pdfDoc  = doc
+                val count = doc.getPageCount()
 
-                // pdfium native layer এ content:// URI directly দিলে
-                // "Failed to load: content provider lookup" error আসে।
-                // file:// URI Android 10+ scoped storage এ permission fail করে।
-                // Safest cross-version approach: URI থেকে InputStream খুলে
-                // cache dir এ temp file copy করো, সেটা দিয়ে pdfium চালাও।
-                val tempFile = java.io.File(context.cacheDir, "pdf_preview_${System.currentTimeMillis()}.pdf")
-                try {
-                    val inputStream = when (uri.scheme) {
-                        "file" -> java.io.FileInputStream(uri.path ?: throw IllegalStateException("Bad file URI"))
-                        else   -> context.contentResolver.openInputStream(uri)
-                                    ?: throw IllegalStateException("Cannot open stream: $uri")
-                    }
-                    inputStream.use { input ->
-                        tempFile.outputStream().use { output -> input.copyTo(output) }
-                    }
-                    pfd = ParcelFileDescriptor.open(tempFile, ParcelFileDescriptor.MODE_READ_ONLY)
-                } catch (e: Exception) {
-                    tempFile.delete()
-                    throw e
-                }
-                doc = pdfCore.newDocument(pfd)
-                withContext(Dispatchers.Main) { pdfDoc = doc; pdfPfd = pfd; pdfTemp = tempFile }
-
-                val count = pdfCore.getPageCount(doc)
                 withContext(Dispatchers.Main) {
                     pages.clear()
                     repeat(count) { pages.add(null) }
                     totalPages  = count
                     currentPage = 1
+                    isLoading   = false
                 }
 
+                // Render pages one by one
                 for (i in 0 until count) {
-                    // getPageSize() (added in barteksc 1.8.0) reads dimensions
-                    // WITHOUT calling openPage() — so no native page handles
-                    // accumulate, and closePage() (which doesn't exist in
-                    // this version) is not needed at all.
-                    val size  = pdfCore.getPageSize(doc, i)
-                    val origW = size.width.toFloat().coerceAtLeast(1f)
-                    val origH = size.height.toFloat().coerceAtLeast(1f)
-                    val baseS = screenW.toFloat() / origW
+                    val page     = doc.openPage(i)
+                    val screenDpi = context.resources.displayMetrics.densityDpi
+                    val origW = page.getPageWidth(screenDpi).coerceAtLeast(1)
+                    val origH = page.getPageHeight(screenDpi).coerceAtLeast(1)
+                    val scale = screenW.toFloat() / origW
                     val bmpW  = screenW
-                    val bmpH  = (origH * baseS).roundToInt().coerceAtLeast(1)
-
-                    if (i == 0) {
-                        val bmp = renderPage(doc, 0, bmpW, bmpH)
-                        bitmapCache.put(0, bmp)
-                        withContext(Dispatchers.Main) {
-                            pages[0]  = PageData(pageIndex = 0, widthPx = bmpW, heightPx = bmpH,
-                                renderedAtScale = 1f, bitmap = bmp)
-                            isLoading = false
-                        }
-                    } else {
-                        withContext(Dispatchers.Main) {
-                            if (i < pages.size)
-                                pages[i] = PageData(pageIndex = i, widthPx = bmpW, heightPx = bmpH)
-                        }
+                    val bmpH  = (origH * scale).roundToInt().coerceAtLeast(1)
+                    val textPage: PdfTextPage? = try { page.openTextPage() } catch (_: Exception) { null }
+                    withContext(Dispatchers.Main) {
+                        if (i < pages.size)
+                            pages[i] = PageData(textPage, i, bmpW, bmpH)
                     }
+                    page.close()
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
@@ -288,229 +311,254 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
         }
     }
 
-    // ── Re-render at higher res for sharp zoom ───────────────────────────────
+    // ── Re-render a page at higher resolution for sharp zoom ────────────────
     suspend fun reRenderPageSharper(pageIndex: Int, targetScale: Float) {
         val doc = pdfDoc ?: return
         withContext(Dispatchers.IO) {
             try {
-                // Use getPageSize() — no openPage() needed for dimensions,
-                // then openPage() inside renderPage() only when actually rendering.
-                val _sz   = pdfCore.getPageSize(doc, pageIndex)
-                val origW = _sz.width.toFloat().coerceAtLeast(1f)
-                val origH = _sz.height.toFloat().coerceAtLeast(1f)
-                val baseS = screenW.toFloat() / origW
-                var bmpW  = (screenW * targetScale).roundToInt()
-                var bmpH  = (origH * baseS * targetScale).roundToInt().coerceAtLeast(1)
+                val page = doc.openPage(pageIndex)
+                val screenDpi = context.resources.displayMetrics.densityDpi
+                val origW = page.getPageWidth(screenDpi).coerceAtLeast(1)
+                val origH = page.getPageHeight(screenDpi).coerceAtLeast(1)
+                val baseScale = screenW.toFloat() / origW
+
+                var bmpW = (screenW * targetScale).roundToInt()
+                var bmpH = (origH * baseScale * targetScale).roundToInt().coerceAtLeast(1)
+
                 if (bmpW > MAX_RENDER_DIM || bmpH > MAX_RENDER_DIM) {
                     val shrink = MAX_RENDER_DIM.toFloat() / maxOf(bmpW, bmpH)
                     bmpW = (bmpW * shrink).roundToInt().coerceAtLeast(1)
                     bmpH = (bmpH * shrink).roundToInt().coerceAtLeast(1)
                 }
-                val bmp = renderPage(doc, pageIndex, bmpW, bmpH)
+
+                val sharperBmp = Bitmap.createBitmap(bmpW, bmpH, Bitmap.Config.ARGB_8888)
+                sharperBmp.eraseColor(AColor.WHITE)
+                page.renderPageBitmap(sharperBmp, 0, 0, bmpW, bmpH, true)
+                page.close()
+
                 withContext(Dispatchers.Main) {
-                    bitmapCache.put(pageIndex, bmp)
+                    bitmapCache.put(pageIndex, sharperBmp)
                     val old = pages.getOrNull(pageIndex)
-                    if (old != null) pages[pageIndex] = old.copy(
-                        bitmap = bmp, widthPx = bmpW, heightPx = bmpH, renderedAtScale = targetScale
-                    )
+                    if (old != null) {
+                        val oldBitmap = old.bitmap
+                        pages[pageIndex] = old.copy(
+                            bitmap          = sharperBmp,
+                            widthPx         = bmpW,
+                            heightPx        = bmpH,
+                            renderedAtScale = targetScale
+                        )
+                        // LruCache eviction will handle old bitmaps eventually, but we can explicitly free if we want.
+                        // Actually, if we just let LruCache evict it when we `put` new ones, it's safer.
+                    }
                 }
-            } catch (_: Exception) {}
+            } catch (_: Exception) {
+                // Zoomed page just stays at its current (lower) resolution —
+                // not worth surfacing an error for a sharpness upgrade that
+                // didn't happen.
+            }
         }
     }
 
+    // Track current page from scroll
     val visibleIdx by remember { derivedStateOf { listState.firstVisibleItemIndex } }
-    LaunchedEffect(visibleIdx) { if (totalPages > 0) currentPage = visibleIdx + 1 }
-
-    LaunchedEffect(scale, visibleIdx) {
-        delay(300)
-        if (scale <= 1.05f) return@LaunchedEffect
-        listOf(visibleIdx, visibleIdx + 1, visibleIdx - 1)
-            .filter { it in 0 until totalPages }
-            .forEach { idx ->
-                val cur = pages.getOrNull(idx) ?: return@forEach
-                if (scale > cur.renderedAtScale * 1.3f) reRenderPageSharper(idx, scale)
-            }
+    LaunchedEffect(visibleIdx) {
+        if (totalPages > 0) currentPage = visibleIdx + 1
     }
 
+    // Debounced: waits for pinch/zoom to actually settle before re-rendering,
+    // so a live two-finger gesture doesn't trigger a re-render on every tiny
+    // scale change (would be expensive and janky mid-gesture).
+    LaunchedEffect(scale, visibleIdx) {
+        delay(350)
+        val current = pages.getOrNull(visibleIdx) ?: return@LaunchedEffect
+        // Only upgrade once real headroom is used up, and only bother past
+        // roughly 1x — avoids needless re-render churn for small pinches.
+        if (scale > 1.05f && scale > current.renderedAtScale * 1.4f) {
+            reRenderPageSharper(visibleIdx, scale)
+        }
+    }
+
+    // Cleanup
     DisposableEffect(Unit) {
         onDispose {
             bitmapCache.evictAll()
-            try { pdfDoc?.let { pdfCore.closeDocument(it) } } catch (_: Exception) {}
-            try { pdfPfd?.close() } catch (_: Exception) {}
-            try { pdfTemp?.delete() } catch (_: Exception) {}
+            pages.forEach { it?.textPage?.close() }
+            pdfDoc?.let { pdfCore.closeDocument(it) }
         }
     }
 
-    // ── Immersive bars ───────────────────────────────────────────────────────
+    // ── Immersive system bars ──────────────────────────────────────────────
+    // FIX: "clean screen like WPS" — the app toolbar hiding on its own wasn't
+    // enough because Android's own status/navigation bars stayed on screen.
+    // Hide them together with the in-app controls so the reading view is a
+    // true edge-to-edge page, and bring both back together on tap.
     val activityWindow = (context as? Activity)?.window
     val view = LocalView.current
     DisposableEffect(activityWindow) {
-        activityWindow?.let { WindowCompat.setDecorFitsSystemWindows(it, false) }
+        val window = activityWindow
+        if (window != null) {
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+        }
         onDispose {
-            activityWindow?.let {
-                WindowInsetsControllerCompat(it, view).show(WindowInsetsCompat.Type.systemBars())
+            if (window != null) {
+                WindowInsetsControllerCompat(window, view).show(WindowInsetsCompat.Type.systemBars())
             }
         }
     }
     LaunchedEffect(controlsVisible, activityWindow) {
-        val w = activityWindow ?: return@LaunchedEffect
-        val c = WindowInsetsControllerCompat(w, view)
-        if (controlsVisible) c.show(WindowInsetsCompat.Type.systemBars())
-        else {
-            c.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            c.hide(WindowInsetsCompat.Type.systemBars())
+        val window = activityWindow ?: return@LaunchedEffect
+        val controller = WindowInsetsControllerCompat(window, view)
+        if (controlsVisible) {
+            controller.show(WindowInsetsCompat.Type.systemBars())
+        } else {
+            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            controller.hide(WindowInsetsCompat.Type.systemBars())
         }
     }
 
-    // ── UI ───────────────────────────────────────────────────────────────────
+    // ── UI ──────────────────────────────────────────────────────────────────
     Box(Modifier.fillMaxSize().background(Color(0xFF111111))) {
+
         when {
-            isLoading           -> LoadingView(fileName)
+            isLoading -> LoadingView(fileName)
             errorMsg.isNotEmpty() -> ErrorView(errorMsg, onClose)
             else -> {
+                // ── Page list, zoomed as ONE unit ───────────────────────────────
+                // FIX: previously every PdfPageItem carried its own graphicsLayer
+                // scale — pinching on one page only ever magnified that single
+                // item, so the "page" and its neighbors visually disconnected the
+                // moment you zoomed instead of the whole screen zooming together
+                // like WPS/Adobe. Now the pinch/pan/double-tap gesture and the
+                // graphicsLayer transform live on ONE Box wrapping the entire
+                // LazyColumn, so every currently-visible page scales and pans as
+                // a single continuous surface. While zoomed in, the list's own
+                // scroll is frozen (userScrollEnabled = false) so the two
+                // gesture systems don't fight — pinch back out (or double-tap)
+                // to resume normal page-by-page scrolling.
                 Box(
                     Modifier
                         .fillMaxSize()
                         .pointerInput(Unit) {
                             awaitEachGesture {
-                                val firstDown  = awaitFirstDown(requireUnconsumed = false)
-                                var lastPos    = firstDown.position
-                                var lastDist   = 0f
-                                var lastMidX   = 0f
-                                var twoFinger  = false
-                                var lastMoveMs = firstDown.uptimeMillis
-                                var lastVelY   = 0f
-
+                                awaitFirstDown(requireUnconsumed = false)
                                 do {
-                                    val event   = awaitPointerEvent(PointerEventPass.Main)
-                                    val pressed = event.changes.filter { it.pressed }
-
-                                    if (pressed.size >= 2) {
-                                        twoFinger = true
-                                        val p0   = pressed[0].position
-                                        val p1   = pressed[1].position
-                                        val dist = kotlin.math.sqrt(
-                                            ((p0.x-p1.x)*(p0.x-p1.x) + (p0.y-p1.y)*(p0.y-p1.y)).toDouble()
-                                        ).toFloat()
-                                        val midX = (p0.x + p1.x) / 2f
-                                        if (lastDist > 0f) {
-                                            val ns = (scale * (dist / lastDist)).coerceIn(1f, 10f)
-                                            val mx = (size.width * (ns - 1f) / 2f).coerceAtLeast(0f)
-                                            val px = (midX - lastMidX) + (size.width / 2f - midX) * (ns - scale)
-                                            offsetX = if (ns > 1f) (offsetX + px).coerceIn(-mx, mx) else 0f
-                                            scale   = ns
-                                        }
-                                        lastDist = dist; lastMidX = midX
+                                    val event = awaitPointerEvent()
+                                    if (event.changes.size >= 2) {
+                                        val zoomChange = event.calculateZoom()
+                                        val panChange  = event.calculatePan()
+                                        // FIX: was capped at 5x — now that pages
+                                        // re-render at higher resolution when
+                                        // zoomed (see reRenderPageSharper above),
+                                        // a genuinely useful "zoom in a lot" ceiling
+                                        // of 10x stays sharp instead of blurry.
+                                        val newScale = (scale * zoomChange).coerceIn(1f, 10f)
+                                        offsetX = if (newScale > 1f) offsetX + panChange.x else 0f
+                                        offsetY = if (newScale > 1f) offsetY + panChange.y else 0f
+                                        scale   = newScale
                                         event.changes.forEach { if (it.positionChanged()) it.consume() }
-
-                                    } else if (pressed.size == 1 && !twoFinger) {
-                                        val pos   = pressed[0].position
-                                        val delta = pos - lastPos
-                                        val dtMs  = (pressed[0].uptimeMillis - lastMoveMs).coerceAtLeast(1L)
-                                        if (delta.y != 0f) lastVelY = delta.y / dtMs.toFloat()
-                                        lastMoveMs = pressed[0].uptimeMillis
-                                        if (delta.y != 0f) listState.dispatchRawDelta(-delta.y)
-                                        if (scale > 1.05f && delta.x != 0f) {
-                                            val mx = (size.width * (scale - 1f) / 2f).coerceAtLeast(0f)
-                                            offsetX = (offsetX + delta.x).coerceIn(-mx, mx)
-                                        }
-                                        lastPos = pos
-                                        pressed[0].consume()
                                     }
+                                    // single finger → never consume, LazyColumn
+                                    // scrolls freely at any zoom level (WPS style)
                                 } while (event.changes.any { it.pressed })
-
-                                // fling
-                                if (!twoFinger) {
-                                    val velPx = -lastVelY * 1000f
-                                    if (kotlin.math.abs(velPx) > 200f) {
-                                        scope.launch {
-                                            var v = velPx
-                                            while (kotlin.math.abs(v) > 30f) {
-                                                listState.dispatchRawDelta(v * (16f / 1000f))
-                                                v *= 0.95f
-                                                delay(16)
-                                            }
-                                        }
-                                    }
-                                }
-                                twoFinger = false
                             }
                         }
                         .pointerInput(Unit) {
                             detectTapGestures(
                                 onTap = {
-                                    controlsVisible = !controlsVisible
-                                    if (showToolbar) { showToolbar = false }
+                                    // Plain tap — toggle the top bar, and dismiss
+                                    // any active selection toolbar too.
+                                    toggleControls()
+                                    if (showToolbar) { selection = null; showToolbar = false }
                                 },
-                                onDoubleTap = { tap ->
-                                    if (scale > 1.2f) { scale = 1f; offsetX = 0f }
-                                    else {
-                                        val ns = 2.5f
-                                        val mx = (size.width * (ns - 1f) / 2f).coerceAtLeast(0f)
-                                        offsetX = ((size.width / 2f - tap.x) * (ns - 1f)).coerceIn(-mx, mx)
-                                        scale   = ns
-                                        scope.launch { listState.scrollBy((tap.y - size.height / 2f) * (ns - 1f) / ns) }
+                                onDoubleTap = { tapOffset ->
+                                    if (scale > 1.2f) {
+                                        scale   = 1f
+                                        offsetX = 0f
+                                        offsetY = 0f
+                                    } else {
+                                        val newScale = 2.5f
+                                        offsetX = (size.width  / 2f - tapOffset.x) * (newScale - 1f)
+                                        offsetY = (size.height / 2f - tapOffset.y) * (newScale - 1f)
+                                        scale   = newScale
                                     }
                                 }
                             )
                         }
-                        .graphicsLayer(scaleX = scale, scaleY = scale, translationX = offsetX, clip = false)
+                        .graphicsLayer(
+                            scaleX       = scale,
+                            scaleY       = scale,
+                            translationX = offsetX,
+                            translationY = offsetY,
+                            clip         = false
+                        )
                 ) {
                     LazyColumn(
-                        state             = listState,
-                        userScrollEnabled = false,
-                        modifier          = Modifier.fillMaxSize(),
+                        state               = listState,
+                        modifier            = Modifier.fillMaxSize(),
+                        userScrollEnabled   = true,
                         verticalArrangement = Arrangement.spacedBy(6.dp),
-                        contentPadding    = PaddingValues(bottom = 72.dp)
+                        contentPadding      = PaddingValues(top = 0.dp, bottom = 72.dp)
                     ) {
-                        items(pages.size) { i ->
-                            PdfPageItem(
-                                pageData    = pages.getOrNull(i),
-                                pageIndex   = i,
-                                density     = density,
-                                onLoadBitmap = { _ ->
-                                    scope.launch(Dispatchers.IO) {
-                                        val doc = pdfDoc ?: return@launch
-                                        val pd  = pages.getOrNull(i) ?: return@launch
-                                        val bmp = renderPage(doc, i, pd.widthPx, pd.heightPx)
-                                        bitmapCache.put(i, bmp)
-                                        withContext(Dispatchers.Main) {
-                                            if (i < pages.size)
-                                                pages[i] = pd.copy(bitmap = bmp, renderedAtScale = 1f)
-                                        }
+                        itemsIndexed(pages) { idx, pageData ->
+                            if (pageData == null) {
+                                PagePlaceholder()
+                            } else {
+                                PdfPageItem(
+                                    pageData       = pageData,
+                                    highlights     = highlights.filter { it.pageIndex == idx },
+                                    onTextSelected = { sel ->
+                                        selection    = sel
+                                        showToolbar  = sel != null
+                                    },
+                                    onLoadBitmap   = { scale ->
+                                        scope.launch { reRenderPageSharper(idx, scale) }
                                     }
-                                },
-                                highlights  = highlights
-                            )
+                                )
+                            }
                         }
                     }
                 }
 
-                // ── Controls overlay ─────────────────────────────────────────
+                // ── Selection toolbar ────────────────────────────────────────
                 AnimatedVisibility(
-                    visible = controlsVisible,
-                    enter   = fadeIn() + slideInVertically(initialOffsetY = { -it }),
-                    exit    = fadeOut() + slideOutVertically(targetOffsetY = { -it }),
+                    visible  = showToolbar && selection != null,
+                    enter    = fadeIn() + slideInVertically { it / 2 },
+                    exit     = fadeOut() + slideOutVertically { it / 2 },
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                ) {
+                    SelectionToolbar(
+                        selectedColor = selectedColor,
+                        onColorChange = { selectedColor = it },
+                        onHighlight   = {
+                            selection?.let { sel ->
+                                highlights.add(
+                                    Highlight(sel.pageIndex, sel.charStart, sel.charEnd, sel.rects, selectedColor)
+                                )
+                            }
+                            selection   = null
+                            showToolbar = false
+                        },
+                        onCopy = {
+                            val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                            cm.setPrimaryClip(android.content.ClipData.newPlainText("PDF Text", selection?.text ?: ""))
+                            selection   = null
+                            showToolbar = false
+                        },
+                        onDismiss = { selection = null; showToolbar = false }
+                    )
+                }
+
+                // ── Floating top bar ─────────────────────────────────────────
+                AnimatedVisibility(
+                    visible  = controlsVisible && !showToolbar,
+                    enter    = slideInVertically { -it } + fadeIn(),
+                    exit     = slideOutVertically { -it } + fadeOut(),
                     modifier = Modifier.align(Alignment.TopCenter)
                 ) {
-                    TopBar(fileName = fileName, onBack = onClose)
-                }
-
-                // Page indicator
-                AnimatedVisibility(
-                    visible  = controlsVisible,
-                    enter    = fadeIn(),
-                    exit     = fadeOut(),
-                    modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
-                ) {
-                    if (totalPages > 0) {
-                        Box(
-                            Modifier.background(VA_BG2.copy(0.85f), RoundedCornerShape(20.dp))
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
-                        ) {
-                            Text("$currentPage / $totalPages", fontSize = 12.sp, color = VA_WHITE)
-                        }
-                    }
+                    TopBar(
+                        fileName = fileName,
+                        onBack   = onClose
+                    )
                 }
             }
         }
@@ -518,49 +566,260 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PAGE ITEM
+// PDF PAGE ITEM
+// Handles: text selection, highlight render. Zoom/pan now lives one level up,
+// on the container wrapping the whole page list (see NativePdfViewer) — the
+// item itself always renders at 1x internally.
 // ─────────────────────────────────────────────────────────────────────────────
 @Composable
 private fun PdfPageItem(
-    pageData:    PageData?,
-    pageIndex:   Int,
-    density:     androidx.compose.ui.unit.Density,
-    onLoadBitmap: (Float) -> Unit,
-    highlights:  List<Highlight>,
+    pageData:       PageData,
+    highlights:     List<Highlight>,
+    onTextSelected: (TextSelection?) -> Unit,
+    onLoadBitmap:   (Float) -> Unit,
 ) {
-    val imgHeightPx = pageData?.heightPx ?: 0
+    val density = LocalDensity.current
 
-    Box(Modifier.fillMaxWidth().wrapContentHeight()) {
-        if (pageData == null || pageData.bitmap == null) {
-            // Trigger load
-            LaunchedEffect(pageIndex) { onLoadBitmap(1f) }
-            Box(
-                Modifier.fillMaxWidth().aspectRatio(0.707f).background(Color(0xFF1A1A1A)),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(modifier = Modifier.size(28.dp), color = VA_INDIGO2, strokeWidth = 2.dp)
+    // Text selection state
+    var selStart   by remember { mutableStateOf<Offset?>(null) }
+    var selEnd     by remember { mutableStateOf<Offset?>(null) }
+    var isSelecting by remember { mutableStateOf(false) }
+
+    // Image dimensions on screen
+    var imgWidthPx  by remember { mutableIntStateOf(pageData.widthPx) }
+    var imgHeightPx by remember { mutableIntStateOf(pageData.heightPx) }
+
+    // Convert screen tap position → PDF page coords for text extraction.
+    // FIX: no longer compensates for scale/offset — the item is always laid
+    // out and hit-tested at 1x now (Compose inverse-transforms pointer input
+    // through the container's graphicsLayer automatically), so the raw local
+    // tap position already lines up with the item's own untransformed size.
+    fun screenToPdfCoords(screenX: Float, screenY: Float): PointF {
+        val pdfX = (screenX / imgWidthPx.toFloat()) * pageData.widthPx
+        val pdfY = (screenY / imgHeightPx.toFloat()) * pageData.heightPx
+        return PointF(pdfX, pdfY)
+    }
+
+    // Extract text between two screen positions
+    fun extractSelectedText(start: Offset, end: Offset): TextSelection? {
+        val tp = pageData.textPage ?: return null
+        return try {
+            val p1 = screenToPdfCoords(start.x, start.y)
+            val p2 = screenToPdfCoords(end.x, end.y)
+            val left   = minOf(p1.x, p2.x)
+            val top    = minOf(p1.y, p2.y)
+            val right  = maxOf(p1.x, p2.x)
+            val bottom = maxOf(p1.y, p2.y)
+
+            // Find char indices in selection box
+            val charCount = tp.textPageCountChars()
+            var startIdx  = -1
+            var endIdx    = -1
+            val rects     = mutableListOf<RectF>()
+
+            for (ci in 0 until charCount) {
+                val rect = tp.textPageGetCharBox(ci) ?: continue
+                val cx   = (rect.left + rect.right) / 2f
+                val cy   = (rect.top + rect.bottom) / 2f
+                if (cx in left..right && cy in top..bottom) {
+                    if (startIdx == -1) startIdx = ci
+                    endIdx = ci
+                    // Convert pdf rect → bitmap coords
+                    val bx1 = (rect.left / pageData.widthPx)  * imgWidthPx
+                    val by1 = (rect.top / pageData.heightPx)  * imgHeightPx
+                    val bx2 = (rect.right / pageData.widthPx) * imgWidthPx
+                    val by2 = (rect.bottom / pageData.heightPx) * imgHeightPx
+                    rects.add(RectF(bx1, by1, bx2, by2))
+                }
             }
-        } else {
-            Image(
-                bitmap             = pageData.bitmap.asImageBitmap(),
-                contentDescription = "Page ${pageIndex + 1}",
-                contentScale       = ContentScale.FillWidth,
-                modifier           = Modifier.fillMaxWidth().wrapContentHeight()
-            )
-        }
+            if (startIdx == -1) return null
 
-        // Highlight overlay
-        val pageHighlights = highlights.filter { it.pageIndex == pageIndex }
-        if (pageHighlights.isNotEmpty() && imgHeightPx > 0) {
+            val text = try { tp.textPageGetText(startIdx, endIdx - startIdx + 1) ?: "" } catch (_: Exception) { "" }
+            if (text.isBlank()) return null
+
+            TextSelection(pageData.pageIndex, startIdx, endIdx, text, rects)
+        } catch (_: Exception) { null }
+    }
+
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .wrapContentHeight()
+            .background(Color(0xFF111111))
+            .onGloballyPositioned { coords ->
+                imgWidthPx  = coords.size.width
+                imgHeightPx = coords.size.height
+            }
+            .pointerInput(pageData) {
+                detectTapGestures(
+                    onLongPress = { pressOffset ->
+                        // Long press = start text selection
+                        isSelecting = true
+                        selStart    = pressOffset
+                        selEnd      = pressOffset
+                    }
+                )
+            }
+            .pointerInput(pageData, isSelecting) {
+                // Drag to extend selection after long press
+                if (!isSelecting) return@pointerInput
+                detectDragGestures(
+                    onDrag = { change, _ ->
+                        selEnd = change.position
+                        val s = selStart
+                        val e = selEnd
+                        if (s != null && e != null) {
+                            val sel = extractSelectedText(s, e)
+                            onTextSelected(sel)
+                        }
+                    },
+                    onDragEnd = {
+                        val s = selStart
+                        val e = selEnd
+                        if (s != null && e != null) {
+                            val sel = extractSelectedText(s, e)
+                            onTextSelected(sel)
+                        }
+                        isSelecting = false
+                    }
+                )
+            }
+    ) {
+        // ── Render page bitmap ─────────────────────────────────────────────
+        androidx.compose.foundation.layout.Box(
+            Modifier.fillMaxWidth().height(with(density) { imgHeightPx.toDp() }).background(Color.White)
+        ) {
+            LaunchedEffect(pageData.pageIndex) {
+                if (pageData.bitmap == null) {
+                    onLoadBitmap(1f)
+                }
+            }
+
+            if (pageData.bitmap != null) {
+                Image(
+                    bitmap             = pageData.bitmap.asImageBitmap(),
+                    contentDescription = "Page ${pageData.pageIndex + 1}",
+                    contentScale       = ContentScale.FillWidth,
+                    modifier           = Modifier.fillMaxWidth().wrapContentHeight()
+                )
+            } else {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                }
+            }
+
+        // ── Render highlights + selection overlay ─────────────────────────
+        val allHighlights = highlights
+        val currentSel    = if (isSelecting) {
+            val s = selStart; val e = selEnd
+            if (s != null && e != null) extractSelectedText(s, e) else null
+        } else null
+
+        if (allHighlights.isNotEmpty() || currentSel != null) {
             Canvas(
-                Modifier.fillMaxWidth().height(with(density) { imgHeightPx.toDp() })
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(with(density) { imgHeightPx.toDp() })
             ) {
-                pageHighlights.forEach { hl ->
+                // Draw saved highlights
+                allHighlights.forEach { hl ->
                     hl.rects.forEach { r ->
-                        drawRect(hl.color, Offset(r.left, r.top),
-                            androidx.compose.ui.geometry.Size(r.width(), r.height()))
+                        drawRect(
+                            color   = hl.color,
+                            topLeft = Offset(r.left, r.top),
+                            size    = androidx.compose.ui.geometry.Size(r.width(), r.height())
+                        )
                     }
                 }
+                // Draw live selection
+                currentSel?.rects?.forEach { r ->
+                    drawRect(
+                        color   = HL_BLUE,
+                        topLeft = Offset(r.left, r.top),
+                        size    = androidx.compose.ui.geometry.Size(r.width(), r.height())
+                    )
+                }
+            }
+        }
+    }
+}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SELECTION TOOLBAR
+// ─────────────────────────────────────────────────────────────────────────────
+@Composable
+private fun SelectionToolbar(
+    selectedColor: Color,
+    onColorChange: (Color) -> Unit,
+    onHighlight:   () -> Unit,
+    onCopy:        () -> Unit,
+    onDismiss:     () -> Unit,
+) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .background(VA_BG2)
+            .border(BorderStroke(0.5.dp, VA_BORDER), RoundedCornerShape(0.dp))
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        // Color picker row
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment     = Alignment.CenterVertically
+        ) {
+            Text("Highlight:", fontSize = 11.sp, color = VA_MUTED)
+            listOf(HL_YELLOW, HL_GREEN, HL_BLUE, HL_PINK).forEach { c ->
+                Box(
+                    Modifier
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .background(c)
+                        .border(
+                            width  = if (c == selectedColor) 2.5.dp else 0.dp,
+                            color  = VA_WHITE,
+                            shape  = CircleShape
+                        )
+                        .clickable { onColorChange(c) }
+                )
+            }
+        }
+
+        // Action buttons
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Button(
+                onClick  = onHighlight,
+                modifier = Modifier.weight(1f).height(38.dp),
+                shape    = RoundedCornerShape(8.dp),
+                colors   = ButtonDefaults.buttonColors(containerColor = selectedColor.copy(alpha = 0.85f))
+            ) {
+                Icon(Icons.Default.FormatColorFill, "Highlight", modifier = Modifier.size(16.dp), tint = VA_BG)
+                Spacer(Modifier.width(4.dp))
+                Text("Highlight", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = VA_BG)
+            }
+
+            Button(
+                onClick  = onCopy,
+                modifier = Modifier.weight(1f).height(38.dp),
+                shape    = RoundedCornerShape(8.dp),
+                colors   = ButtonDefaults.buttonColors(containerColor = VA_INDIGO)
+            ) {
+                Icon(Icons.Default.ContentCopy, "Copy", modifier = Modifier.size(16.dp), tint = VA_WHITE)
+                Spacer(Modifier.width(4.dp))
+                Text("Copy", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = VA_WHITE)
+            }
+
+            IconButton(
+                onClick  = onDismiss,
+                modifier = Modifier
+                    .size(38.dp)
+                    .background(VA_CARD2, RoundedCornerShape(8.dp))
+            ) {
+                Icon(Icons.Default.Close, "Dismiss", tint = VA_MUTED, modifier = Modifier.size(18.dp))
             }
         }
     }
@@ -572,19 +831,30 @@ private fun PdfPageItem(
 @Composable
 private fun TopBar(fileName: String, onBack: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().background(VA_BG.copy(0.93f)).padding(horizontal = 6.dp, vertical = 5.dp),
+        Modifier
+            .fillMaxWidth()
+            .background(VA_BG.copy(0.93f))
+            .padding(horizontal = 6.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onBack, modifier = Modifier.size(42.dp)) {
             Icon(Icons.Default.ArrowBack, "Back", tint = VA_WHITE, modifier = Modifier.size(22.dp))
         }
-        Text(fileName, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VA_WHITE,
-            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(start = 2.dp))
+        Column(Modifier.weight(1f).padding(start = 2.dp)) {
+            Text(
+                fileName,
+                fontSize   = 13.sp,
+                fontWeight = FontWeight.Bold,
+                color      = VA_WHITE,
+                maxLines   = 1,
+                overflow   = TextOverflow.Ellipsis
+            )
+        }
     }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// LOADING / ERROR
+// LOADING / ERROR / PLACEHOLDER
 // ─────────────────────────────────────────────────────────────────────────────
 @Composable
 private fun LoadingView(fileName: String) {
@@ -612,5 +882,15 @@ private fun ErrorView(msg: String, onClose: () -> Unit) {
                 Text("← ফিরে যান", color = Color.White)
             }
         }
+    }
+}
+
+@Composable
+private fun PagePlaceholder() {
+    Box(
+        Modifier.fillMaxWidth().aspectRatio(0.707f).background(Color(0xFF1A1A1A)),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator(modifier = Modifier.size(28.dp), color = VA_INDIGO2, strokeWidth = 2.dp)
     }
 }

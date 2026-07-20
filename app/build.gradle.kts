@@ -342,11 +342,12 @@ dependencies {
     // ✅ PDF — শুধু full flavor-এ include হবে
     "fullImplementation"("com.tom-roush:pdfbox-android:2.0.27.0")
 
-    // ✅ pdfium — MuPDF এর বদলে (lighter, stable, native pdfium engine)
-    // pdfiumandroid: shockwave's Android pdfium binding — battle-tested,
-    // used by barteksc/AndroidPdfViewer under the hood but without the
-    // heavy UI layer. Gives us raw bitmap rendering from a PdfiumCore instance.
-    "fullImplementation"("com.github.barteksc:pdfium-android:1.9.0")
+    // ✅ pdfium — io.legere:pdfiumandroid (com.shockwave.pdfium/barteksc এর বদলে)
+    // barteksc/pdfium-android দিয়ে content:// URI খুললে "Failed to load: content
+    // provider lookup" error আসছিল, temp-file workaround দিয়েও ঠিক হয়নি।
+    // io.legere:pdfiumandroid সরাসরি ContentResolver.openFileDescriptor(uri, "r")
+    // support করে, কোনো workaround লাগে না।
+    "fullImplementation"("io.legere:pdfiumandroid:1.0.24")
 
     // Testing
     testImplementation("junit:junit:4.13.2")
