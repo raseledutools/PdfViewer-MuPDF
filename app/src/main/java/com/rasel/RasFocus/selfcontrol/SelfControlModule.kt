@@ -1479,7 +1479,15 @@ private fun BrowserStatChip(icon: ImageVector, label: String) {
 fun BrowserChooserDialog(context: Context, onDismiss: () -> Unit) {
     var showSettingsFor by remember { mutableStateOf<String?>(null) }
 
-    // পুরো screen জুড়ে — dialog/overlay কিছু না, independent full page
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnBackPress = true,
+            dismissOnClickOutside = false
+        )
+    ) {
+    // পুরো screen জুড়ে
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -1587,6 +1595,8 @@ fun BrowserChooserDialog(context: Context, onDismiss: () -> Unit) {
             }
         }
     }
+
+    } // end Dialog
 
     if (showSettingsFor != null) {
         BrowserSettingsDialog(context, appType = showSettingsFor!!) { showSettingsFor = null }
