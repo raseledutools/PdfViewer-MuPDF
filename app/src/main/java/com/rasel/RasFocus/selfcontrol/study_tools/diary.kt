@@ -577,6 +577,195 @@ fun ReminderDialog(
 }
 
 // ============================================================
+// LIST SCREEN — WriteDiary-style entry list (first page)
+// ============================================================
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DiaryListScreen(
+    entries: List<DiaryEntry>,
+    onEntryClick: (DiaryEntry) -> Unit,
+    onNewEntry: () -> Unit,
+    onNavigateBack: () -> Unit
+) {
+    val context = LocalContext.current
+    val magenta = Color(0xFFE91E8C)
+    val green   = Color(0xFF4CAF50)
+
+    // Group entries by date label
+    val grouped = remember(entries) {
+        entries.groupBy { it.date.ifBlank { "Unknown" } }
+            .entries.sortedByDescending { grp ->
+                entries.find { e -> e.date == grp.key }?.timestamp ?: 0L
+            }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        "WriteDiary",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.Default.Menu, contentDescription = "Menu", tint = Color.White)
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { /* search */ }) {
+                        Icon(Icons.Default.Search, contentDescription = "Search", tint = Color.White)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF1A1A1A))
+            )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onNewEntry,
+                containerColor = magenta,
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Icon(Icons.Default.Edit, contentDescription = "New Entry", tint = Color.White)
+            }
+        },
+        containerColor = Color(0xFFF5F5F5)
+    ) { padding ->
+        if (entries.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("📔", fontSize = 56.sp)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        "No diary entries yet",
+                        fontSize = 18.sp,
+                        color = Color.Gray,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        "Tap + to write your first entry",
+                        fontSize = 14.sp,
+                        color = Color.LightGray
+                    )
+                }
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentPadding = PaddingValues(bottom = 80.dp)
+            ) {
+                grouped.forEach { (date, dayEntries) ->
+                    // Date header — parse date into calendar badge
+                    item {
+                        val cal = runCatching {
+                            val sdf = SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.ENGLISH)
+                            Calendar.getInstance().also { c -> c.time = sdf.parse(date)!! }
+                        }.getOrNull()
+
+                        val monthStr = cal?.let {
+                            SimpleDateFormat("MMM", Locale.ENGLISH).format(it.time).uppercase()
+                        } ?: "???"
+                        val dayNum = cal?.get(Calendar.DAY_OF_MONTH)?.toString() ?: "?"
+                        val yearStr = cal?.get(Calendar.YEAR)?.toString() ?: ""
+
+                        dayEntries.forEachIndexed { idx, entry ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(Color.White)
+                                    .clickable { onEntryClick(entry) }
+                                    .padding(vertical = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Calendar badge — only show for first entry of the day
+                                if (idx == 0) {
+                                    Box(
+                                        modifier = Modifier
+                                            .padding(start = 12.dp, top = 6.dp, bottom = 6.dp)
+                                            .size(width = 56.dp, height = 64.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(green),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text(
+                                                monthStr,
+                                                color = Color.White,
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            Text(
+                                                dayNum,
+                                                color = Color.White,
+                                                fontSize = 22.sp,
+                                                fontWeight = FontWeight.ExtraBold,
+                                                lineHeight = 24.sp
+                                            )
+                                            Text(
+                                                yearStr,
+                                                color = Color.White.copy(alpha = 0.85f),
+                                                fontSize = 10.sp
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    Spacer(modifier = Modifier.width(68.dp))
+                                }
+
+                                Spacer(modifier = Modifier.width(14.dp))
+
+                                Column(modifier = Modifier.weight(1f).padding(vertical = 10.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        if (entry.isLocked) {
+                                            Icon(
+                                                Icons.Default.Lock,
+                                                contentDescription = null,
+                                                tint = magenta,
+                                                modifier = Modifier.size(14.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                        }
+                                        Text(
+                                            entry.title.ifBlank { "Untitled" },
+                                            color = magenta,
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            maxLines = 1
+                                        )
+                                    }
+                                    if (entry.body.isNotBlank()) {
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            entry.body.take(60).replace('\n', ' '),
+                                            color = magenta.copy(alpha = 0.75f),
+                                            fontSize = 13.sp,
+                                            maxLines = 1
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.width(8.dp))
+                            }
+
+                            HorizontalDivider(color = Color(0xFFEEEEEE), thickness = 0.5.dp)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ============================================================
 // MAIN SCREEN
 // ============================================================
 @OptIn(ExperimentalMaterial3Api::class)
@@ -595,6 +784,9 @@ fun ProfessionalDiaryScreen(
     val saveStatus by viewModel.saveStatus.collectAsState()
     val isUnlocked by viewModel.isUnlocked.collectAsState()
     val cloudStatus by viewModel.cloudStatus.collectAsState()
+
+    // ── NEW: list vs canvas navigation ──────────────────────────────────
+    var showListScreen by remember { mutableStateOf(true) }
 
     var showMoodDialog by remember { mutableStateOf(false) }
     var showTagDialog by remember { mutableStateOf(false) }
@@ -619,7 +811,25 @@ fun ProfessionalDiaryScreen(
         if (DiaryCloudSync.isLoggedIn()) viewModel.syncFromCloud()
     }
 
-    // Show calendar
+    // ── Show list screen first ───────────────────────────────────────────
+    if (showListScreen) {
+        DiaryListScreen(
+            entries = allEntries,
+            onEntryClick = { entry ->
+                viewModel.loadEntry(entry)
+                showListScreen = false
+            },
+            onNewEntry = {
+                viewModel.startNewEntry()
+                showListScreen = false
+            },
+            onNavigateBack = onNavigateBack
+        )
+        return
+    }
+
+    // Show calendar — calendar icon click থেকে DatePickerDialog খোলে যাতে
+    // user যেকোনো date choose করে নতুন entry লিখতে পারে
     if (showCalendar) {
         DiaryCalendarScreen(
             entries = allEntries,
@@ -637,7 +847,7 @@ fun ProfessionalDiaryScreen(
         DiaryLockScreen(
             entry = currentEntry,
             onUnlock = { viewModel.unlockWithBiometric() },
-            onCancel = { viewModel.startNewEntry() }
+            onCancel = { showListScreen = true }
         )
         return
     }
