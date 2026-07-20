@@ -78,6 +78,12 @@ class DocxViewerActivity : ComponentActivity() {
         loadFromIntent(intent)
         setContent {
             MaterialTheme {
+                val uriState  = androidx.compose.runtime.remember {
+                    androidx.compose.runtime.mutableStateOf(currentUri)
+                }
+                val nameState = androidx.compose.runtime.remember {
+                    androidx.compose.runtime.mutableStateOf(currentName)
+                }
                 DocxViewer(
                     uri      = uriState.value,
                     fileName = nameState.value,
@@ -103,7 +109,7 @@ class DocxViewerActivity : ComponentActivity() {
             } catch (_: SecurityException) {}
         }
         currentUri  = uri
-        nameState.value = uri?.let { getFileName(it) } ?: "Document"
+        currentName = uri?.let { getFileName(it) } ?: "Document"
     }
 
     private fun getFileName(uri: Uri): String {

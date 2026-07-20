@@ -68,8 +68,8 @@ class PptxViewerActivity : ComponentActivity() {
                 )
             } catch (_: SecurityException) {}
         }
-        uriState.value  = uri
-        nameState.value = uri?.let { getFileName(it) } ?: "Presentation"
+        currentUri  = uri
+        currentName = uri?.let { getFileName(it) } ?: "Presentation"
     }
 
     private fun getFileName(uri: Uri): String {
