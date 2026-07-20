@@ -102,25 +102,12 @@ fun OfficeWebViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                 context.contentResolver.openInputStream(uri)?.use { input ->
                     cacheFile.outputStream().use { output -> input.copyTo(output) }
                 }
-                // Use FileProvider to get a shareable URI, then build the
-                // Google Docs Viewer URL with it.
-                // NOTE: Google Docs Viewer needs a publicly accessible URL.
-                // For local files we encode the file bytes as a data URI —
-                // this works for most modern WebView versions and avoids the
-                // need for a public server.
-                val bytes = cacheFile.readBytes()
-                val base64 = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
-                val mimeType = when {
-                    fileName.endsWith(".pptx", true) ->
-                        "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-                    fileName.endsWith(".docx", true) ->
-                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                    fileName.endsWith(".xlsx", true) ->
-                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                    else -> "application/octet-stream"
-                }
+                // Use file:// URL directly — much faster than encoding the
+                // entire file as base64, especially for large DOCX/PPTX.
+                // WebView can access cacheDir files when allowFileAccess=true.
+                val fileUrl = "file://${cacheFile.absolutePath}"
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                    viewerUrl = "data:$mimeType;base64,$base64"
+                    viewerUrl = fileUrl
                     isLoading = false
                 }
             }
@@ -198,8 +185,8 @@ fun OfficeWebViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                             }
                         },
                         update = { wv ->
-                            if (viewerUrl.startsWith("data:")) {
-                                wv.loadData(viewerUrl, null, null)
+                            if (viewerUrl.startsWith("file://")) {
+                                wv.loadUrl(viewerUrl)
                             }
                         },
                         modifier = Modifier.fillMaxSize()

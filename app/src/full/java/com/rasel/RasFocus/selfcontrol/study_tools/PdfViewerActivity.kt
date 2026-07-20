@@ -197,8 +197,11 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
         val bmp = Bitmap.createBitmap(bmpW, bmpH, Bitmap.Config.ARGB_8888)
         bmp.eraseColor(AColor.WHITE)
         pdfCore.renderPageBitmap(doc, bmp, pageIndex, 0, 0, bmpW, bmpH, true)
-        // FIX: must close after every openPage to free native pdfium resources
-        try { pdfCore.closePage(doc, pageIndex) } catch (_: Exception) {}
+        // NOTE: barteksc PdfiumCore 1.9.0 has NO closePage() method —
+        // pages are closed automatically when closeDocument() is called.
+        // The correct way to avoid excessive memory use is to call
+        // getPageSize() (added in 1.8.0) for dimension-only reads since
+        // it does NOT require openPage() at all.
         return bmp
     }
 
@@ -240,22 +243,19 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                 }
 
                 for (i in 0 until count) {
-                    pdfCore.openPage(doc, i)
-                    val origW = pdfCore.getPageWidthPoint(doc, i).toFloat().coerceAtLeast(1f)
-                    val origH = pdfCore.getPageHeightPoint(doc, i).toFloat().coerceAtLeast(1f)
+                    // getPageSize() (added in barteksc 1.8.0) reads dimensions
+                    // WITHOUT calling openPage() — so no native page handles
+                    // accumulate, and closePage() (which doesn't exist in
+                    // this version) is not needed at all.
+                    val size  = pdfCore.getPageSize(doc, i)
+                    val origW = size.width.toFloat().coerceAtLeast(1f)
+                    val origH = size.height.toFloat().coerceAtLeast(1f)
                     val baseS = screenW.toFloat() / origW
                     val bmpW  = screenW
                     val bmpH  = (origH * baseS).roundToInt().coerceAtLeast(1)
 
                     if (i == 0) {
                         val bmp = renderPage(doc, 0, bmpW, bmpH)
-                        // FIX: renderPage calls openPage internally — close it
-                        // after rendering so pdfium doesn't accumulate open
-                        // page handles (each openPage allocates native memory;
-                        // not closing them causes a native crash on any PDF
-                        // with more than a handful of pages when opened from
-                        // the file manager/folder).
-                        try { pdfCore.closePage(doc, 0) } catch (_: Exception) {}
                         bitmapCache.put(0, bmp)
                         withContext(Dispatchers.Main) {
                             pages[0]  = PageData(pageIndex = 0, widthPx = bmpW, heightPx = bmpH,
@@ -263,10 +263,6 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                             isLoading = false
                         }
                     } else {
-                        // Close the metadata-read page immediately — we only
-                        // needed the dimensions; actual rendering happens
-                        // lazily when the page scrolls into view.
-                        try { pdfCore.closePage(doc, i) } catch (_: Exception) {}
                         withContext(Dispatchers.Main) {
                             if (i < pages.size)
                                 pages[i] = PageData(pageIndex = i, widthPx = bmpW, heightPx = bmpH)
@@ -287,9 +283,11 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
         val doc = pdfDoc ?: return
         withContext(Dispatchers.IO) {
             try {
-                pdfCore.openPage(doc, pageIndex)
-                val origW = pdfCore.getPageWidthPoint(doc, pageIndex).toFloat().coerceAtLeast(1f)
-                val origH = pdfCore.getPageHeightPoint(doc, pageIndex).toFloat().coerceAtLeast(1f)
+                // Use getPageSize() — no openPage() needed for dimensions,
+                // then openPage() inside renderPage() only when actually rendering.
+                val _sz   = pdfCore.getPageSize(doc, pageIndex)
+                val origW = _sz.width.toFloat().coerceAtLeast(1f)
+                val origH = _sz.height.toFloat().coerceAtLeast(1f)
                 val baseS = screenW.toFloat() / origW
                 var bmpW  = (screenW * targetScale).roundToInt()
                 var bmpH  = (origH * baseS * targetScale).roundToInt().coerceAtLeast(1)
