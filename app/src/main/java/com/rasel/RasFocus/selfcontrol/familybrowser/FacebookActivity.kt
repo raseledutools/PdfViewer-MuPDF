@@ -524,101 +524,125 @@ class FacebookActivity : ComponentActivity() {
     }
 
     private fun injectSettingsRemover(view: WebView) {
-        val prefs = getSharedPreferences("browser_settings", Context.MODE_PRIVATE)
-        val hideVideo    = prefs.getBoolean("fb_hide_videos",   false)
-        val hideReels    = prefs.getBoolean("fb_hide_reels",    false)
-        val hideNewsfeed = prefs.getBoolean("fb_hide_newsfeed", false)
-        val grayscale    = prefs.getBoolean("fb_grayscale",     false)
-        val textOnly     = prefs.getBoolean("fb_text_only",     false)
+        val prefs          = getSharedPreferences("browser_settings", Context.MODE_PRIVATE)
+        val hideVideo      = prefs.getBoolean("fb_hide_videos",      false)
+        val hideReels      = prefs.getBoolean("fb_hide_reels",       false)
+        val hideNewsfeed   = prefs.getBoolean("fb_hide_newsfeed",    false)
+        val hideMarketplace= prefs.getBoolean("fb_hide_marketplace", false)
+        val grayscale      = prefs.getBoolean("fb_grayscale",        false)
+        val textOnly       = prefs.getBoolean("fb_text_only",        false)
 
-        if (!hideVideo && !hideReels && !hideNewsfeed && !grayscale && !textOnly) return
-
+        // YouTube এর মতো — পুরনো interval clear করে নতুন লাগাও
+        // এতে toggle change করলে সাথে সাথে কাজ করে
         val js = """
             (function() {
-                // ── Grayscale ────────────────────────────────────────────────
-                if ($grayscale) {
-                    document.documentElement.style.filter = 'grayscale(100%)';
+                if (window.__rasFbSettingsInterval__) {
+                    clearInterval(window.__rasFbSettingsInterval__);
+                    window.__rasFbSettingsInterval__ = null;
                 }
 
-                // ── Text-only: সব img/video/svg লুকাও ───────────────────────
+                // ── Grayscale: toggle on/off দুটোই ───────────────────────────
+                document.documentElement.style.filter = ${if (grayscale) "'grayscale(100%)'" else "''"};
+
+                // ── Text-only CSS inject/remove ───────────────────────────────
+                var txtStyle = document.getElementById('__ras_text_only__');
                 if ($textOnly) {
-                    var s = document.getElementById('__ras_text_only__');
-                    if (!s) {
-                        s = document.createElement('style');
-                        s.id = '__ras_text_only__';
-                        s.textContent = 'img,video,source,svg,canvas,[role="img"],[data-visualcompletion="media-vc-image"]{display:none!important}';
-                        (document.head || document.documentElement).appendChild(s);
+                    if (!txtStyle) {
+                        txtStyle = document.createElement('style');
+                        txtStyle.id = '__ras_text_only__';
+                        txtStyle.textContent = 'img,video,source,svg,canvas,' +
+                            '[role="img"],[data-visualcompletion="media-vc-image"]' +
+                            '{display:none!important}';
+                        (document.head || document.documentElement).appendChild(txtStyle);
                     }
+                } else {
+                    if (txtStyle) txtStyle.remove();
                 }
 
-                // ── Reels + Video hide ───────────────────────────────────────
-                function applyHide() {
+                function applySettings() {
                     try {
-                        // ১. Bottom nav এর Reels/Watch tab লুকাও
-                        document.querySelectorAll('a[href]').forEach(function(a) {
-                            var href = (a.getAttribute('href') || '').toLowerCase();
-                            if ($hideReels && (href.indexOf('/reel') !== -1 || href === '/reels/' || href === '/reels')) {
-                                var item = a.closest('li') || a.closest('[role="listitem"]') || a;
-                                item.style.setProperty('display','none','important');
+                        // ── Bottom nav items: text দিয়ে find করে hide/show ────
+                        // m.facebook.com এর nav — <a> tag এর ভেতরে icon + span
+                        document.querySelectorAll(
+                            'a[href], [role="tab"], [role="menuitem"]'
+                        ).forEach(function(el) {
+                            var href = (el.getAttribute('href') || '').toLowerCase().replace(/^https?:\/\/[^\/]+/, '');
+                            var txt  = (el.innerText || el.getAttribute('aria-label') || '').toLowerCase().trim();
+
+                            // Reels nav button
+                            if (href.indexOf('/reel') !== -1 || txt === 'reels' || txt === 'রিলস') {
+                                var item = el.closest('li, [role="listitem"]') || el;
+                                item.style.setProperty('display', ${if (hideReels) "'none'" else "''"}, 'important');
                             }
-                            if ($hideVideo && (href.indexOf('/watch') !== -1)) {
-                                var item = a.closest('li') || a.closest('[role="listitem"]') || a;
-                                item.style.setProperty('display','none','important');
+                            // Video/Watch nav button
+                            if (href.indexOf('/watch') !== -1 || txt === 'watch' || txt === 'video' || txt === 'ভিডিও') {
+                                var item = el.closest('li, [role="listitem"]') || el;
+                                item.style.setProperty('display', ${if (hideVideo) "'none'" else "''"}, 'important');
+                            }
+                            // Marketplace nav button
+                            if (href.indexOf('/marketplace') !== -1 || txt === 'marketplace' || txt === 'মার্কেটপ্লেস') {
+                                var item = el.closest('li, [role="listitem"]') || el;
+                                item.style.setProperty('display', ${if (hideMarketplace) "'none'" else "''"}, 'important');
                             }
                         });
 
-                        // ২. Feed এ Reels card/section লুকাও
+                        // ── Feed এ Reels carousel/section ────────────────────
+                        document.querySelectorAll(
+                            '[data-mcomponent="MHorizontalScrollSection"],' +
+                            '[data-mcomponent="MContainer"],' +
+                            'section, article'
+                        ).forEach(function(el) {
+                            var txt = (el.innerText || '').toLowerCase();
+                            var firstLine = txt.split('\n')[0].trim();
+
+                            if ($hideReels && (firstLine === 'reels' || firstLine === 'রিলস' ||
+                                txt.indexOf('reels') !== -1 && el.querySelector('video,canvas'))) {
+                                el.style.setProperty('display', 'none', 'important');
+                            }
+                            // Video section in feed
+                            if ($hideVideo && el.querySelector('video') &&
+                                !el.closest('[role="main"]>div>div:first-child')) {
+                                el.style.setProperty('display', 'none', 'important');
+                            }
+                        });
+
+                        // ── Newsfeed articles ─────────────────────────────────
+                        document.querySelectorAll(
+                            '[role="article"], [data-mcomponent="MStory"]'
+                        ).forEach(function(el) {
+                            if (!el.closest('header') && !el.closest('[role="banner"]')) {
+                                el.style.setProperty('display', ${if (hideNewsfeed) "'none'" else "''"}, 'important');
+                            }
+                        });
+
+                        // ── Marketplace page redirect ─────────────────────────
+                        if ($hideMarketplace) {
+                            var url = window.location.href.toLowerCase();
+                            if (url.indexOf('/marketplace') !== -1) {
+                                window.location.replace('https://m.facebook.com/');
+                            }
+                        }
+
+                        // ── Reels/Watch page redirect ─────────────────────────
                         if ($hideReels) {
-                            document.querySelectorAll('div,section').forEach(function(el) {
-                                var txt = (el.innerText || '').trim();
-                                // "Reels" হেডার সহ block — childCount কম থাকলে exact match
-                                if ((txt === 'Reels' || txt === 'রিলস') && el.childElementCount <= 2) {
-                                    var card = el.closest('[data-mcomponent]') ||
-                                               el.parentElement?.parentElement?.parentElement;
-                                    if (card) card.style.setProperty('display','none','important');
-                                }
-                            });
-                            // data-mcomponent="Story" / Reels carousel
-                            document.querySelectorAll('[data-mcomponent="MHorizontalScrollSection"]').forEach(function(el) {
-                                var txt = (el.innerText || '').toLowerCase();
-                                if (txt.indexOf('reel') !== -1 || txt.indexOf('রিল') !== -1) {
-                                    el.style.setProperty('display','none','important');
-                                }
-                            });
+                            var url = window.location.href.toLowerCase();
+                            if (url.indexOf('/reel') !== -1) {
+                                window.location.replace('https://m.facebook.com/');
+                            }
                         }
-
-                        // ৩. Video autoplay posts লুকাও
                         if ($hideVideo) {
-                            document.querySelectorAll('video').forEach(function(v) {
-                                var card = v.closest('[data-mcomponent]') ||
-                                           v.closest('[role="article"]') ||
-                                           v.parentElement?.parentElement;
-                                if (card) card.style.setProperty('display','none','important');
-                            });
+                            var url = window.location.href.toLowerCase();
+                            if (url.indexOf('/watch') !== -1) {
+                                window.location.replace('https://m.facebook.com/');
+                            }
                         }
 
-                        // ৪. Newsfeed articles লুকাও
-                        if ($hideNewsfeed) {
-                            document.querySelectorAll('[role="article"],[data-mcomponent="MContainer"]').forEach(function(el) {
-                                if (!el.closest('header') && !el.closest('[role="banner"]')) {
-                                    el.style.setProperty('display','none','important');
-                                }
-                            });
-                        }
                     } catch(e) {}
                 }
 
-                applyHide();
-
-                // Page load + SPA navigation এ আবার apply করো
-                if (!window.__rasSettingsObserver__) {
-                    window.__rasSettingsObserver__ = true;
-                    setInterval(applyHide, 1500);
-                    new MutationObserver(applyHide).observe(
-                        document.body || document.documentElement,
-                        {childList: true, subtree: true}
-                    );
-                }
+                applySettings();
+                // YouTube এর মতো interval রাখো — SPA navigation এ কাজ করবে
+                window.__rasFbSettingsInterval__ = setInterval(applySettings, 800);
             })();
         """.trimIndent()
         view.evaluateJavascript(js, null)

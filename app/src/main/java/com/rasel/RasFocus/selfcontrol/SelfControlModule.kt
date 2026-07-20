@@ -2256,6 +2256,7 @@ fun BrowserSettingsDialog(context: Context, appType: String, onDismiss: () -> Un
     var fbHideVideo by remember { mutableStateOf(prefs.getBoolean("fb_hide_videos", false)) }
     var fbHideReels by remember { mutableStateOf(prefs.getBoolean("fb_hide_reels", false)) }
     var fbHideNewsfeed by remember { mutableStateOf(prefs.getBoolean("fb_hide_newsfeed", false)) }
+    var fbHideMarketplace by remember { mutableStateOf(prefs.getBoolean("fb_hide_marketplace", false)) }
     var fbGrayscale by remember { mutableStateOf(prefs.getBoolean("fb_grayscale", false)) }
     var fbTextOnly by remember { mutableStateOf(prefs.getBoolean("fb_text_only", false)) }
 
@@ -2362,6 +2363,11 @@ fun BrowserSettingsDialog(context: Context, appType: String, onDismiss: () -> Un
                             item {
                                 SettingToggleRow("Hide Reels Section", fbHideReels, onSettingsClick = { showLockConfigFor = "fb_hide_reels" }) { newValue ->
                                     handleToggle("fb_hide_reels", newValue) { fbHideReels = it; prefs.edit().putBoolean("fb_hide_reels", it).apply() }
+                                }
+                            }
+                            item {
+                                SettingToggleRow("Hide Marketplace", fbHideMarketplace, onSettingsClick = { showLockConfigFor = "fb_hide_marketplace" }) { newValue ->
+                                    handleToggle("fb_hide_marketplace", newValue) { fbHideMarketplace = it; prefs.edit().putBoolean("fb_hide_marketplace", it).apply() }
                                 }
                             }
                             item {
