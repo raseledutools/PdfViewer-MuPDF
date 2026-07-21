@@ -8,6 +8,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import android.content.Context
+import com.rasel.RasFocus.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -180,7 +181,7 @@ class UsageNotificationService : Service() {
             Notification.Builder(this, CHANNEL_ID)
                 .setContentTitle("RasFocus Protection")
                 .setContentText(if (isProtecting) "Blocking active" else "Service inactive")
-                .setSmallIcon(iconRes)
+                .setSmallIcon(iconRes as Int)
                 .setOngoing(true)
                 .build()
         } else {
@@ -188,7 +189,7 @@ class UsageNotificationService : Service() {
             Notification.Builder(this)
                 .setContentTitle("RasFocus Protection")
                 .setContentText(if (isProtecting) "Blocking active" else "Service inactive")
-                .setSmallIcon(iconRes)
+                .setSmallIcon(iconRes as Int)
                 .build()
         }
         startForeground(NOTIF_ID, notif)

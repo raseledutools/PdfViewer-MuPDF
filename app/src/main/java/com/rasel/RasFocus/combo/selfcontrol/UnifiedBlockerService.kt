@@ -29,6 +29,7 @@ import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.TextView
 import androidx.core.app.NotificationCompat
 import com.rasel.RasFocus.DataManager
+import com.rasel.RasFocus.R
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
