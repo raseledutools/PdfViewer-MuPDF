@@ -244,7 +244,8 @@ class UnifiedBlockerService : AccessibilityService() {
         }
         serviceInfo = info
 
-        startForeground(NOTIFICATION_ID, buildNotification("RasFocus Protection Active", "Monitoring for distractions..."))
+        // AccessibilityService system-managed — startForeground() ছাড়াই চলে।
+        // আলাদা notification সরানো হলো। Lock/unlock status UsageNotificationService এ দেখানো হয়।
         startPeriodicPopupChecker()
 
         // Deep Study resume
@@ -1311,6 +1312,7 @@ class UnifiedBlockerService : AccessibilityService() {
             .putInt("sessionType", 0).putBoolean("playSound", playSound).putInt("soundType", soundType).apply()
         if (playSound) playAmbientSound(soundType)
         showFloatingTimer()
+        startForeground(NOTIFICATION_ID, buildNotification("Deep Study Active", "Focus session running...", R.drawable.ic_notif_lock_locked))
         dsTimer?.cancel()
         dsTimer = object : android.os.CountDownTimer(timeMillis, 30) {
             override fun onTick(ms: Long) {
@@ -1322,7 +1324,7 @@ class UnifiedBlockerService : AccessibilityService() {
                 isDeepStudyActive = false; DataManager.isDeepStudyStrict = false
                 recoveryPrefs.edit().clear().apply()
                 sendBroadcast(Intent("POMODORO_SESSION_UPDATE"))
-                updateNotification("Protection is Active", "Monitoring your focus...")
+                stopForeground(STOP_FOREGROUND_REMOVE)
                 showSessionCompletePopup()
             }
         }.start()
@@ -1333,13 +1335,14 @@ class UnifiedBlockerService : AccessibilityService() {
         showBreakScreenOverlay()
         recoveryPrefs.edit().putBoolean("isTimerActive", true)
             .putLong("targetEndTime", System.currentTimeMillis() + timeMillis).putInt("sessionType", 1).apply()
+        startForeground(NOTIFICATION_ID, buildNotification("Break Time!", "Enjoy your break", R.drawable.ic_notif_lock_locked))
         dsTimer?.cancel()
         dsTimer = object : android.os.CountDownTimer(timeMillis, 1000) {
             override fun onTick(ms: Long) { updateNotification("Break Time!", "Enjoy your break. ${ms / 60000} mins left.") }
             override fun onFinish() {
                 removeBreakScreenOverlay(); isDeepStudyActive = false; DataManager.isDeepStudyStrict = false
                 recoveryPrefs.edit().clear().apply()
-                updateNotification("Protection is Active", "Monitoring your focus...")
+                stopForeground(STOP_FOREGROUND_REMOVE)
                 BlockPage.show(this@UnifiedBlockerService, BlockPage.Type.FOCUS, "TIME'S UP!", "🎉 Break Completed! Ready to focus?")
                 sendBroadcast(Intent("POMODORO_SESSION_UPDATE"))
             }
@@ -1400,7 +1403,7 @@ class UnifiedBlockerService : AccessibilityService() {
         }
     }
 
-    private fun buildNotification(title: String, content: String): Notification {
+    private fun buildNotification(title: String, content: String, iconRes: Int = android.R.drawable.ic_secure): Notification {
         // ── Main tap → RasFocus MainActivity ──────────────────────────────────
         val mainIntent = PendingIntent.getActivity(
             this, 0,
@@ -1423,7 +1426,7 @@ class UnifiedBlockerService : AccessibilityService() {
         return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(content)
-            .setSmallIcon(android.R.drawable.ic_secure)
+            .setSmallIcon(iconRes)
             .setContentIntent(mainIntent)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
