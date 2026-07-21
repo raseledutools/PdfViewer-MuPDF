@@ -35,17 +35,33 @@ object DriveBackupManager {
     )
 
     // ── Public check ─────────────────────────────────────────────────────────
-    fun isAvailable(context: Context): Boolean = runCatching {
-        val account = GoogleSignIn.getLastSignedInAccount(context) ?: return@runCatching false
+    fun isAvailable(context: Context): Boolean = try {
+        val account = GoogleSignIn.getLastSignedInAccount(context) ?: return false
+        // DRIVE_FILE scope চেক করো — sign in করা থাকলেও scope না থাকলে upload fail করবে
         GoogleSignIn.hasPermissions(account, Scope(DriveScopes.DRIVE_FILE))
-    }.getOrDefault(false)
+    } catch (e: Exception) {
+        Log.w(TAG, "isAvailable check failed: ${e.message}")
+        false
+    }
 
     // ── Build Drive service safely on IO thread ───────────────────────────────
     private fun buildDriveService(context: Context): Drive? {
         return try {
-            val account = GoogleSignIn.getLastSignedInAccount(context) ?: return null
-            if (!GoogleSignIn.hasPermissions(account, Scope(DriveScopes.DRIVE_FILE))) return null
-            val androidAccount = account.account ?: return null
+            val account = GoogleSignIn.getLastSignedInAccount(context)
+            if (account == null) {
+                Log.w(TAG, "buildDriveService: no signed-in account")
+                return null
+            }
+            val hasDriveScope = GoogleSignIn.hasPermissions(account, Scope(DriveScopes.DRIVE_FILE))
+            if (!hasDriveScope) {
+                Log.w(TAG, "buildDriveService: DRIVE_FILE scope not granted — user needs to re-sign-in")
+                return null
+            }
+            val androidAccount = account.account
+            if (androidAccount == null) {
+                Log.w(TAG, "buildDriveService: account.account is null")
+                return null
+            }
             val credential = GoogleAccountCredential.usingOAuth2(
                 context, listOf(DriveScopes.DRIVE_FILE)
             ).also { it.selectedAccount = androidAccount }
@@ -53,7 +69,7 @@ object DriveBackupManager {
                 NetHttpTransport(), GsonFactory.getDefaultInstance(), credential
             ).setApplicationName("RasFocus+").build()
         } catch (e: Exception) {
-            Log.e(TAG, "buildDriveService failed", e)
+            Log.e(TAG, "buildDriveService failed: ${e.message}", e)
             null
         }
     }

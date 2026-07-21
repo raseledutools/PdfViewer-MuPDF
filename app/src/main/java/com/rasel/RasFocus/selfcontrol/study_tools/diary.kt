@@ -590,9 +590,9 @@ fun DiaryListScreen(
 ) {
     val context = LocalContext.current
     val magenta = Color(0xFFE91E8C)
-    val green   = Color(0xFF4CAF50)
+    val teal    = Color(0xFF009688)
+    val indigo  = Color(0xFF3F51B5)
 
-    // Group entries by date label
     val grouped = remember(entries) {
         entries.groupBy { it.date.ifBlank { "Unknown" } }
             .entries.sortedByDescending { grp ->
@@ -604,12 +604,10 @@ fun DiaryListScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        "RasDiary",
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 22.sp
-                    )
+                    Column {
+                        Text("RasDiary", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
+                        Text("${entries.size} entries", color = Color.White.copy(.65f), fontSize = 11.sp)
+                    }
                 },
                 navigationIcon = {
                     IconButton(onClick = onMenuClick) {
@@ -617,148 +615,149 @@ fun DiaryListScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* search */ }) {
+                    IconButton(onClick = { /* search TODO */ }) {
                         Icon(Icons.Default.Search, contentDescription = "Search", tint = Color.White)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF1A1A1A))
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = indigo)
             )
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onNewEntry,
+                onClick = onNewEntry,     // ← সরাসরি onNewEntry, sidebar নয়
                 containerColor = magenta,
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Icon(Icons.Default.Edit, contentDescription = "New Entry", tint = Color.White)
             }
         },
-        containerColor = Color(0xFFF5F5F5)
+        containerColor = Color(0xFFF0F4FF)
     ) { padding ->
         if (entries.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
+            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("📔", fontSize = 56.sp)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        "No diary entries yet",
-                        fontSize = 18.sp,
-                        color = Color.Gray,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        "Tap + to write your first entry",
-                        fontSize = 14.sp,
-                        color = Color.LightGray
-                    )
+                    Text("📔", fontSize = 64.sp)
+                    Spacer(Modifier.height(16.dp))
+                    Text("No diary entries yet", fontSize = 18.sp, color = Color(0xFF37474F), fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(6.dp))
+                    Text("Tap ✏️ to write your first entry", fontSize = 14.sp, color = Color.Gray)
                 }
             }
         } else {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentPadding = PaddingValues(bottom = 80.dp)
+                modifier = Modifier.fillMaxSize().padding(padding),
+                contentPadding = PaddingValues(bottom = 90.dp, top = 8.dp)
             ) {
                 grouped.forEach { (date, dayEntries) ->
-                    // Date header — parse date into calendar badge
                     item {
                         val cal = runCatching {
                             val sdf = SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.ENGLISH)
                             Calendar.getInstance().also { c -> c.time = sdf.parse(date)!! }
                         }.getOrNull()
 
-                        val monthStr = cal?.let {
-                            SimpleDateFormat("MMM", Locale.ENGLISH).format(it.time).uppercase()
-                        } ?: "???"
-                        val dayNum = cal?.get(Calendar.DAY_OF_MONTH)?.toString() ?: "?"
-                        val yearStr = cal?.get(Calendar.YEAR)?.toString() ?: ""
+                        val monthStr = cal?.let { SimpleDateFormat("MMM", Locale.ENGLISH).format(it.time).uppercase() } ?: "???"
+                        val dayNum   = cal?.get(Calendar.DAY_OF_MONTH)?.toString() ?: "?"
+                        val yearStr  = cal?.get(Calendar.YEAR)?.toString() ?: ""
+                        val dayName  = cal?.let { SimpleDateFormat("EEE", Locale.ENGLISH).format(it.time).uppercase() } ?: ""
 
-                        dayEntries.forEachIndexed { idx, entry ->
-                            Row(
+                        // ── Date section header ────────────────────────────────
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Premium calendar badge
+                            Box(
+                                modifier = Modifier
+                                    .size(52.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(
+                                        Brush.verticalGradient(listOf(indigo, Color(0xFF7C4DFF)))
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(monthStr, color = Color.White.copy(.8f), fontSize = 9.sp, fontWeight = FontWeight.Bold, lineHeight = 10.sp)
+                                    Text(dayNum, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 22.sp)
+                                    Text(dayName, color = Color.White.copy(.7f), fontSize = 8.sp, fontWeight = FontWeight.Medium, lineHeight = 9.sp)
+                                }
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Column {
+                                Text(date.substringBefore(",").ifBlank { date }, color = Color(0xFF1A237E), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                Text(yearStr, color = Color(0xFF7986CB), fontSize = 12.sp)
+                            }
+                            Spacer(Modifier.weight(1f))
+                            Text("${dayEntries.size} entry${if (dayEntries.size > 1) "ies" else ""}", color = Color.Gray, fontSize = 11.sp)
+                        }
+
+                        dayEntries.forEach { entry ->
+                            Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(Color.White)
-                                    .clickable { onEntryClick(entry) }
-                                    .padding(vertical = 2.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                    .padding(horizontal = 12.dp, vertical = 3.dp)
+                                    .clickable { onEntryClick(entry) },
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                             ) {
-                                // Calendar badge — only show for first entry of the day
-                                if (idx == 0) {
-                                    Box(
-                                        modifier = Modifier
-                                            .padding(start = 12.dp, top = 6.dp, bottom = 6.dp)
-                                            .size(width = 56.dp, height = 64.dp)
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .background(green),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    // Mood indicator dot
+                                    val moodColor = when (entry.mood) {
+                                        "😊" -> Color(0xFF4CAF50)
+                                        "😢" -> Color(0xFF2196F3)
+                                        "😡" -> Color(0xFFF44336)
+                                        "😴" -> Color(0xFF9C27B0)
+                                        else -> magenta
+                                    }
+                                    Box(modifier = Modifier.size(8.dp).background(moodColor, CircleShape))
+                                    Spacer(Modifier.width(10.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            if (entry.isLocked) {
+                                                Icon(Icons.Default.Lock, null, tint = magenta, modifier = Modifier.size(13.dp))
+                                                Spacer(Modifier.width(4.dp))
+                                            }
                                             Text(
-                                                monthStr,
-                                                color = Color.White,
-                                                fontSize = 11.sp,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                            Text(
-                                                dayNum,
-                                                color = Color.White,
-                                                fontSize = 22.sp,
-                                                fontWeight = FontWeight.ExtraBold,
-                                                lineHeight = 24.sp
-                                            )
-                                            Text(
-                                                yearStr,
-                                                color = Color.White.copy(alpha = 0.85f),
-                                                fontSize = 10.sp
+                                                entry.title.ifBlank { "Untitled" },
+                                                color = Color(0xFF1A237E),
+                                                fontSize = 15.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                maxLines = 1,
+                                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                             )
                                         }
-                                    }
-                                } else {
-                                    Spacer(modifier = Modifier.width(68.dp))
-                                }
-
-                                Spacer(modifier = Modifier.width(14.dp))
-
-                                Column(modifier = Modifier.weight(1f).padding(vertical = 10.dp)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        if (entry.isLocked) {
-                                            Icon(
-                                                Icons.Default.Lock,
-                                                contentDescription = null,
-                                                tint = magenta,
-                                                modifier = Modifier.size(14.dp)
+                                        if (entry.body.isNotBlank()) {
+                                            Text(
+                                                entry.body.take(80).replace('\n', ' '),
+                                                color = Color(0xFF546E7A),
+                                                fontSize = 12.sp,
+                                                maxLines = 1,
+                                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                                modifier = Modifier.padding(top = 2.dp)
                                             )
-                                            Spacer(modifier = Modifier.width(4.dp))
                                         }
-                                        Text(
-                                            entry.title.ifBlank { "Untitled" },
-                                            color = magenta,
-                                            fontSize = 16.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            maxLines = 1
-                                        )
+                                        if (entry.tags.isNotEmpty()) {
+                                            Row(modifier = Modifier.padding(top = 4.dp)) {
+                                                entry.tags.take(2).forEach { tag ->
+                                                    Box(
+                                                        modifier = Modifier.padding(end = 4.dp)
+                                                            .background(indigo.copy(.1f), RoundedCornerShape(4.dp))
+                                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                                    ) { Text("#$tag", color = indigo, fontSize = 10.sp) }
+                                                }
+                                            }
+                                        }
                                     }
-                                    if (entry.body.isNotBlank()) {
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                        Text(
-                                            entry.body.take(60).replace('\n', ' '),
-                                            color = magenta.copy(alpha = 0.75f),
-                                            fontSize = 13.sp,
-                                            maxLines = 1
-                                        )
+                                    if (entry.mood.isNotBlank()) {
+                                        Text(entry.mood, fontSize = 20.sp, modifier = Modifier.padding(start = 8.dp))
                                     }
                                 }
-
-                                Spacer(modifier = Modifier.width(8.dp))
                             }
-
-                            HorizontalDivider(color = Color(0xFFEEEEEE), thickness = 0.5.dp)
                         }
+                        Spacer(Modifier.height(8.dp))
                     }
                 }
             }
@@ -812,21 +811,63 @@ fun ProfessionalDiaryScreen(
         if (DiaryCloudSync.isLoggedIn()) viewModel.syncFromCloud()
     }
 
-    // ── Show list screen first ───────────────────────────────────────────
+    // ── Show list screen first — wrapped in drawer so menu works ────────────
     if (showListScreen) {
-        DiaryListScreen(
-            entries = allEntries,
-            onEntryClick = { entry ->
-                viewModel.loadEntry(entry)
-                showListScreen = false
-            },
-            onNewEntry = {
-                viewModel.startNewEntry()
-                showListScreen = false
-            },
-            onNavigateBack = onNavigateBack,
-            onMenuClick = { scope.launch { drawerState.open() } }
-        )
+        ModalNavigationDrawer(
+            drawerState = drawerState,
+            drawerContent = {
+                ModalDrawerSheet(
+                    modifier = Modifier.width(280.dp),
+                    drawerContainerColor = Color(0xFF2D323E)
+                ) {
+                    DiarySidebar(
+                        selectedFilter = selectedFilter,
+                        isDarkMode = isDarkMode,
+                        cloudStatus = cloudStatus,
+                        isLoggedIn = DiaryCloudSync.isLoggedIn(),
+                        onFilterSelect = {
+                            viewModel.setFolderFilter(it)
+                            scope.launch { drawerState.close() }
+                        },
+                        onNewEntry = {
+                            viewModel.startNewEntry()
+                            scope.launch { drawerState.close() }
+                            showListScreen = false
+                        },
+                        onToggleTheme = { isDarkMode = !isDarkMode },
+                        onExportClick = {
+                            scope.launch { drawerState.close() }
+                            showExportMenu = true
+                        },
+                        onCalendarClick = {
+                            scope.launch { drawerState.close() }
+                            showCalendar = true
+                        },
+                        onSyncClick = { viewModel.syncToCloud() },
+                        allEntries = allEntries,
+                        onEntryClick = { entry ->
+                            viewModel.loadEntry(entry)
+                            scope.launch { drawerState.close() }
+                            showListScreen = false
+                        }
+                    )
+                }
+            }
+        ) {
+            DiaryListScreen(
+                entries = allEntries,
+                onEntryClick = { entry ->
+                    viewModel.loadEntry(entry)
+                    showListScreen = false
+                },
+                onNewEntry = {
+                    viewModel.startNewEntry()
+                    showListScreen = false
+                },
+                onNavigateBack = onNavigateBack,
+                onMenuClick = { scope.launch { drawerState.open() } }
+            )
+        }
         return
     }
 
@@ -1183,9 +1224,16 @@ fun ProfessionalDiaryScreen(
                             fontSize = 13.sp, color = Color(0xFF4A90D9))
                         if (!driveAvailable) {
                             Spacer(Modifier.width(8.dp))
-                            Text("(sign in required)", fontSize = 11.sp,
-                                color = Color(0xFF888888))
+                            Text("(Google Sign-In দরকার)", fontSize = 11.sp,
+                                color = Color(0xFFFF6B6B))
                         }
+                    }
+                    if (!driveAvailable) {
+                        Text(
+                            "Settings → Google Sign-In করুন এবং Drive permission দিন, তারপর আবার চেষ্টা করুন।",
+                            fontSize = 11.sp, color = Color(0xFF888888),
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
                     }
 
                     if (driveAvailable) {
