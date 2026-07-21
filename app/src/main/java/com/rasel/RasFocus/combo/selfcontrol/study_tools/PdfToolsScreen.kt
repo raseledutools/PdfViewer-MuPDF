@@ -1,6 +1,4 @@
-﻿package com.rasel.RasFocus.combo.selfcontrol.study_tools
-
-import com.rasel.RasFocus.selfcontrol.study_tools.PdfViewerActivity
+package com.rasel.RasFocus.selfcontrol.study_tools
 
 import android.content.ContentUris
 import android.content.Intent
@@ -629,21 +627,79 @@ private fun WpsRecentRow(
         Modifier
             .fillMaxWidth()
             .clickable {
-                // URI থেকে directly PdfViewerActivity open করো — super fast, no base64
                 val uri = item.uri
                 if (uri != null) {
-                    val openUri = if (item.path.isNotBlank()) {
-                        android.net.Uri.fromFile(java.io.File(item.path))
+                    val openUri = if (item.path.isNotBlank() && uri.scheme != "content") {
+                        val file = java.io.File(item.path)
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                            try {
+                                androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+                            } catch (e: Exception) {
+                                uri // fallback to original uri if FileProvider fails
+                            }
+                        } else {
+                            android.net.Uri.fromFile(file)
+                        }
                     } else {
                         uri
                     }
-                    val intent = android.content.Intent(context, PdfViewerActivity::class.java).apply {
-                        action = android.content.Intent.ACTION_VIEW
-                        setDataAndType(openUri, "application/pdf")
-                        addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+
+                    when (item.type.lowercase()) {
+                        "pdf" -> {
+                            val intent = android.content.Intent(context, PdfViewerActivity::class.java).apply {
+                                action = android.content.Intent.ACTION_VIEW
+                                setDataAndType(openUri, "application/pdf")
+                                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            context.startActivity(intent)
+                        }
+                        "html" -> {
+                            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                                setDataAndType(openUri, "text/html")
+                                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            try { context.startActivity(intent) } catch (e: Exception) {
+                                android.widget.Toast.makeText(context, "No HTML viewer found", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        "docs", "docx", "doc" -> {
+                            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                                setDataAndType(openUri, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+                                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                setPackage("com.google.android.apps.docs.editors.docs")
+                            }
+                            try {
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                intent.setPackage(null)
+                                try { context.startActivity(intent) } catch (e2: Exception) {
+                                    android.widget.Toast.makeText(context, "No app found for Docs", android.widget.Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+                        "pptx", "ppt" -> {
+                            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                                setDataAndType(openUri, "application/vnd.openxmlformats-officedocument.presentationml.presentation")
+                                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                setPackage("com.google.android.apps.docs.editors.slides")
+                            }
+                            try {
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                intent.setPackage(null)
+                                try { context.startActivity(intent) } catch (e2: Exception) {
+                                    android.widget.Toast.makeText(context, "No app found for PPTX", android.widget.Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+                        else -> {
+                            onOpen()
+                        }
                     }
-                    context.startActivity(intent)
                 } else {
                     onOpen()
                 }
