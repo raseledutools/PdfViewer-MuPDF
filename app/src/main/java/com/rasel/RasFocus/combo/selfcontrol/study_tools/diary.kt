@@ -1203,7 +1203,7 @@ fun ProfessionalDiaryScreen(
                                             val dao = DiaryDatabase.getDatabase(context).diaryDao()
                                             val entries = dao.getAllEntriesOnce()
                                             val arr2 = JSONArray()
-                                            entries.forEach { e ->
+                                            entries.forEach { e: DiaryEntry ->
                                                 arr2.put(JSONObject().apply {
                                                     put("id", e.id); put("title", e.title)
                                                     put("body", e.body); put("date", e.date)

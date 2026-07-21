@@ -61,6 +61,12 @@ interface DiaryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertEntry(entry: DiaryEntry)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(entries: List<DiaryEntry>)
+
+    @Query("SELECT * FROM diary_entries ORDER BY timestamp DESC")
+    suspend fun getAllEntriesOnce(): List<DiaryEntry>
+
     @Delete
     suspend fun deleteEntry(entry: DiaryEntry)
 
