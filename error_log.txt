@@ -1,183 +1,10 @@
 === KOTLIN/KAPT ERRORS ===
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/youtubeactivity.kt:28:7 Redeclaration: YoutubeActivity
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PdfToolsScreen.kt:88:20 Redeclaration: PdfScreen
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PdfToolsScreen.kt:91:20 Redeclaration: HomeTab
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PdfToolsScreen.kt:93:20 Redeclaration: RecentItem
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PdfToolsScreen.kt:103:20 Redeclaration: QuickTool
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PdfToolsScreen.kt:133:1 Conflicting overloads: public fun PdfToolsScreen(onBack: () -> Unit = ...): Unit defined in com.rasel.RasFocus.selfcontrol.study_tools in file PdfToolsScreen.kt, public fun PdfToolsScreen(onBack: () -> Unit = ...): Unit defined in com.rasel.RasFocus.selfcontrol.study_tools in file PdfToolsScreen.kt
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/study_tools.kt:129:39 Unresolved reference: PdfToolsScreen
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/drivebackup/DriveBackupManager.kt:39:71 Returns are not allowed for functions with expression body. Use block body in '{...}'
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/youtubeactivity.kt:28:7 Redeclaration: YoutubeActivity
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:88:20 Redeclaration: PdfScreen
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:91:20 Redeclaration: HomeTab
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:93:20 Redeclaration: RecentItem
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:103:20 Redeclaration: QuickTool
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:106:21 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:113:5 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:113:40 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:113:50 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:114:5 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:114:40 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:114:50 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:115:5 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:115:40 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:115:50 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:116:5 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:116:41 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:116:51 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:121:5 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:121:39 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:121:49 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:122:5 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:122:40 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:122:50 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:123:5 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:123:39 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:123:49 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:124:5 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:124:39 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:124:49 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:125:5 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:125:35 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:125:45 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:133:1 Conflicting overloads: public fun PdfToolsScreen(onBack: () -> Unit = ...): Unit defined in com.rasel.RasFocus.selfcontrol.study_tools in file PdfToolsScreen.kt, public fun PdfToolsScreen(onBack: () -> Unit = ...): Unit defined in com.rasel.RasFocus.selfcontrol.study_tools in file PdfToolsScreen.kt
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:143:46 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:143:56 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:144:46 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:144:54 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:146:53 Cannot access 'RecentItem': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:150:68 Cannot access 'RecentItem': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:152:38 Cannot access 'RecentItem': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:190:38 Cannot access 'RecentItem': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:212:36 Cannot access 'RecentItem': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:213:28 Cannot access 'RecentItem': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:250:23 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:250:30 No method 'equals(Any?): Boolean' available
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:250:33 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:250:43 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:250:58 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:250:68 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:264:17 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:264:27 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:281:17 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:281:27 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:288:41 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:288:51 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:290:17 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:290:27 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:294:46 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:294:56 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:296:17 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:296:27 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:302:41 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:302:51 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:304:17 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:304:27 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:310:41 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:310:51 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:312:17 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:312:27 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:318:41 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:318:51 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:320:17 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:320:27 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:324:46 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:324:56 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:326:17 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:326:27 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:332:41 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:332:51 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:334:17 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:334:27 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:335:41 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:335:51 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:337:17 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:337:27 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:338:41 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:338:51 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:351:23 Cannot access 'RecentItem': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:353:18 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:354:19 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:355:19 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:360:53 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:431:66 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:432:58 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:448:66 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:449:58 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:466:46 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:466:56 No method 'equals(Any?): Boolean' available
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:466:59 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:466:67 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:467:37 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:467:45 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:469:47 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:469:57 No method 'equals(Any?): Boolean' available
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:469:60 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:469:68 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:470:37 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:470:45 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:477:35 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:477:45 No method 'equals(Any?): Boolean' available
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:477:48 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:477:56 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:480:45 Cannot access 'RecentItem': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:515:60 Cannot access 'RecentItem': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:531:51 Cannot access 'RecentItem': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:531:67 Cannot access 'RecentItem': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:532:58 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:532:68 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:555:51 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:555:61 Cannot access 'PdfScreen': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:580:18 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:597:34 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:598:36 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:601:23 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:605:18 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:620:19 Cannot access 'RecentItem': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:625:22 Cannot access 'RecentItem': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:630:32 Cannot access 'RecentItem': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:632:44 Cannot access 'RecentItem': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:633:54 Cannot access 'RecentItem': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:647:32 Cannot access 'RecentItem': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:723:22 Cannot access 'RecentItem': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:731:62 Cannot access 'RecentItem': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:737:96 Cannot access 'RecentItem': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:743:25 Cannot access 'RecentItem': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:751:26 Cannot access 'RecentItem': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:753:37 Cannot access 'RecentItem': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:797:34 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:797:54 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:799:16 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:799:24 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:800:16 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:800:24 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:801:16 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:801:24 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:802:16 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:802:24 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:814:28 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:814:35 No method 'equals(Any?): Boolean' available
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1310:33 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1339:42 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1340:44 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1342:31 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1344:31 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1355:78 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1372:69 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1375:33 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1379:61 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1380:29 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1381:43 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1389:71 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1395:19 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1395:51 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1395:85 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1399:26 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/study_tools.kt:129:39 Overload resolution ambiguity: 
+e: [ksp] /home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/study_tools.kt: (1674, 1): Function declaration must have a name
+e: Error occurred in KSP, check log for detail
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/study_tools.kt:1678:12 Expecting function name or receiver type
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/study_tools.kt:1678:12 Expecting function name or receiver type
 
 === UNRESOLVED / TYPE ERRORS ===
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/study_tools.kt:129:39 Unresolved reference: PdfToolsScreen
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/study_tools.kt:129:39 Overload resolution ambiguity: 
 
 === KAPT / MODULE ERRORS ===
    > Compilation error. See log for more details
@@ -185,44 +12,44 @@ e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/
 === STACKTRACE ===
 
 === BUILD FAILURE ===
-> Task :app:compileFullReleaseKotlin FAILED
+> Task :app:kspFullReleaseKotlin FAILED
 * What went wrong:
-Execution failed for task ':app:compileFullReleaseKotlin'.
-BUILD FAILED in 2m 14s
+Execution failed for task ':app:kspFullReleaseKotlin'.
+BUILD FAILED in 19s
 
 === LAST 50 LINES ===
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:801:24 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:802:16 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:802:24 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:814:28 Cannot access 'HomeTab': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:814:35 No method 'equals(Any?): Boolean' available
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1310:33 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1339:42 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1340:44 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1342:31 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1344:31 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1355:78 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1372:69 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1375:33 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1379:61 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1380:29 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1381:43 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1389:71 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1395:19 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1395:51 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1395:85 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:1399:26 Cannot access 'QuickTool': it is private in file
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/study_tools.kt:129:39 Overload resolution ambiguity: 
-public fun PdfToolsScreen(onBack: () -> Unit = ...): Unit defined in com.rasel.RasFocus.selfcontrol.study_tools in file PdfToolsScreen.kt
-public fun PdfToolsScreen(onBack: () -> Unit = ...): Unit defined in com.rasel.RasFocus.selfcontrol.study_tools in file PdfToolsScreen.kt
+> Task :app:mergeFullReleaseAssets FROM-CACHE
+> Task :app:mergeFullReleaseNativeLibs
+> Task :app:compressFullReleaseAssets FROM-CACHE
+> Task :app:collectFullReleaseDependencies
+> Task :app:mergeFullReleaseResources FROM-CACHE
+> Task :app:sdkFullReleaseDependencyData
 
-> Task :app:compileFullReleaseKotlin FAILED
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784614635767.json
+> Task :app:stripFullReleaseDebugSymbols
+Unable to strip the following libraries, packaging them as they are: libbarhopper_v3.so, libimage_processing_util_jni.so, libpdfium.so, libpdfiumandroid.so.
+
+> Task :app:extractFullReleaseNativeSymbolTables FROM-CACHE
+> Task :app:mergeFullReleaseNativeDebugMetadata NO-SOURCE
+> Task :app:processFullReleaseMainManifest
+> Task :app:processFullReleaseManifest
+> Task :app:processFullReleaseManifestForPackage
+note: generating mipmap/ic_launcher_round with config "anydpi-v33" for round icon compatibility.
+
+note: generating mipmap/ic_launcher_round with config "anydpi-v33" for round icon compatibility.
+
+> Task :app:processFullReleaseResources
+
+> Task :app:kspFullReleaseKotlin FAILED
+e: [ksp] /home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/study_tools.kt: (1674, 1): Function declaration must have a name
+e: Error occurred in KSP, check log for detail
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/study_tools.kt:1678:12 Expecting function name or receiver type
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/study_tools.kt:1678:12 Expecting function name or receiver type
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784624232705.json
 
 FAILURE: Build failed with an exception.
 
 * What went wrong:
-Execution failed for task ':app:compileFullReleaseKotlin'.
+Execution failed for task ':app:kspFullReleaseKotlin'.
 > A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
    > Compilation error. See log for more details
 
@@ -238,6 +65,6 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.9/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 2m 14s
-32 actionable tasks: 22 executed, 10 from cache
+BUILD FAILED in 19s
+31 actionable tasks: 21 executed, 10 from cache
 Configuration cache entry stored.
