@@ -9,7 +9,7 @@
 //  D. Settings UI (Compose)
 // ============================================================
 
-package com.rasel.RasFocus.selfcontrol
+package com.rasel.RasFocus.combo.selfcontrol
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo

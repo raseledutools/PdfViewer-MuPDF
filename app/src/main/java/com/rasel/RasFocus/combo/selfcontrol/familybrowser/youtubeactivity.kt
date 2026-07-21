@@ -1,4 +1,4 @@
-package com.rasel.RasFocus.selfcontrol.familybrowser
+package com.rasel.RasFocus.combo.selfcontrol.familybrowser
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -1141,6 +1141,7 @@ class YoutubeActivity : ComponentActivity() {
         view.evaluateJavascript(js, null)
     }
 }
+
 
 
 
