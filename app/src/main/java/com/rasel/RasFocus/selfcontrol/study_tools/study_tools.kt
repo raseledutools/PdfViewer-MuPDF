@@ -44,7 +44,6 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -72,7 +71,6 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.*
-import android.content.Intent
 import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
 import androidx.compose.foundation.lazy.LazyColumn
@@ -273,7 +271,7 @@ private fun StudyToolsMain(
 }
 
 // -----------------------------------------------------------------------------
-// Native Tools 2×2 grid
+// Native Tools 2ï¿½2 grid
 // -----------------------------------------------------------------------------
 @Composable
 private fun NativeToolsGrid(
@@ -397,7 +395,7 @@ private fun NativePdfMergeCard(onClick: () -> Unit) {
                 Spacer(Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text("PDF Merge", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = AccentRed)
-                    Text("?????? ???? — ????????? ??????", fontSize = 11.sp, color = TextMuted)
+                    Text("?????? ???? ï¿½ ????????? ??????", fontSize = 11.sp, color = TextMuted)
                 }
                 Box(
                     modifier = Modifier
@@ -436,7 +434,7 @@ private fun NativePdfToolsCard(onClick: () -> Unit) {
                 Spacer(Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text("PDF & Image Tools", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = AccentOrange)
-                    Text("Convert · Split · Compress — ????????? ??????", fontSize = 11.sp, color = TextMuted)
+                    Text("Convert ï¿½ Split ï¿½ Compress ï¿½ ????????? ??????", fontSize = 11.sp, color = TextMuted)
                 }
                 Box(
                     modifier = Modifier
@@ -451,7 +449,7 @@ private fun NativePdfToolsCard(onClick: () -> Unit) {
 }
 
 // -----------------------------------------------------------------------------
-// Doc Scanner card (CamScanner-style) — full-width hero card
+// Doc Scanner card (CamScanner-style) ï¿½ full-width hero card
 // -----------------------------------------------------------------------------
 @Composable
 private fun DocScannerCard(onClick: () -> Unit) {
@@ -509,7 +507,7 @@ private fun DocScannerCard(onClick: () -> Unit) {
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "CamScanner-?? ??? — Auto edge detect, Magic Color, PDF export",
+                        "CamScanner-?? ??? ï¿½ Auto edge detect, Magic Color, PDF export",
                         fontSize = 11.sp,
                         color = TextMuted,
                         lineHeight = 16.sp
@@ -628,7 +626,7 @@ private fun ToolCard(item: ToolItem, modifier: Modifier, onOpenUrl: (String, Str
 }
 
 // -----------------------------------------------------------------------------
-//  NATIVE SCREEN 1 — Scientific Calculator
+//  NATIVE SCREEN 1 ï¿½ Scientific Calculator
 // -----------------------------------------------------------------------------
 @Composable
 private fun ScientificCalculatorScreen(onBack: () -> Unit) {
@@ -643,7 +641,7 @@ private fun ScientificCalculatorScreen(onBack: () -> Unit) {
         return try {
             // Replace display symbols
             var e = expr
-                .replace("×", "*").replace("÷", "/")
+                .replace("ï¿½", "*").replace("ï¿½", "/")
                 .replace("p", Math.PI.toString())
                 .replace("e", Math.E.toString())
             // Simple recursive descent is complex; use stack-based approach
@@ -695,7 +693,7 @@ private fun ScientificCalculatorScreen(onBack: () -> Unit) {
                 expression = if (result == "Error") "" else result
                 justEvaled = true
             }
-            "±"   -> {
+            "ï¿½"   -> {
                 if (display != "0" && display != "Error") {
                     if (display.startsWith("-")) { display = display.drop(1); expression = display }
                     else { display = "-$display"; expression = display }
@@ -720,7 +718,7 @@ private fun ScientificCalculatorScreen(onBack: () -> Unit) {
                 else expression += btn
                 display = expression
             }
-            "x²" -> {
+            "xï¿½" -> {
                 val v = display.toDoubleOrNull()
                 if (v != null) {
                     val r = v * v
@@ -728,7 +726,7 @@ private fun ScientificCalculatorScreen(onBack: () -> Unit) {
                     display = expression; justEvaled = true
                 }
             }
-            "x³" -> {
+            "xï¿½" -> {
                 val v = display.toDoubleOrNull()
                 if (v != null) {
                     val r = v * v * v
@@ -753,20 +751,20 @@ private fun ScientificCalculatorScreen(onBack: () -> Unit) {
 
     // Button layout
     val scientificRow = listOf("sin(", "cos(", "tan(", "log(", "ln(", "v(")
-    val row2 = listOf("x²", "x³", "1/x", "^", "p", "e")
+    val row2 = listOf("xï¿½", "xï¿½", "1/x", "^", "p", "e")
     val mainRows = listOf(
-        listOf("C", "?", "%", "÷"),
-        listOf("7", "8", "9", "×"),
+        listOf("C", "?", "%", "ï¿½"),
+        listOf("7", "8", "9", "ï¿½"),
         listOf("4", "5", "6", "-"),
         listOf("1", "2", "3", "+"),
-        listOf("±", "0", ".", "=")
+        listOf("ï¿½", "0", ".", "=")
     )
 
     fun btnColor(btn: String): Color = when {
         btn == "=" -> AccentGreen
-        btn in listOf("÷", "×", "-", "+", "^") -> AccentOrange
+        btn in listOf("ï¿½", "ï¿½", "-", "+", "^") -> AccentOrange
         btn in listOf("C", "?") -> AccentRed
-        btn in listOf("%", "±") -> Color(0xFF3A3A5A)
+        btn in listOf("%", "ï¿½") -> Color(0xFF3A3A5A)
         btn in scientificRow || btn in row2 -> Color(0xFF2A2A4A)
         else -> Color(0xFF1E1E38)
     }
@@ -909,7 +907,7 @@ private fun evalArithmetic(expr: String): Double {
 }
 
 // -----------------------------------------------------------------------------
-//  NATIVE SCREEN 2 — Unit Converter
+//  NATIVE SCREEN 2 ï¿½ Unit Converter
 // -----------------------------------------------------------------------------
 private enum class UnitCategory(val label: String, val emoji: String) {
     LENGTH("Length", "??"), MASS("Mass", "??"),
@@ -921,12 +919,12 @@ private enum class UnitCategory(val label: String, val emoji: String) {
 private val unitData: Map<UnitCategory, List<Pair<String, Double>>> = mapOf(
     UnitCategory.LENGTH to listOf("mm" to 1e-3, "cm" to 1e-2, "m" to 1.0, "km" to 1e3, "inch" to 0.0254, "ft" to 0.3048, "yard" to 0.9144, "mile" to 1609.344),
     UnitCategory.MASS   to listOf("mg" to 1e-6, "g" to 1e-3, "kg" to 1.0, "ton" to 1e3, "lb" to 0.453592, "oz" to 0.0283495),
-    UnitCategory.AREA   to listOf("mm²" to 1e-6, "cm²" to 1e-4, "m²" to 1.0, "km²" to 1e6, "acre" to 4046.86, "hectare" to 1e4, "ft²" to 0.092903),
+    UnitCategory.AREA   to listOf("mmï¿½" to 1e-6, "cmï¿½" to 1e-4, "mï¿½" to 1.0, "kmï¿½" to 1e6, "acre" to 4046.86, "hectare" to 1e4, "ftï¿½" to 0.092903),
     UnitCategory.SPEED  to listOf("m/s" to 1.0, "km/h" to 0.277778, "mph" to 0.44704, "knot" to 0.514444, "ft/s" to 0.3048),
     UnitCategory.TIME   to listOf("ms" to 1e-3, "s" to 1.0, "min" to 60.0, "hr" to 3600.0, "day" to 86400.0, "week" to 604800.0, "month" to 2.628e6, "year" to 3.156e7),
-    UnitCategory.VOLUME to listOf("ml" to 1e-3, "L" to 1.0, "m³" to 1e3, "cup" to 0.236588, "fl oz" to 0.0295735, "pint" to 0.473176, "gallon" to 3.78541),
+    UnitCategory.VOLUME to listOf("ml" to 1e-3, "L" to 1.0, "mï¿½" to 1e3, "cup" to 0.236588, "fl oz" to 0.0295735, "pint" to 0.473176, "gallon" to 3.78541),
     UnitCategory.DATA   to listOf("bit" to 1.0, "byte" to 8.0, "KB" to 8192.0, "MB" to 8388608.0, "GB" to 8589934592.0, "TB" to 8.796e12),
-    UnitCategory.TEMP   to listOf("°C" to 0.0, "°F" to 0.0, "K" to 0.0)   // handled specially
+    UnitCategory.TEMP   to listOf("ï¿½C" to 0.0, "ï¿½F" to 0.0, "K" to 0.0)   // handled specially
 )
 
 @Composable
@@ -941,19 +939,19 @@ private fun UnitConverterScreen(onBack: () -> Unit) {
     LaunchedEffect(category) { fromIdx = 0; toIdx = 1; inputVal = "1" }
 
     fun convert(): String {
-        val v = inputVal.toDoubleOrNull() ?: return "—"
+        val v = inputVal.toDoubleOrNull() ?: return "ï¿½"
         if (category == UnitCategory.TEMP) {
             val fromU = units[fromIdx].first
             val toU   = units[toIdx].first
             val celsius = when (fromU) {
-                "°C" -> v
-                "°F" -> (v - 32) * 5 / 9
+                "ï¿½C" -> v
+                "ï¿½F" -> (v - 32) * 5 / 9
                 "K"  -> v - 273.15
                 else -> v
             }
             val result = when (toU) {
-                "°C" -> celsius
-                "°F" -> celsius * 9 / 5 + 32
+                "ï¿½C" -> celsius
+                "ï¿½F" -> celsius * 9 / 5 + 32
                 "K"  -> celsius + 273.15
                 else -> celsius
             }
@@ -1070,7 +1068,7 @@ private fun UnitDropdown(label: String, units: List<Pair<String, Double>>, selec
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(label, fontSize = 10.sp, color = TextMuted)
-                Text(units.getOrNull(selectedIdx)?.first ?: "—", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Text(units.getOrNull(selectedIdx)?.first ?: "ï¿½", fontSize = 14.sp, fontWeight = FontWeight.Bold)
             }
         }
         DropdownMenu(
@@ -1089,7 +1087,7 @@ private fun UnitDropdown(label: String, units: List<Pair<String, Double>>, selec
 }
 
 // -----------------------------------------------------------------------------
-//  NATIVE SCREEN 3 — Pomodoro Timer
+//  NATIVE SCREEN 3 ï¿½ Pomodoro Timer
 // -----------------------------------------------------------------------------
 private enum class PomodoroPhase(val label: String, val color: Color, val defaultMin: Int) {
     FOCUS("Focus", AccentRed, 25),
@@ -1212,7 +1210,7 @@ private fun PomodoroScreen(onBack: () -> Unit) {
                         repeat(minOf(sessions, 8)) {
                             Text("??", fontSize = 20.sp)
                         }
-                        if (sessions == 0) Text("—", color = TextMuted, fontSize = 16.sp)
+                        if (sessions == 0) Text("ï¿½", color = TextMuted, fontSize = 16.sp)
                         if (sessions > 8) Text("+${sessions-8}", color = AccentRed, fontSize = 14.sp)
                     }
                     TextButton(onClick = { sessions = 0 }) {
@@ -1229,9 +1227,9 @@ private fun PomodoroScreen(onBack: () -> Unit) {
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text("?? Pomodoro Tips", fontSize = 13.sp, color = AccentGreen, fontWeight = FontWeight.Bold)
-                    Text("• ?? ????? focus ? ? ????? break", fontSize = 12.sp, color = TextMuted)
-                    Text("• ??? session ???? ?? ????? long break", fontSize = 12.sp, color = TextMuted)
-                    Text("• Phone down ????, notification ???? ???", fontSize = 12.sp, color = TextMuted)
+                    Text("ï¿½ ?? ????? focus ? ? ????? break", fontSize = 12.sp, color = TextMuted)
+                    Text("ï¿½ ??? session ???? ?? ????? long break", fontSize = 12.sp, color = TextMuted)
+                    Text("ï¿½ Phone down ????, notification ???? ???", fontSize = 12.sp, color = TextMuted)
                 }
             }
         }
@@ -1239,7 +1237,7 @@ private fun PomodoroScreen(onBack: () -> Unit) {
 }
 
 // -----------------------------------------------------------------------------
-//  NATIVE SCREEN 4 — Quick Notes (multi-note, SharedPrefs)
+//  NATIVE SCREEN 4 ï¿½ Quick Notes (multi-note, SharedPrefs)
 // -----------------------------------------------------------------------------
 @Composable
 private fun QuickNotesScreen(onBack: () -> Unit) {
@@ -1402,7 +1400,7 @@ private fun QuickNotesScreen(onBack: () -> Unit) {
 }
 
 // -----------------------------------------------------------------------------
-//  NATIVE SCREEN 5 — PDF Merge
+//  NATIVE SCREEN 5 ï¿½ PDF Merge
 // -----------------------------------------------------------------------------
 @Composable
 private fun NativePdfMergeScreen(onBack: () -> Unit) {
@@ -1506,7 +1504,7 @@ private fun NativePdfMergeScreen(onBack: () -> Unit) {
             }
 
             Text(
-                "• ????????? ?????? ??? ???\n• Merged ???? Downloads-? ??? ???\n• ??????? ??? PDF ?????",
+                "ï¿½ ????????? ?????? ??? ???\nï¿½ Merged ???? Downloads-? ??? ???\nï¿½ ??????? ??? PDF ?????",
                 fontSize = 12.sp, color = TextMuted, lineHeight = 20.sp
             )
         }
@@ -1630,7 +1628,7 @@ private fun PersonalDiaryCard(onClick: () -> Unit) {
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        SimpleDateFormat("dd MMM yyyy — EEEE", Locale.getDefault()).format(Date()),
+                        SimpleDateFormat("dd MMM yyyy ï¿½ EEEE", Locale.getDefault()).format(Date()),
                         fontSize = 11.sp,
                         color = AccentPurple
                     )
@@ -1697,7 +1695,7 @@ private fun TomorrowTasksCard() {
             .padding(20.dp)
         ) {
             Column {
-                Text("?? ???????? — ${SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(cal.time)}",
+                Text("?? ???????? ï¿½ ${SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(cal.time)}",
                     fontSize = 13.sp, color = AccentGreen, modifier = Modifier.padding(bottom = 16.dp))
                 if (taskList.isEmpty()) {
                     Text("???? ???? ??? ???? ???? ??? ????!", fontSize = 13.sp, color = TextMuted, modifier = Modifier.padding(bottom = 12.dp))
