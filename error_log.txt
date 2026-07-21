@@ -1,15 +1,7 @@
 === KOTLIN/KAPT ERRORS ===
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/diary.kt:1113:35 Unresolved reference: upsertAll
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/diary.kt:1204:63 Unresolved reference: getAllEntriesOnce
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/diary.kt:1206:53 Overload resolution ambiguity: 
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/diary.kt:1206:63 Cannot infer a type for this parameter. Please specify it explicitly.
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/diary.kt:1291:63 Unresolved reference: upsertAll
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/drivebackup/DriveBackupManager.kt:39:71 Returns are not allowed for functions with expression body. Use block body in '{...}'
 
 === UNRESOLVED / TYPE ERRORS ===
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/diary.kt:1113:35 Unresolved reference: upsertAll
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/diary.kt:1204:63 Unresolved reference: getAllEntriesOnce
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/diary.kt:1206:53 Overload resolution ambiguity: 
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/diary.kt:1291:63 Unresolved reference: upsertAll
 
 === KAPT / MODULE ERRORS ===
    > Compilation error. See log for more details
@@ -23,6 +15,12 @@ Execution failed for task ':app:compileFullReleaseKotlin'.
 BUILD FAILED in 3m 21s
 
 === LAST 50 LINES ===
+> Task :app:checkFullReleaseAarMetadata
+> Task :app:writeFullReleaseSigningConfigVersions
+> Task :app:collectFullReleaseDependencies
+> Task :app:compressFullReleaseAssets FROM-CACHE
+> Task :app:mergeFullReleaseNativeLibs
+
 > Task :app:stripFullReleaseDebugSymbols
 Unable to strip the following libraries, packaging them as they are: libbarhopper_v3.so, libimage_processing_util_jni.so, libpdfium.so, libpdfiumandroid.so.
 
@@ -40,16 +38,10 @@ note: generating mipmap/ic_launcher_round with config "anydpi-v33" for round ico
 > Task :app:processFullReleaseResources
 > Task :app:kspFullReleaseKotlin
 > Task :app:compileFullReleaseKotlin
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/diary.kt:1113:35 Unresolved reference: upsertAll
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/diary.kt:1204:63 Unresolved reference: getAllEntriesOnce
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/diary.kt:1206:53 Overload resolution ambiguity: 
-public inline fun <T> Iterable<TypeVariable(T)>.forEach(action: (TypeVariable(T)) -> Unit): Unit defined in kotlin.collections
-public inline fun <K, V> Map<out TypeVariable(K), TypeVariable(V)>.forEach(action: (Map.Entry<TypeVariable(K), TypeVariable(V)>) -> Unit): Unit defined in kotlin.collections
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/diary.kt:1206:63 Cannot infer a type for this parameter. Please specify it explicitly.
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/diary.kt:1291:63 Unresolved reference: upsertAll
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/drivebackup/DriveBackupManager.kt:39:71 Returns are not allowed for functions with expression body. Use block body in '{...}'
 
 > Task :app:compileFullReleaseKotlin FAILED
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784601191310.json
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784605842885.json
 
 FAILURE: Build failed with an exception.
 
