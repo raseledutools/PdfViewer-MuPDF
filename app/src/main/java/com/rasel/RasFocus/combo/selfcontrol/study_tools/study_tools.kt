@@ -1,4 +1,4 @@
-package com.rasel.RasFocus.combo.selfcontrol.study_tools
+﻿package com.rasel.RasFocus.selfcontrol.study_tools
 
 import android.annotation.SuppressLint
 import android.content.ContentValues
@@ -15,6 +15,28 @@ import android.provider.MediaStore
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.core.content.pm.ShortcutManagerCompat
+import androidx.core.content.pm.ShortcutInfoCompat
+import androidx.core.graphics.drawable.IconCompat
+import android.content.Intent
+import android.provider.AlarmClock
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.zIndex
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Alarm
+import androidx.compose.material.icons.filled.Minimize
+import androidx.compose.material.icons.filled.AddBox
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material.icons.filled.NoteAdd
+import androidx.compose.material.icons.filled.DragIndicator
+import org.json.JSONArray
+import org.json.JSONObject
+import androidx.compose.ui.geometry.Offset
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -244,7 +266,7 @@ private fun StudyToolsMain(
 
         // ── Tomorrow's Tasks ────────────────────────────────────────────
         SectionTitle("✅ Tomorrow's Tasks", AccentGreen, AccentTeal)
-        TaskSection()
+        
     }
 }
 
@@ -1653,7 +1675,7 @@ private fun PersonalDiaryCard(onClick: () -> Unit) {
 // Tomorrow's Tasks
 // ─────────────────────────────────────────────────────────────────────────────
 @Composable
-private fun TaskSection() {
+private fun  {
     val context  = LocalContext.current
     val prefs    = remember { context.getSharedPreferences("study_tools_prefs", Context.MODE_PRIVATE) }
     var taskList by remember { mutableStateOf(prefs.getStringSet("tasks", emptySet())?.toMutableList() ?: mutableListOf()) }
@@ -1756,3 +1778,167 @@ private fun StudyWebView(url: String, title: String, onBack: () -> Unit) {
     }
 }
 // ═════════════════════════════════════════════════════════════════════════════
+
+
+// Data class for canvas items
+data class CanvasItem(val id: String, val type: String, val content: String, var offset: Offset, var scale: Float = 1f)
+
+@Composable
+private fun FloatingTaskCanvas() {
+    val context = LocalContext.current
+    val prefs = context.getSharedPreferences("canvas_prefs", Context.MODE_PRIVATE)
+    
+    var isMinimized by remember { mutableStateOf(prefs.getBoolean("is_minimized", true)) }
+    var items by remember { mutableStateOf<List<CanvasItem>>(emptyList()) }
+    
+    // Load
+    LaunchedEffect(Unit) {
+        val saved = prefs.getString("canvas_items", "[]") ?: "[]"
+        try {
+            val arr = JSONArray(saved)
+            val list = mutableListOf<CanvasItem>()
+            for (i in 0 until arr.length()) {
+                val obj = arr.getJSONObject(i)
+                list.add(CanvasItem(
+                    id = obj.getString("id"),
+                    type = obj.getString("type"),
+                    content = obj.getString("content"),
+                    offset = Offset(obj.getDouble("x").toFloat(), obj.getDouble("y").toFloat()),
+                    scale = obj.optDouble("scale", 1.0).toFloat()
+                ))
+            }
+            items = list
+        } catch (e: Exception) {}
+    }
+    
+    // Save helper
+    fun saveItems() {
+        val arr = JSONArray()
+        items.forEach { 
+            val obj = JSONObject()
+            obj.put("id", it.id)
+            obj.put("type", it.type)
+            obj.put("content", it.content)
+            obj.put("x", it.offset.x.toDouble())
+            obj.put("y", it.offset.y.toDouble())
+            obj.put("scale", it.scale.toDouble())
+            arr.put(obj)
+        }
+        prefs.edit().putString("canvas_items", arr.toString()).putBoolean("is_minimized", isMinimized).apply()
+    }
+    
+    val imgLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            val newItems = items.toMutableList()
+            newItems.add(CanvasItem(System.currentTimeMillis().toString(), "image", uri.toString(), Offset(100f, 100f)))
+            items = newItems
+            saveItems()
+        }
+    }
+    
+    val pdfLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            val newItems = items.toMutableList()
+            newItems.add(CanvasItem(System.currentTimeMillis().toString(), "pdf", uri.toString(), Offset(150f, 150f)))
+            items = newItems
+            saveItems()
+        }
+    }
+
+    if (isMinimized) {
+        Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.BottomEnd) {
+            FloatingActionButton(onClick = { isMinimized = false; saveItems() }, containerColor = AccentPurple, contentColor = Color.White) {
+                Icon(Icons.Default.AddBox, "Open Canvas")
+            }
+        }
+    } else {
+        Box(modifier = Modifier.fillMaxSize().background(Color(0xD90A0A1A)).zIndex(10f)) {
+            // Toolbar
+            Row(modifier = Modifier.fillMaxWidth().background(Color(0xFF151525)).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("Floating Canvas", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                IconButton(onClick = {
+                    val newItems = items.toMutableList()
+                    newItems.add(CanvasItem(System.currentTimeMillis().toString(), "text", "New Note", Offset(200f, 200f)))
+                    items = newItems
+                    saveItems()
+                }) { Icon(Icons.Default.NoteAdd, "Add Text", tint = AccentGreen) }
+                IconButton(onClick = { imgLauncher.launch("image/*") }) { Icon(Icons.Default.Image, "Add Image", tint = AccentCyan) }
+                IconButton(onClick = { pdfLauncher.launch("application/pdf") }) { Icon(Icons.Default.PictureAsPdf, "Add PDF", tint = AccentRed) }
+                IconButton(onClick = { isMinimized = true; saveItems() }) { Icon(Icons.Default.Minimize, "Minimize", tint = Color.White) }
+            }
+            
+            // Canvas Area
+            Box(modifier = Modifier.fillMaxSize().padding(top = 60.dp)) {
+                items.forEach { item ->
+                    var offset by remember { mutableStateOf(item.offset) }
+                    var scale by remember { mutableStateOf(item.scale) }
+                    
+                    Box(modifier = Modifier
+                        .offset(x = offset.x.dp, y = offset.y.dp)
+                        .graphicsLayer(scaleX = scale, scaleY = scale)
+                        .pointerInput(Unit) {
+                            detectTransformGestures { _, pan, zoom, _ ->
+                                offset += Offset(pan.x / density, pan.y / density)
+                                scale *= zoom
+                                item.offset = offset
+                                item.scale = scale
+                                saveItems()
+                            }
+                        }
+                    ) {
+                        when (item.type) {
+                            "text" -> {
+                                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF2A2A40)), elevation = CardDefaults.cardElevation(8.dp)) {
+                                    Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.DragIndicator, "Drag", tint = Color.Gray, modifier = Modifier.size(16.dp))
+                                        Spacer(Modifier.width(8.dp))
+                                        var text by remember { mutableStateOf(item.content) }
+                                        androidx.compose.foundation.text.BasicTextField(
+                                            value = text,
+                                            onValueChange = { text = it; item.copy(content = it).also { updated -> val newItems = items.toMutableList(); newItems[newItems.indexOf(item)] = updated; items = newItems; saveItems() } },
+                                            textStyle = androidx.compose.ui.text.TextStyle(color = Color.White)
+                                        )
+                                    }
+                                }
+                            }
+                            "image" -> {
+                                Card(colors = CardDefaults.cardColors(containerColor = Color.Transparent)) {
+                                    AsyncImageOrBitmap(uri = Uri.parse(item.content), context = context, modifier = Modifier.size(150.dp))
+                                }
+                            }
+                            "pdf" -> {
+                                Card(colors = CardDefaults.cardColors(containerColor = AccentRed), elevation = CardDefaults.cardElevation(8.dp), modifier = Modifier.clickable {
+                                    val i = Intent(Intent.ACTION_VIEW).apply {
+                                        setDataAndType(Uri.parse(item.content), "application/pdf")
+                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    }
+                                    try { context.startActivity(i) } catch (e:Exception){}
+                                }) {
+                                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.PictureAsPdf, "PDF", tint = Color.White)
+                                        Spacer(Modifier.width(8.dp))
+                                        Text("Open PDF", color = Color.White, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AsyncImageOrBitmap(uri: Uri, context: Context, modifier: Modifier) {
+    var bitmap by remember { mutableStateOf<Bitmap?>(null) }
+    LaunchedEffect(uri) {
+        try {
+            val src = android.graphics.ImageDecoder.createSource(context.contentResolver, uri)
+            bitmap = android.graphics.ImageDecoder.decodeBitmap(src)
+        } catch (e: Exception) {}
+    }
+    bitmap?.let {
+        Image(bitmap = it.asImageBitmap(), contentDescription = null, modifier = modifier, contentScale = ContentScale.Crop)
+    } ?: Box(modifier.background(Color.Gray))
+}

@@ -35,13 +35,15 @@ object DriveBackupManager {
     )
 
     // ── Public check ─────────────────────────────────────────────────────────
-    fun isAvailable(context: Context): Boolean = try {
-        val account = GoogleSignIn.getLastSignedInAccount(context) ?: return false
-        // DRIVE_FILE scope চেক করো — sign in করা থাকলেও scope না থাকলে upload fail করবে
-        GoogleSignIn.hasPermissions(account, Scope(DriveScopes.DRIVE_FILE))
-    } catch (e: Exception) {
-        Log.w(TAG, "isAvailable check failed: ${e.message}")
-        false
+    fun isAvailable(context: Context): Boolean {
+        return try {
+            val account = GoogleSignIn.getLastSignedInAccount(context) ?: return false
+            // DRIVE_FILE scope চেক করো — sign in করা থাকলেও scope না থাকলে upload fail করবে
+            GoogleSignIn.hasPermissions(account, Scope(DriveScopes.DRIVE_FILE))
+        } catch (e: Exception) {
+            Log.w(TAG, "isAvailable check failed: ${e.message}")
+            false
+        }
     }
 
     // ── Build Drive service safely on IO thread ───────────────────────────────
