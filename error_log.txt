@@ -1,10 +1,26 @@
 === KOTLIN/KAPT ERRORS ===
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/study_tools.kt:21:24 Conflicting import, imported name 'Intent' is ambiguous
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/study_tools.kt:75:24 Conflicting import, imported name 'Intent' is ambiguous
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/study_tools.kt:21:24 Conflicting import, imported name 'Intent' is ambiguous
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/study_tools.kt:75:24 Conflicting import, imported name 'Intent' is ambiguous
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/MissingServices.kt:175:41 Unresolved reference: R
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/MissingServices.kt:175:78 Unresolved reference: R
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/MissingServices.kt:180:18 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/MissingServices.kt:188:18 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/UnifiedBlockerService.kt:1315:109 Unresolved reference: R
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/UnifiedBlockerService.kt:1338:95 Unresolved reference: R
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/MissingServices.kt:177:41 Unresolved reference: R
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/MissingServices.kt:177:78 Unresolved reference: R
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/MissingServices.kt:183:18 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/MissingServices.kt:191:18 Overload resolution ambiguity: 
 
 === UNRESOLVED / TYPE ERRORS ===
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/MissingServices.kt:175:41 Unresolved reference: R
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/MissingServices.kt:175:78 Unresolved reference: R
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/MissingServices.kt:180:18 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/MissingServices.kt:188:18 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/UnifiedBlockerService.kt:1315:109 Unresolved reference: R
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/UnifiedBlockerService.kt:1338:95 Unresolved reference: R
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/MissingServices.kt:177:41 Unresolved reference: R
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/MissingServices.kt:177:78 Unresolved reference: R
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/MissingServices.kt:183:18 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/MissingServices.kt:191:18 Overload resolution ambiguity: 
 
 === KAPT / MODULE ERRORS ===
    > Compilation error. See log for more details
@@ -15,36 +31,36 @@ e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/
 > Task :app:compileFullReleaseKotlin FAILED
 * What went wrong:
 Execution failed for task ':app:compileFullReleaseKotlin'.
-BUILD FAILED in 3m 5s
+BUILD FAILED in 3m 26s
 
 === LAST 50 LINES ===
-> Task :app:compressFullReleaseAssets FROM-CACHE
-> Task :app:collectFullReleaseDependencies
-
-> Task :app:stripFullReleaseDebugSymbols
-Unable to strip the following libraries, packaging them as they are: libbarhopper_v3.so, libimage_processing_util_jni.so, libpdfium.so, libpdfiumandroid.so.
-
-> Task :app:extractFullReleaseNativeSymbolTables FROM-CACHE
-> Task :app:mergeFullReleaseNativeDebugMetadata NO-SOURCE
-> Task :app:mergeFullReleaseResources FROM-CACHE
-> Task :app:sdkFullReleaseDependencyData
-> Task :app:processFullReleaseMainManifest
-> Task :app:processFullReleaseManifest
-> Task :app:processFullReleaseManifestForPackage
-note: generating mipmap/ic_launcher_round with config "anydpi-v33" for round icon compatibility.
 
 note: generating mipmap/ic_launcher_round with config "anydpi-v33" for round icon compatibility.
 
 > Task :app:processFullReleaseResources
 > Task :app:kspFullReleaseKotlin
 > Task :app:compileFullReleaseKotlin
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/study_tools.kt:21:24 Conflicting import, imported name 'Intent' is ambiguous
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/study_tools.kt:75:24 Conflicting import, imported name 'Intent' is ambiguous
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/study_tools.kt:21:24 Conflicting import, imported name 'Intent' is ambiguous
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/study_tools.kt:75:24 Conflicting import, imported name 'Intent' is ambiguous
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/MissingServices.kt:175:41 Unresolved reference: R
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/MissingServices.kt:175:78 Unresolved reference: R
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/MissingServices.kt:180:18 Overload resolution ambiguity: 
+public open fun setSmallIcon(p0: Icon!): Notification.Builder defined in android.app.Notification.Builder
+public open fun setSmallIcon(p0: Int): Notification.Builder defined in android.app.Notification.Builder
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/MissingServices.kt:188:18 Overload resolution ambiguity: 
+public open fun setSmallIcon(p0: Icon!): Notification.Builder defined in android.app.Notification.Builder
+public open fun setSmallIcon(p0: Int): Notification.Builder defined in android.app.Notification.Builder
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/UnifiedBlockerService.kt:1315:109 Unresolved reference: R
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/UnifiedBlockerService.kt:1338:95 Unresolved reference: R
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/MissingServices.kt:177:41 Unresolved reference: R
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/MissingServices.kt:177:78 Unresolved reference: R
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/MissingServices.kt:183:18 Overload resolution ambiguity: 
+public open fun setSmallIcon(p0: Icon!): Notification.Builder defined in android.app.Notification.Builder
+public open fun setSmallIcon(p0: Int): Notification.Builder defined in android.app.Notification.Builder
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/MissingServices.kt:191:18 Overload resolution ambiguity: 
+public open fun setSmallIcon(p0: Icon!): Notification.Builder defined in android.app.Notification.Builder
+public open fun setSmallIcon(p0: Int): Notification.Builder defined in android.app.Notification.Builder
 
 > Task :app:compileFullReleaseKotlin FAILED
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784627229907.json
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784628424277.json
 
 FAILURE: Build failed with an exception.
 
@@ -65,6 +81,6 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.9/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 3m 5s
-32 actionable tasks: 22 executed, 10 from cache
+BUILD FAILED in 3m 26s
+32 actionable tasks: 25 executed, 7 from cache
 Configuration cache entry stored.
