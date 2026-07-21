@@ -266,6 +266,7 @@ private fun StudyToolsMain(
 
         // ── Tomorrow's Tasks ────────────────────────────────────────────
         SectionTitle("✅ Tomorrow's Tasks", AccentGreen, AccentTeal)
+        TomorrowTasksCard()
         
     }
 }
@@ -1675,7 +1676,7 @@ private fun PersonalDiaryCard(onClick: () -> Unit) {
 // Tomorrow's Tasks
 // ─────────────────────────────────────────────────────────────────────────────
 @Composable
-private fun  {
+private fun TomorrowTasksCard() {
     val context  = LocalContext.current
     val prefs    = remember { context.getSharedPreferences("study_tools_prefs", Context.MODE_PRIVATE) }
     var taskList by remember { mutableStateOf(prefs.getStringSet("tasks", emptySet())?.toMutableList() ?: mutableListOf()) }
