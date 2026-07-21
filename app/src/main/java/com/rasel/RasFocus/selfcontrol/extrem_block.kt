@@ -749,6 +749,11 @@ class RasFocusBlockingService : AccessibilityService() {
         if (prefs.blockNormalLoading) {
             list.addAll(adultSiteKeywords)
             list.addAll(romanticKeywords)
+            // Firebase Realtime DB থেকে আসা remote keywords যোগ করো।
+            // FirebaseKeywordSync.init() service start এ call হয়ে যায়,
+            // তাই এখানে শুধু in-memory set পড়লেই হয় — কোনো network call নেই।
+            val remoteKw = FirebaseKeywordSync.getAdultKeywords()
+            if (remoteKw.isNotEmpty()) list.addAll(remoteKw)
         }
         return list
     }
