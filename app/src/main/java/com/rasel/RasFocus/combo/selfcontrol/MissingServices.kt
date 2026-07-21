@@ -53,15 +53,14 @@ class BpAppBlockerService : Service() {
     private fun buildNotification(): Notification {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Notification.Builder(this, CHANNEL_ID)
-                .setContentTitle("Focus Lock Active")
-                .setContentText("App blocking is running.")
+                .setContentTitle("RasFocus")
                 .setSmallIcon(android.R.drawable.ic_lock_lock)
+                .setVisibility(Notification.VISIBILITY_SECRET)
                 .build()
         } else {
             @Suppress("DEPRECATION")
             Notification.Builder(this)
-                .setContentTitle("Focus Lock Active")
-                .setContentText("App blocking is running.")
+                .setContentTitle("RasFocus")
                 .setSmallIcon(android.R.drawable.ic_lock_lock)
                 .build()
         }
@@ -93,15 +92,14 @@ class BlockerForegroundService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val notif = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Notification.Builder(this, CHANNEL_ID)
-                .setContentTitle("RasFocus Blocker Active")
-                .setContentText("App blocking is running.")
+                .setContentTitle("RasFocus")
                 .setSmallIcon(android.R.drawable.ic_lock_lock)
+                .setVisibility(Notification.VISIBILITY_SECRET)
                 .build()
         } else {
             @Suppress("DEPRECATION")
             Notification.Builder(this)
-                .setContentTitle("RasFocus Blocker Active")
-                .setContentText("App blocking is running.")
+                .setContentTitle("RasFocus")
                 .setSmallIcon(android.R.drawable.ic_lock_lock)
                 .build()
         }
@@ -173,16 +171,21 @@ class UsageNotificationService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val isProtecting = com.rasel.RasFocus.combo.selfcontrol.UnifiedBlockerService.instance != null
+        val iconRes = if (isProtecting) R.drawable.ic_notif_lock_locked else R.drawable.ic_notif_lock_unlocked
         val notif = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Notification.Builder(this, CHANNEL_ID)
-                .setContentTitle("RasFocus Usage Tracker")
-                .setSmallIcon(android.R.drawable.ic_menu_info_details)
+                .setContentTitle("RasFocus Protection")
+                .setContentText(if (isProtecting) "Blocking active" else "Service inactive")
+                .setSmallIcon(iconRes)
+                .setOngoing(true)
                 .build()
         } else {
             @Suppress("DEPRECATION")
             Notification.Builder(this)
-                .setContentTitle("RasFocus Usage Tracker")
-                .setSmallIcon(android.R.drawable.ic_menu_info_details)
+                .setContentTitle("RasFocus Protection")
+                .setContentText(if (isProtecting) "Blocking active" else "Service inactive")
+                .setSmallIcon(iconRes)
                 .build()
         }
         startForeground(NOTIF_ID, notif)
