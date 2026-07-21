@@ -155,6 +155,7 @@ fun StudyToolsScreen(onBack: () -> Unit = {}, onOpenDiary: () -> Unit) {
             is StudyNav.QuickNotes -> QuickNotesScreen(onBack = { nav = StudyNav.Home })
             is StudyNav.GraphCalculator -> GraphicCalculatorScreen(onBack = { nav = StudyNav.Home })
             is StudyNav.DocScanner -> ScanToPdfScreen(onBack = { nav = StudyNav.Home })
+            else -> {}
         }
     }
 }
@@ -1943,4 +1944,5 @@ fun AsyncImageOrBitmap(uri: Uri, context: Context, modifier: Modifier) {
         Image(bitmap = it.asImageBitmap(), contentDescription = null, modifier = modifier, contentScale = ContentScale.Crop)
     } ?: Box(modifier.background(Color.Gray))
 }
+
 
