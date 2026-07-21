@@ -9,7 +9,7 @@
 //  D. Settings UI (Compose)
 // ============================================================
 
-package com.rasel.RasFocus.combo.selfcontrol
+package com.rasel.RasFocus.selfcontrol
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
@@ -170,6 +170,13 @@ class BlockerPrefs(context: Context) {
     var blockFbVideo: Boolean
         get() = prefs.getBoolean("fb_video", false)
         set(v) = prefs.edit().putBoolean("fb_video", v).apply()
+
+    // পুরো Facebook app block — video/reels না, পুরো app-ই। Messenger এর
+    // Facebook icon সহ যেকোনো entry point দিয়ে খুললেও package foreground
+    // এ আসা মাত্রই kill হবে (locale/UI-text এর উপর নির্ভর করে না)।
+    var blockFacebookApp: Boolean
+        get() = prefs.getBoolean("fb_app_full", false)
+        set(v) = prefs.edit().putBoolean("fb_app_full", v).apply()
 
     var uninstallProtection: Boolean
         get() = prefs.getBoolean("uninstall_prot", false)
@@ -462,12 +469,14 @@ class RasFocusBlockingService : AccessibilityService() {
             if (!handled) handled = handleWaBusinessBlocking(root, pkg)
             if (!handled) handled = handleTikTok(root, pkg)
             if (!handled && (pkg == "com.facebook.katana" || pkg == "com.facebook.lite")) {
-                handled = handleFacebookVideo(root, pkg)
+                handled = handleFacebookAppBlock(pkg)
+                if (!handled) handled = handleFacebookVideo(root, pkg)
                 if (!handled) handled = handleFacebookFeedShortVideo(root, pkg)
             }
 
             // ── Advanced ──
             if (!handled) handled = handleUnsupportedBrowsers(root, pkg)
+            if (!handled) handled = handleUnsupportedWebView(root, pkg)
             if (!handled) handled = handleNewlyInstalledApps(root, pkg)
 
             // ── Protection ──
@@ -528,10 +537,12 @@ class RasFocusBlockingService : AccessibilityService() {
             if (!handled) handled = handleWaBusinessBlocking(root, pkg)
             if (!handled) handled = handleTikTok(root, pkg)
             if (!handled) handled = handleUnsupportedBrowsers(root, pkg)
+            if (!handled) handled = handleUnsupportedWebView(root, pkg)
             if (!handled) handled = handleNewlyInstalledApps(root, pkg)
             if (!handled) handled = handleUninstallProtection(root, pkg)
             if (!handled) handleRebootProtection(root, pkg)
             if (!handled && (pkg == "com.facebook.katana" || pkg == "com.facebook.lite")) {
+                if (!handled) handled = handleFacebookAppBlock(pkg)
                 if (!handled) handled = handleFacebookVideo(root, pkg)
                 if (!handled) handleFacebookFeedShortVideo(root, pkg)
             }
@@ -666,114 +677,23 @@ class RasFocusBlockingService : AccessibilityService() {
         return _adultDomainList!!
     }
 
-    private val adultSiteKeywords = listOf(
-        // EN
-        "porn video", "porn site", "porn watch", "free porn", "watch porn",
-        "xxx video", "xxx site", "xxx watch", "hd xxx",
-        "nude video", "nude photo", "nude pic", "nude girl", "nude scene",
-        "nsfw video", "nsfw content", "sexy video", "sexy girl", "sexy photo", "sexy scene",
-        "hentai video", "hentai anime", "hentai watch", "rule34", "milf video", "milf porn",
-        "blowjob video", "blowjob scene", "tits video", "boobs video", "boobs photo",
-        "pussy video", "pussy photo", "cock video", "dick video", "dick photo",
-        "escort service", "escort girl", "bdsm video", "bdsm porn", "fetish video", "fetish porn",
-        "erotica video", "erotic video", "erotic scene", "dildo video", "camgirls live", "cam girls",
-        "onlyfans video", "onlyfans content", "onlyfans leak", "chaturbate live",
-        "mia khalifa", "sunny leone", "dani daniels", "johnny sins", "kendra lust",
-        // Bangla
-        "চটি গল্প", "চটি পড়", "পর্ণ ভিডিও", "পর্ণ দেখ", "পর্ণগ্রাফি দেখ", "সেক্স ভিডিও", "সেক্স করা", "সেক্স দেখ",
-        "নগ্ন ভিডিও", "নগ্ন ছবি", "নগ্ন মেয়ে", "উলঙ্গ ভিডিও", "উলঙ্গ ছবি", "বেশ্যা ভিডিও", "মাগি ভিডিও",
-        "খানকি ভিডিও", "খানকি ছবি", "যৌন ভিডিও", "যৌন মিলন ভিডিও", "যৌনাঙ্গ ভিডিও", "রেন্ডি ভিডিও", "চোদাচুতি ভিডিও",
-        "গরম ভিডিও", "খারাপ ছবি দেখ", "খারাপ ভিডিও", "চুদো ভিডিও", "নগ্নতা ভিডিও",
-        // Banglish
-        "bangla choti", "bangla chuda", "bangla xxx", "desi sex video", "desi bhabi sex", "desi nude",
-        "bhabi sex", "bhabi nude", "bhabi video", "chudai video", "chudai scene", "panu video", "panu bd",
-        "desi mms", "mms leak video", "khanki video", "magi video", "choda video", "chodachudi video",
-        "randi video", "randi sex", "nengta video", "nangta video", "vodai video", "vodai photo",
-        "bokachoda video", "kharap video", "kharap ছবি",
-        // Site names
-        "pornhub", "xvideos", "xnxx", "xhamster", "redtube", "youporn", "tube8", "spankbang",
-        "eporner", "drtuber", "txxx", "tnaflix", "brazzers", "realitykings", "bangbros",
-        "onlyfans", "chaturbate", "stripchat", "slutload", "motherless", "redgifs",
-        "hentaihaven", "gelbooru", "rule34", "javhd", "japanhdv", "playboy video", "playboy nude",
-        "beeg video", "pornmd", "pornhd", "pornotube", "fakehub", "fakku", "hentaigasm",
-        "camhub", "imlive", "luckycrush", "jerkmate", "jizzhut", "tubegalore", "cliphunter",
-        "wankzvr", "vrporn", "vrcock", "watchmygf", "watchmyexgf", "hotsouthindiansex", "viewdesisex",
-        "tranny video", "tranny porn", "twistysnetwork", "digitalplayground", "teamskeet", "nubiles",
-        "theporndude", "toppornsites",
-        // Single/Short
-        "porn", "xxx", "sex", "nude", "nsfw", "sexy", "hentai", "milf", "blowjob", "tits", "boobs", "pussy", "dick", "cock",
-        "escort", "bdsm", "fetish", "erotica", "dildo", "webcam", "camgirls", "webcam girl",
-        "চটি", "পর্ণ", "সেক্স", "নগ্ন", "উলঙ্গ", "বেশ্যা", "মাগি", "খানকি", "যৌন", "পর্ণগ্রাফি",
-        "রেন্ডি", "চোদাচুতি", "গরম ভিডিও", "খারাপ ছবি", "যৌন মিলন", "যৌনাঙ্গ", "চুদো", "নগ্নতা",
-        "bhabi", "chudai", "bangla choti", "panu", "desi bhabi", "mms", "magi", "choda", "chodachudi", "khanki", "besha",
-        "randi", "nengta", "nangta", "baal", "vodai", "bokachoda", "kuttar bacha", "shuarer bacha"
-    )
+    // ── HARDCODED KEYWORDS REMOVED — সব কিছু Firebase Realtime DB থেকে আসে ──
+    // FirebaseKeywordSync.getAdultKeywords() → adult_keywords
+    // FirebaseKeywordSync.getAdultDomains()  → adult_domains
+    // romantic keywords ও Firebase-এ adult_keywords এর অংশ হিসেবে রাখো
 
-    private val romanticKeywords = listOf(
-        // EN
-        "love story", "love quotes", "romantic status", "romantic shayari",
-        "love letter", "i love you", "miss you love", "girlfriend boyfriend",
-        "couple goals", "crush quotes", "propose video", "love proposal",
-        "romantic song", "love song", "dating tips", "how to impress girl",
-        "how to impress boy", "secret relationship", "love chat", "flirting tips",
-        "romantic message", "valentine gift", "love poem", "romantic movie scene",
-        "hot dance", "seductive dance", "item song", "belly dance",
-        "kissing scene", "bikini", "swimsuit", "sexy dance",
-        "cleavage", "hot scene", "romantic kiss", "bedroom scene",
-        "bath scene", "rain dance", "bold scene", "semi nude",
-        "lingerie", "erotic", "hot song", "romantic video hot",
-        "navel show", "deep neck", "short dress sexy", "unfaithful scene",
-        // Bangla
-        "প্রেমের গল্প", "প্রেমের কবিতা", "রোমান্টিক স্ট্যাটাস", "রোমান্টিক শায়েরি",
-        "প্রেম পত্র", "ভালোবাসি তোমায়", "গার্লফ্রেন্ড বয়ফ্রেন্ড", "প্রেমের গান",
-        "প্রপোজ ভিডিও", "প্রেমের মেসেজ", "গোপন প্রেম", "প্রেমিকা",
-        "প্রেমিক", "ভালোবাসার গান", "রোমান্টিক চ্যাট",
-        // Banglish
-        "love kobita", "valobashi", "prem kahini", "romantic shayari bangla",
-        "bf gf chat", "love message bangla", "propose korbo"
-    )
+    // ── ROMANTIC KEYWORDS REMOVED — Firebase-এ adult_keywords node-এ রাখো ──
 
     private fun activeExtremeKeywords(): List<String> {
-        val list = mutableListOf<String>()
-        if (prefs.blockNormalLoading) {
-            list.addAll(adultSiteKeywords)
-            list.addAll(romanticKeywords)
-            // Firebase Realtime DB থেকে আসা remote keywords যোগ করো।
-            val remoteKw = FirebaseKeywordSync.getAdultKeywords()
-            if (remoteKw.isNotEmpty()) list.addAll(remoteKw)
-        }
-        return list
+        // সম্পূর্ণ Firebase-only — কোনো hardcoded keyword নেই
+        // FirebaseKeywordSync.init() service start-এ call হয়ে যায়,
+        // তাই এখানে শুধু in-memory set পড়লেই হয়
+        if (!prefs.blockNormalLoading) return emptyList()
+        return FirebaseKeywordSync.getAdultKeywords().toList()
     }
 
-    private val adultDomains = setOf(
-        "18videosz.com", "24porn.com", "3movs.com", "4tube.com", "adulttime.com", "allofgfs.com", "alohatube.com", "alotporn.com",
-        "alphaporno.com", "anon-v.com", "anyshemale.com", "arabianchicks.com", "avn.com", "baberotica.com", "babes.com", "badoinkvr.com",
-        "bang.com", "bangbrosnetwork.com", "bdsmstreak.com", "beeg.com", "bestpornbabes.com", "besttrannypornsites.com", "bestxxxsites.com", "bigtits.com",
-        "blacked.com", "bobs-tube.com", "boysfood.com", "braincash.com", "brazzers.com", "brokestraightboys.com", "camhub.cc", "cams.com",
-        "cliphunter.com", "clips4sale.com", "czechvr.com", "dansmovies.com", "daredorm.com", "ddfnetwork.com", "deviantclip.com", "digitalplayground.com",
-        "dorcelclub.com", "drtuber.com", "eggporncomics.com", "empflix.com", "eporner.com", "eroxia.com", "evilangel.com", "extremetube.com",
-        "fakehub.com", "fakku.net", "fantasti.cc", "fapster.xxx", "forhertube.com", "free18.net", "freepornfull.com", "fuq.com",
-        "fux.com", "gayfuror.com", "gaymaletube.com", "gaytube.com", "gelbooru.com", "gfrevenge.com", "girlsway.com", "gotgayporn.com",
-        "h2porn.com", "handjobhub.com", "hardsextube.com", "hclips.com", "helixstudios.net", "hentai-foundry.com", "hentaicore.org", "hentaigasm.com",
-        "hentaihaven.org", "hentaipulse.com", "hotgoo.com", "hotsouthindiansex.com", "hustler.com", "iknowthatgirl.com", "imlive.com", "ixxx.com",
-        "iyalc.com", "japanhdv.com", "javhd.com", "jerkmate.com", "jizzhut.com", "jizzonline.com", "justusboys.com", "keezmovies.com",
-        "kinkyfamily.com", "kporno.com", "lesbian8.com", "letsjerk.is", "lovehomeporn.com", "lubetube.com", "luckycrush.live", "madthumbs.com",
-        "manporn.xxx", "maxim.com", "maxiporn.com", "metaporn.com", "mofosex.com", "mogosnetwork.com", "motherless.com", "moviefap.com",
-        "myporngay.com", "mythav.com", "netfapx.com", "newsensations.com", "nonktube.com", "nubiles.net", "nuvid.com", "orgasm.com",
-        "perfectgirls.net", "perfectgonzo.com", "pervclips.com", "playboy.com", "porcore.com", "porn.com", "porn300.xxx", "porn7.xxx",
-        "porndroids.com", "pornerbros.com", "pornfuror.com", "pornhd.com", "pornheed.com", "pornhost.com", "pornhub.com", "pornhubselect.com",
-        "pornmate.com", "pornmd.com", "pornmilo.com", "pornotube.com", "pornoxo.com", "pornprosnetwork.com", "pornrabbit.com", "pornrox.com",
-        "pornstarnetwork.com", "porntube.com", "pornxio.com", "proporn.com", "punishbang.com", "punishtube.com", "realitykings.com", "redgifs.com",
-        "redporn.xxx", "redtube.com", "rk.com", "rockettube.com", "rude.com", "sankakucomplex.com", "sexlikereal.com", "sexvid.xxx",
-        "shameless.com", "shemailhd.sex", "shooshtime.com", "slutload.com", "slutroulette.com", "spankbang.com", "spankwire.com", "stripchat.com",
-        "submityourflicks.com", "submityourtapes.com", "sunporno.com", "teamskeet.com", "theporndude.com", "thumbzilla.com", "tiava.com", "tnaflix.com",
-        "topfreepornvideos.com", "toppornsites.com", "tranny.one", "tube8.com", "tubegalore.com", "tubegals.com", "tubev.sex", "twilightsex.com",
-        "twistysnetwork.com", "txxx.com", "videosz.com", "viewdesisex.com", "virtualtaboo.com", "vixen.com", "vporn.com", "vrcock.com",
-        "vrcosplay.com", "vrporn.com", "vrsmash.com", "wankzvr.com", "watch-my-gf.com", "watch-my-gf.me", "watchindianporn.net", "watchmyexgf.net",
-        "watchmygf.me", "watchmygf.tv", "xbabe.com", "xhamster.com", "xmoviesforyou.com", "xnxx.com", "xnxxhamster.net", "xpaja.net",
-        "xtube.com", "xvideos.com", "xxvids.net", "xxx.com", "xxxaporn.com", "xxxbunker.com", "xxxvideos247.com", "youjizz.com",
-        "youporn.com", "youporngay.com", "yuvutu.com", "zbporn.com", "zzcartoon.com", "zzgays.com"
-    )
+    // ── HARDCODED ADULT DOMAINS REMOVED — Firebase-এ adult_domains node-এ রাখো ──
+    // রানটাইমে FirebaseKeywordSync.getAdultDomains() থেকে আসবে
 
     private fun fastAdultCheck(event: AccessibilityEvent, pkg: String): Boolean {
         if (pkg !in ALL_BROWSER_PKGS) return false
@@ -861,6 +781,7 @@ class RasFocusBlockingService : AccessibilityService() {
     }
 
     private fun isAdultUrl(text: String): Boolean {
+        // ── Keyword check — সব Firebase থেকে আসে ──
         if (prefs.blockNormalLoading || prefs.blockRomanticKeywords || prefs.blockAdultKeywordAnyApp) {
             if (activeExtremeKeywords().any { text.contains(it) }) return true
         }
@@ -869,17 +790,20 @@ class RasFocusBlockingService : AccessibilityService() {
             android.net.Uri.parse(raw).host?.lowercase()?.removePrefix("www.") ?: ""
         } catch (e: Exception) { "" }
         if (host.isNotEmpty()) {
+            // ── Firebase remote domains check ──
             if (prefs.blockNormalLoading) {
-                if (adultDomains.contains(host)) return true
+                val remoteDomains = FirebaseKeywordSync.getAdultDomains()
+                if (remoteDomains.contains(host)) return true
+                if (remoteDomains.any { host.endsWith(".$it") }) return true
             }
+            // ── Assets adultsite.txt — website list (এটা থাকবে) ──
             if (prefs.blockNormalLoading || prefs.blockAdultSiteList) {
                 val domainList = getAdultDomainList()
                 if (domainList.any { host == it || host.endsWith(".$it") }) return true
             }
         }
 
-        // ── Firebase remote check — hardcoded list-এ miss হলে এটা catch করবে ──
-        // owned by "Adult Image & Website Block" sub-toggle
+        // ── Firebase full remote check (keywords + domains + TLDs) ──
         if (prefs.blockAdultImageWeb && FirebaseKeywordSync.isBlockedByRemote(text, host)) return true
 
         return false
@@ -1415,6 +1339,20 @@ class RasFocusBlockingService : AccessibilityService() {
         return false
     }
 
+    // ── পুরো Facebook app block ──
+    // সরাসরি package-name match করে instant kill করে — কোনো view-id বা
+    // on-screen text পড়ার দরকার নেই, তাই Facebook app update বা device
+    // language যাই হোক না কেন কাজ করবে। Messenger এর Facebook shortcut
+    // দিয়ে খুললেও com.facebook.katana foreground এ আসা মাত্রই ধরা পড়বে।
+    private fun handleFacebookAppBlock(pkg: String): Boolean {
+        if (!prefs.blockFacebookApp) return false
+        if (pkg == "com.facebook.katana" || pkg == "com.facebook.lite") {
+            forceKillAppAndGoHome(pkg, "Facebook Blocked", "Facebook is blocked on this device.")
+            return true
+        }
+        return false
+    }
+
     private fun handleFacebookVideo(root: AccessibilityNodeInfo, pkg: String): Boolean {
         if (!prefs.blockFbVideo) return false
         if (root.findAccessibilityNodeInfosByViewId("com.facebook.katana:id/watch_tab").isNotEmpty()
@@ -1566,6 +1504,44 @@ class RasFocusBlockingService : AccessibilityService() {
             performGlobalAction(GLOBAL_ACTION_HOME); return true
         }
         return false
+    }
+
+    // ── App-এর ভেতরের embedded WebView block (browser app না হয়েও web browsing) ──
+    // Messenger এর "Facebook" shortcut এরকম case ধরার জন্য — এখানে foreground
+    // package কখনো Facebook হয় না (Messenger-ই থাকে), তাই package-match দিয়ে
+    // ধরা যায় না। এর বদলে screen-এ বড়সড় android.webkit.WebView node আছে কিনা
+    // সেটা দেখে ধরা হচ্ছে — content কী সেটা matter করে না, কোনো webview মানেই block।
+    private fun findWebViewNode(node: AccessibilityNodeInfo, depth: Int = 0): AccessibilityNodeInfo? {
+        if (depth > 30) return null
+        if (node.className?.toString() == "android.webkit.WebView") return node
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            val found = findWebViewNode(child, depth + 1)
+            if (found != null) return found
+        }
+        return null
+    }
+
+    private fun handleUnsupportedWebView(root: AccessibilityNodeInfo, pkg: String): Boolean {
+        if (!prefs.blockUnsupported) return false
+        if (pkg.startsWith("com.android.") || pkg == "android") return false
+        if (pkg in ALL_BROWSER_PKGS) return false // এগুলো handleUnsupportedBrowsers/handleAdultContent দিয়ে আলাদাভাবে হ্যান্ডল হয়
+
+        val webView = findWebViewNode(root) ?: return false
+        if (!webView.isVisibleToUser) return false
+
+        // ছোট/hidden webview (Google/Facebook login popup, payment checkout ইত্যাদি)
+        // বাদ দিতে — screen area এর কমপক্ষে ৪৫% দখল করলে তবেই "browsing করছে" ধরা হবে।
+        val screenBounds = android.graphics.Rect()
+        root.getBoundsInScreen(screenBounds)
+        val wvBounds = android.graphics.Rect()
+        webView.getBoundsInScreen(wvBounds)
+        val screenArea = (screenBounds.width().toLong() * screenBounds.height().toLong()).coerceAtLeast(1)
+        val wvArea = wvBounds.width().toLong() * wvBounds.height().toLong()
+        if (wvArea * 100 / screenArea < 45) return false
+
+        forceKillAppAndGoHome(pkg, "Unsupported Browser", "এই app এর ভেতরের browser (WebView) ব্লক করা আছে।")
+        return true
     }
 
     private fun handleNewlyInstalledApps(root: AccessibilityNodeInfo, pkg: String): Boolean {
@@ -1923,6 +1899,7 @@ fun ExtremeBlockScreen() {
     var blockUnsupported by remember { mutableStateOf(prefs.blockUnsupported) }
     var blockNewApps     by remember { mutableStateOf(prefs.blockNewApps) }
     var blockFbVideo     by remember { mutableStateOf(prefs.blockFbVideo) }
+    var blockFacebookApp by remember { mutableStateOf(prefs.blockFacebookApp) }
 
     val dpm = remember { ctx.getSystemService(android.content.Context.DEVICE_POLICY_SERVICE) as android.app.admin.DevicePolicyManager }
     val adminComponent = remember { android.content.ComponentName(ctx, com.rasel.RasFocus.features.MyDeviceAdminReceiver::class.java) }
@@ -1977,7 +1954,13 @@ fun ExtremeBlockScreen() {
             for (row in 0..(size.height / spacing).toInt() + 1) drawLine(Color(0xFF131720), Offset(0f, row * spacing), Offset(size.width, row * spacing), strokeWidth = 0.5f)
         }
 
-        Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp).padding(top = 8.dp)) {
+        Column(modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .statusBarsPadding()
+            .padding(horizontal = 16.dp)
+            .padding(top = 16.dp, bottom = 24.dp)
+        ) {
             Spacer(Modifier.height(8.dp))
             HeaderBar(isActive = isServiceActive)
             Spacer(Modifier.height(12.dp))
@@ -2066,6 +2049,8 @@ fun ExtremeBlockScreen() {
                 RasSwitch(label = "Block newly installed apps", sublabel = "Prevents all new installs & APK sideloads", checked = blockNewApps, accentColor = ACCENT2, onCheckedChange = { if (it || !focusLockActive) { blockNewApps = it; prefs.blockNewApps = it; RasFocusBlockingService.instance?.checkCurrentWindow() } })
                 RasDivider()
                 RasSwitch(label = "Block Facebook video", sublabel = "Blocks Watch, Reels & inline videos", checked = blockFbVideo, accentColor = ACCENT2, onCheckedChange = { if (it || !focusLockActive) { blockFbVideo = it; prefs.blockFbVideo = it; RasFocusBlockingService.instance?.checkCurrentWindow() } })
+                RasDivider()
+                RasSwitch(label = "Block Facebook completely", sublabel = "Kills Facebook instantly — even opened via Messenger's Facebook icon", checked = blockFacebookApp, accentColor = ACCENT2, onCheckedChange = { if (it || !focusLockActive) { blockFacebookApp = it; prefs.blockFacebookApp = it; RasFocusBlockingService.instance?.checkCurrentWindow() } })
             }
 
             Spacer(Modifier.height(16.dp))
@@ -2555,4 +2540,3 @@ class ServiceRestartReceiver : android.content.BroadcastReceiver() {
 // FirebaseKeywordSync stub removed — real implementation lives in
 // FirebaseKeywordSync.kt (was causing a Redeclaration compile error).
 // ============================================================
-
