@@ -1,4 +1,4 @@
-﻿package com.rasel.RasFocus.selfcontrol.study_tools
+package com.rasel.RasFocus.selfcontrol.study_tools
 
 import android.app.DatePickerDialog
 import android.net.Uri
@@ -813,6 +813,53 @@ fun ProfessionalDiaryScreen(
     }
 
     // ── Show list screen first ───────────────────────────────────────────
+    if (showListScreen) {
+        DiaryListScreen(
+            entries = allEntries,
+            onEntryClick = { entry ->
+                viewModel.loadEntry(entry)
+                showListScreen = false
+            },
+            onNewEntry = {
+                viewModel.startNewEntry()
+                showListScreen = false
+            },
+            onNavigateBack = onNavigateBack,
+            onMenuClick = { scope.launch { drawerState.open() } }
+        )
+        return
+    }
+
+    // BackHandler: physical back button in canvas → save and go to list
+    androidx.activity.compose.BackHandler {
+        viewModel.forceSaveOnExit()
+        showListScreen = true
+    }
+
+    // Show calendar — calendar icon click থেকে DatePickerDialog খোলে যাতে
+    // user যেকোনো date choose করে নতুন entry লিখতে পারে
+    if (showCalendar) {
+        DiaryCalendarScreen(
+            entries = allEntries,
+            onEntryClick = { entry ->
+                viewModel.loadEntry(entry)
+                showCalendar = false
+            },
+            onBack = { showCalendar = false }
+        )
+        return
+    }
+
+    // Show lock screen if entry is locked and not yet unlocked
+    if (currentEntry.isLocked && !isUnlocked) {
+        DiaryLockScreen(
+            entry = currentEntry,
+            onUnlock = { viewModel.unlockWithBiometric() },
+            onCancel = { showListScreen = true }
+        )
+        return
+    }
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -831,7 +878,6 @@ fun ProfessionalDiaryScreen(
                     },
                     onNewEntry = {
                         viewModel.startNewEntry()
-                        showListScreen = false
                         scope.launch { drawerState.close() }
                     },
                     onToggleTheme = { isDarkMode = !isDarkMode },
@@ -847,44 +893,58 @@ fun ProfessionalDiaryScreen(
                     allEntries = allEntries,
                     onEntryClick = { entry ->
                         viewModel.loadEntry(entry)
-                        showListScreen = false
                         scope.launch { drawerState.close() }
                     }
                 )
             }
         }
     ) {
-        if (showListScreen) {
-            DiaryListScreen(
-                entries = allEntries,
-                onEntryClick = { entry ->
-                    viewModel.loadEntry(entry)
-                    showListScreen = false
-                },
-                onNewEntry = {
-                    viewModel.startNewEntry()
-                    showListScreen = false
-                },
-                onNavigateBack = onNavigateBack,
-                onMenuClick = { scope.launch { drawerState.open() } }
-            )
-        } else if (showCalendar) {
-            DiaryCalendarScreen(
-                entries = allEntries,
-                onEntryClick = { entry ->
-                    viewModel.loadEntry(entry)
-                    showCalendar = false
-                    showListScreen = false
-                },
-                onClose = { showCalendar = false }
-            )
-        } else if (currentEntry.isLocked && !isUnlocked) {
-            DiaryLockScreen(
-                entry = currentEntry,
-                onUnlock = { viewModel.unlockWithBiometric() },
-                onCancel = { showListScreen = true }
-            )
-        } else {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            "RasDiary",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 22.sp
+                        )
+                    },
+                    navigationIcon = {
+                        // Back arrow → save and go back to diary list
+                        IconButton(onClick = {
+                            viewModel.forceSaveOnExit()
+                            showListScreen = true
+                        }) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        }
+                    },
+                    actions = {
+                        // Cloud status icon
+                        when (cloudStatus) {
+                            CloudStatus.SYNCING -> CircularProgressIndicator(
+                                color = Color.White, modifier = Modifier.size(18.dp), strokeWidth = 2.dp
+                            )
+                            CloudStatus.SUCCESS -> Icon(Icons.Default.CloudDone, contentDescription = "Synced", tint = Color.Green)
+                            CloudStatus.ERROR -> Icon(Icons.Default.CloudOff, contentDescription = "Error", tint = Color.Red)
+                            CloudStatus.NOT_LOGGED_IN -> {}
+                            else -> {}
+                        }
+
+                        // Mood/emoji button — screenshot এর 😊 icon
+                        IconButton(onClick = { showMoodDialog = true }) {
+                            Icon(
+                                Icons.Default.Face,
+                                contentDescription = "Mood",
+                                tint = if (currentEntry.mood.isNotBlank()) Color(0xFFDD0099) else Color.White
+                            )
+                        }
+
+                        // Checkmark — save + close, screenshot এর ✓ icon
+                        IconButton(onClick = {
+                            viewModel.forceSaveOnExit()
+                            onNavigateBack()
+                        }) {
                             Icon(Icons.Default.Check, contentDescription = "Save", tint = Color.White)
                         }
 
@@ -968,7 +1028,6 @@ fun ProfessionalDiaryScreen(
         }
     }
 
-    }
     // ---- Dialogs ----
 
     if (showMoodDialog) {
@@ -1691,4 +1750,3 @@ fun Chip(label: String, onClose: () -> Unit) {
         }
     }
 }
-
