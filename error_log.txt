@@ -1,6 +1,172 @@
 === KOTLIN/KAPT ERRORS ===
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/MainActivity.kt:1118:70 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/AdultBlockFull.kt:126:16 Unresolved reference: BlockerPrefs
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/AdultBlockFull.kt:127:10 Variable expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/AdultBlockFull.kt:128:10 Variable expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/AdultBlockFull.kt:129:10 Variable expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/AdultBlockFull.kt:130:10 Variable expected
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/StudyToolsActivity.kt:12:57 Unresolved reference: StudyToolsScreen
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/StudyToolsActivity.kt:35:21 Unresolved reference: StudyToolsScreen
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/UnifiedBlockerService.kt:51:40 Unresolved reference: BlockerPrefs
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/UnifiedBlockerService.kt:201:24 Unresolved reference: BlockerPrefs
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:72:7 Redeclaration: BlockerPrefs
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:247:7 Redeclaration: RasFocusBlockingService
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1842:7 Redeclaration: RasFocusSettingsActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1846:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1847:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1865:1 Conflicting overloads: public fun RasFocusSettingsTheme(content: () -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun RasFocusSettingsTheme(content: () -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1874:1 Conflicting overloads: public fun ExtremeBlockScreen(): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun ExtremeBlockScreen(): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1965:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1968:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1971:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1975:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1976:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1981:29 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1982:50 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1983:56 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1984:48 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1985:56 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1990:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1991:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1996:29 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1997:50 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1998:56 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2003:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2004:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2009:29 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2010:52 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2011:58 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2012:55 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2020:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2021:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2021:177 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2021:222 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2021:251 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2022:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2023:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2023:177 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2023:221 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2023:249 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2027:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2032:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2034:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2036:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2038:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2040:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2042:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2044:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2046:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2047:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2047:187 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2047:232 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2047:261 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2048:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2049:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2049:192 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2049:233 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2049:258 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2050:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2051:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2051:180 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2051:221 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2051:246 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2052:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2053:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2053:222 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2053:267 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2053:296 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2057:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2059:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2059:182 Cannot infer a type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2085:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2086:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2086:185 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2086:227 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2086:253 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2087:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2088:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2088:197 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2088:237 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2088:261 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2089:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2090:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2090:191 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2090:233 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2090:259 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2091:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2092:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2092:221 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2092:263 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2092:289 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2093:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2094:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2094:196 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2094:233 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2094:254 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2098:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2100:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2101:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2101:154 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2101:181 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2102:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2103:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2103:167 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2103:191 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2110:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2110:111 Cannot infer a type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2110:117 Cannot infer a type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2117:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2128:1 Conflicting overloads: public fun HeaderBar(isActive: Boolean): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun HeaderBar(isActive: Boolean): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2164:1 Conflicting overloads: public fun SectionHeader(icon: String, title: String, accentColor: Color): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun SectionHeader(icon: String, title: String, accentColor: Color): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2175:1 Conflicting overloads: public fun BlockingCard(content: ColumnScope.() -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun BlockingCard(content: ColumnScope.() -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2180:1 Conflicting overloads: public fun MasterToggleCard(label: String, sublabel: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun MasterToggleCard(label: String, sublabel: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2190:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2195:1 Conflicting overloads: public fun RasSwitch(label: String, sublabel: String, checked: Boolean, accentColor: Color, onCheckedChange: (Boolean) -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun RasSwitch(label: String, sublabel: String, checked: Boolean, accentColor: Color, onCheckedChange: (Boolean) -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2204:9 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2208:1 Conflicting overloads: public fun SubSwitchRow(icon: String, label: String, sublabel: String, checked: Boolean, accentColor: Color, onCheckedChange: (Boolean) -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun SubSwitchRow(icon: String, label: String, sublabel: String, checked: Boolean, accentColor: Color, onCheckedChange: (Boolean) -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2219:9 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2223:1 Conflicting overloads: public fun CustomizeRow(label: String, value: String, placeholder: String, onValueChange: (String) -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun CustomizeRow(label: String, value: String, placeholder: String, onValueChange: (String) -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2237:1 Conflicting overloads: public fun RasToggle(checked: Boolean, accentColor: Color, onCheckedChange: (Boolean) -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun RasToggle(checked: Boolean, accentColor: Color, onCheckedChange: (Boolean) -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2248:14 Redeclaration: AppReelsRow
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2253:1 Conflicting overloads: public fun AppReelsCard(appIcon: String, appName: String, appIconColor: Color, rows: List<AppReelsRow>): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun AppReelsCard(appIcon: String, appName: String, appIconColor: Color, rows: List<AppReelsRow>): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2273:26 'when' expression must be exhaustive, add necessary 'is Toggle', 'is Upgrade' branches or 'else' branch instead
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2274:21 'when' expression must be exhaustive, add necessary 'is Toggle', 'is Upgrade' branches or 'else' branch instead
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2274:59 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2274:138 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2282:1 Conflicting overloads: public fun UpgradeButton(): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun UpgradeButton(): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2294:1 Conflicting overloads: public fun RasDivider(): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun RasDivider(): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2297:1 Conflicting overloads: public fun FocusLockTopBar(isActive: Boolean, endTime: Long, onStartClick: () -> Unit, onUnlockClick: () -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun FocusLockTopBar(isActive: Boolean, endTime: Long, onStartClick: () -> Unit, onUnlockClick: () -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2330:20 Redeclaration: ModeItem
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2332:1 Conflicting overloads: public fun FocusLockSetupDialog(prefs: BlockerPrefs, onDismiss: () -> Unit, onActivated: (mode: String, endMs: Long) -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun FocusLockSetupDialog(prefs: BlockerPrefs, onDismiss: () -> Unit, onActivated: (mode: String, endMs: Long) -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2363:25 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2364:25 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2372:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2372:88 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2373:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2373:91 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2374:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2374:94 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2381:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2382:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2387:29 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2387:125 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2388:29 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2388:135 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2392:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2393:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2405:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2406:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2416:1 Conflicting overloads: public fun FocusLockUnlockDialog(prefs: BlockerPrefs, onDismiss: () -> Unit, onUnlocked: () -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun FocusLockUnlockDialog(prefs: BlockerPrefs, onDismiss: () -> Unit, onUnlocked: () -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2435:137 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2438:206 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2443:25 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2443:119 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2446:25 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2459:25 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2470:1 Conflicting overloads: public fun FocusDialogButton(label: String, enabled: Boolean, modifier: Modifier = ..., onClick: () -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun FocusDialogButton(label: String, enabled: Boolean, modifier: Modifier = ..., onClick: () -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2477:1 Conflicting overloads: public fun FocusPasswordField(value: String, placeholder: String, onValueChange: (String) -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun FocusPasswordField(value: String, placeholder: String, onValueChange: (String) -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2484:1 Conflicting overloads: public fun FocusNumberPicker(label: String, value: Int, min: Int, max: Int, onValueChange: (Int) -> Unit, modifier: Modifier = ...): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun FocusNumberPicker(label: String, value: Int, min: Int, max: Int, onValueChange: (Int) -> Unit, modifier: Modifier = ...): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2500:7 Redeclaration: ServiceRestartReceiver
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/youtubeactivity.kt:28:7 Redeclaration: YoutubeActivity
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PdfToolsScreen.kt:88:20 Redeclaration: PdfScreen
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/PdfToolsScreen.kt:91:20 Redeclaration: HomeTab
@@ -20,6 +186,172 @@ e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/study_tools.kt:1907:37 Overload resolution ambiguity: 
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/study_tools.kt:1933:1 Conflicting overloads: public fun AsyncImageOrBitmap(uri: Uri, context: Context, modifier: Modifier): Unit defined in com.rasel.RasFocus.selfcontrol.study_tools in file study_tools.kt, public fun AsyncImageOrBitmap(uri: Uri, context: Context, modifier: Modifier): Unit defined in com.rasel.RasFocus.selfcontrol.study_tools in file study_tools.kt
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/StudyToolsActivity.kt:35:21 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:72:7 Redeclaration: BlockerPrefs
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:247:7 Redeclaration: RasFocusBlockingService
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1842:7 Redeclaration: RasFocusSettingsActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1846:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1847:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1865:1 Conflicting overloads: public fun RasFocusSettingsTheme(content: () -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun RasFocusSettingsTheme(content: () -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1874:1 Conflicting overloads: public fun ExtremeBlockScreen(): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun ExtremeBlockScreen(): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1965:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1968:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1971:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1975:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1976:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1981:29 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1982:50 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1983:56 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1984:48 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1985:56 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1990:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1991:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1996:29 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1997:50 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1998:56 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2003:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2004:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2009:29 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2010:52 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2011:58 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2012:55 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2020:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2021:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2021:177 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2021:222 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2021:251 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2022:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2023:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2023:177 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2023:221 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2023:249 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2027:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2032:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2034:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2036:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2038:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2040:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2042:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2044:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2046:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2047:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2047:187 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2047:232 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2047:261 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2048:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2049:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2049:192 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2049:233 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2049:258 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2050:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2051:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2051:180 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2051:221 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2051:246 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2052:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2053:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2053:222 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2053:267 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2053:296 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2057:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2059:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2059:182 Cannot infer a type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2085:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2086:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2086:185 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2086:227 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2086:253 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2087:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2088:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2088:197 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2088:237 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2088:261 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2089:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2090:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2090:191 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2090:233 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2090:259 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2091:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2092:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2092:221 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2092:263 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2092:289 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2093:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2094:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2094:196 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2094:233 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2094:254 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2098:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2100:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2101:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2101:154 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2101:181 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2102:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2103:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2103:167 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2103:191 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2110:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2110:111 Cannot infer a type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2110:117 Cannot infer a type for this parameter. Please specify it explicitly.
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2117:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2128:1 Conflicting overloads: public fun HeaderBar(isActive: Boolean): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun HeaderBar(isActive: Boolean): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2164:1 Conflicting overloads: public fun SectionHeader(icon: String, title: String, accentColor: Color): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun SectionHeader(icon: String, title: String, accentColor: Color): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2175:1 Conflicting overloads: public fun BlockingCard(content: ColumnScope.() -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun BlockingCard(content: ColumnScope.() -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2180:1 Conflicting overloads: public fun MasterToggleCard(label: String, sublabel: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun MasterToggleCard(label: String, sublabel: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2190:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2195:1 Conflicting overloads: public fun RasSwitch(label: String, sublabel: String, checked: Boolean, accentColor: Color, onCheckedChange: (Boolean) -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun RasSwitch(label: String, sublabel: String, checked: Boolean, accentColor: Color, onCheckedChange: (Boolean) -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2204:9 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2208:1 Conflicting overloads: public fun SubSwitchRow(icon: String, label: String, sublabel: String, checked: Boolean, accentColor: Color, onCheckedChange: (Boolean) -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun SubSwitchRow(icon: String, label: String, sublabel: String, checked: Boolean, accentColor: Color, onCheckedChange: (Boolean) -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2219:9 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2223:1 Conflicting overloads: public fun CustomizeRow(label: String, value: String, placeholder: String, onValueChange: (String) -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun CustomizeRow(label: String, value: String, placeholder: String, onValueChange: (String) -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2237:1 Conflicting overloads: public fun RasToggle(checked: Boolean, accentColor: Color, onCheckedChange: (Boolean) -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun RasToggle(checked: Boolean, accentColor: Color, onCheckedChange: (Boolean) -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2248:14 Redeclaration: AppReelsRow
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2253:1 Conflicting overloads: public fun AppReelsCard(appIcon: String, appName: String, appIconColor: Color, rows: List<AppReelsRow>): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun AppReelsCard(appIcon: String, appName: String, appIconColor: Color, rows: List<AppReelsRow>): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2273:26 'when' expression must be exhaustive, add necessary 'is Toggle', 'is Upgrade' branches or 'else' branch instead
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2274:21 'when' expression must be exhaustive, add necessary 'is Toggle', 'is Upgrade' branches or 'else' branch instead
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2274:59 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2274:138 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2282:1 Conflicting overloads: public fun UpgradeButton(): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun UpgradeButton(): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2294:1 Conflicting overloads: public fun RasDivider(): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun RasDivider(): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2297:1 Conflicting overloads: public fun FocusLockTopBar(isActive: Boolean, endTime: Long, onStartClick: () -> Unit, onUnlockClick: () -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun FocusLockTopBar(isActive: Boolean, endTime: Long, onStartClick: () -> Unit, onUnlockClick: () -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2330:20 Redeclaration: ModeItem
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2332:1 Conflicting overloads: public fun FocusLockSetupDialog(prefs: BlockerPrefs, onDismiss: () -> Unit, onActivated: (mode: String, endMs: Long) -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun FocusLockSetupDialog(prefs: BlockerPrefs, onDismiss: () -> Unit, onActivated: (mode: String, endMs: Long) -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2350:40 Cannot access 'ModeItem': it is private in file
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2350:103 Cannot access 'ModeItem': it is private in file
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2350:173 Cannot access 'ModeItem': it is private in file
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2352:60 Cannot access 'ModeItem': it is private in file
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2353:342 Cannot access 'ModeItem': it is private in file
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2355:54 Cannot access 'ModeItem': it is private in file
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2356:63 Cannot access 'ModeItem': it is private in file
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2356:187 Cannot access 'ModeItem': it is private in file
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2363:25 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2364:25 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2372:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2372:88 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2373:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2373:91 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2374:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2374:94 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2381:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2382:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2387:29 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2387:125 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2388:29 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2388:135 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2392:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2393:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2405:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2406:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2416:1 Conflicting overloads: public fun FocusLockUnlockDialog(prefs: BlockerPrefs, onDismiss: () -> Unit, onUnlocked: () -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun FocusLockUnlockDialog(prefs: BlockerPrefs, onDismiss: () -> Unit, onUnlocked: () -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2435:137 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2438:206 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2443:25 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2443:119 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2446:25 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2459:25 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2470:1 Conflicting overloads: public fun FocusDialogButton(label: String, enabled: Boolean, modifier: Modifier = ..., onClick: () -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun FocusDialogButton(label: String, enabled: Boolean, modifier: Modifier = ..., onClick: () -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2477:1 Conflicting overloads: public fun FocusPasswordField(value: String, placeholder: String, onValueChange: (String) -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun FocusPasswordField(value: String, placeholder: String, onValueChange: (String) -> Unit): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2484:1 Conflicting overloads: public fun FocusNumberPicker(label: String, value: Int, min: Int, max: Int, onValueChange: (Int) -> Unit, modifier: Modifier = ...): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt, public fun FocusNumberPicker(label: String, value: Int, min: Int, max: Int, onValueChange: (Int) -> Unit, modifier: Modifier = ...): Unit defined in com.rasel.RasFocus.selfcontrol in file extrem_block.kt
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2500:7 Redeclaration: ServiceRestartReceiver
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/youtubeactivity.kt:28:7 Redeclaration: YoutubeActivity
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:88:20 Redeclaration: PdfScreen
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/PdfToolsScreen.kt:91:20 Redeclaration: HomeTab
@@ -375,11 +707,271 @@ e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/study_tools.kt:1933:1 Conflicting overloads: public fun AsyncImageOrBitmap(uri: Uri, context: Context, modifier: Modifier): Unit defined in com.rasel.RasFocus.selfcontrol.study_tools in file study_tools.kt, public fun AsyncImageOrBitmap(uri: Uri, context: Context, modifier: Modifier): Unit defined in com.rasel.RasFocus.selfcontrol.study_tools in file study_tools.kt
 
 === UNRESOLVED / TYPE ERRORS ===
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/MainActivity.kt:1118:70 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/AdultBlockFull.kt:126:16 Unresolved reference: BlockerPrefs
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/StudyToolsActivity.kt:12:57 Unresolved reference: StudyToolsScreen
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/StudyToolsActivity.kt:35:21 Unresolved reference: StudyToolsScreen
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/UnifiedBlockerService.kt:51:40 Unresolved reference: BlockerPrefs
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/UnifiedBlockerService.kt:201:24 Unresolved reference: BlockerPrefs
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1846:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1847:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1965:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1968:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1971:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1975:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1976:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1981:29 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1982:50 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1983:56 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1984:48 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1985:56 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1990:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1991:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1996:29 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1997:50 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:1998:56 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2003:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2004:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2009:29 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2010:52 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2011:58 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2012:55 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2020:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2021:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2021:177 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2021:222 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2021:251 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2022:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2023:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2023:177 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2023:221 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2023:249 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2027:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2032:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2034:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2036:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2038:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2040:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2042:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2044:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2046:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2047:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2047:187 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2047:232 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2047:261 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2048:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2049:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2049:192 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2049:233 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2049:258 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2050:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2051:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2051:180 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2051:221 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2051:246 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2052:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2053:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2053:222 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2053:267 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2053:296 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2057:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2059:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2085:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2086:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2086:185 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2086:227 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2086:253 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2087:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2088:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2088:197 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2088:237 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2088:261 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2089:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2090:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2090:191 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2090:233 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2090:259 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2091:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2092:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2092:221 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2092:263 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2092:289 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2093:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2094:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2094:196 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2094:233 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2094:254 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2098:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2100:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2101:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2101:154 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2101:181 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2102:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2103:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2103:167 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2103:191 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2110:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2117:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2190:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2204:9 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2219:9 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2274:59 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2274:138 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2363:25 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2364:25 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2372:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2372:88 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2373:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2373:91 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2374:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2374:94 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2381:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2382:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2387:29 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2387:125 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2388:29 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2388:135 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2392:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2393:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2405:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2406:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2435:137 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2438:206 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2443:25 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2443:119 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2446:25 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/extrem_block.kt:2459:25 Overload resolution ambiguity: 
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/study_tools.kt:151:39 Overload resolution ambiguity: 
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/study_tools.kt:1907:37 Overload resolution ambiguity: 
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/StudyToolsActivity.kt:35:21 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1846:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1847:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1965:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1968:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1971:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1975:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1976:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1981:29 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1982:50 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1983:56 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1984:48 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1985:56 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1990:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1991:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1996:29 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1997:50 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:1998:56 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2003:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2004:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2009:29 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2010:52 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2011:58 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2012:55 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2020:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2021:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2021:177 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2021:222 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2021:251 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2022:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2023:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2023:177 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2023:221 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2023:249 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2027:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2032:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2034:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2036:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2038:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2040:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2042:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2044:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2046:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2047:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2047:187 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2047:232 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2047:261 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2048:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2049:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2049:192 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2049:233 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2049:258 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2050:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2051:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2051:180 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2051:221 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2051:246 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2052:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2053:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2053:222 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2053:267 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2053:296 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2057:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2059:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2085:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2086:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2086:185 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2086:227 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2086:253 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2087:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2088:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2088:197 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2088:237 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2088:261 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2089:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2090:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2090:191 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2090:233 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2090:259 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2091:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2092:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2092:221 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2092:263 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2092:289 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2093:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2094:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2094:196 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2094:233 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2094:254 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2098:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2100:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2101:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2101:154 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2101:181 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2102:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2103:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2103:167 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2103:191 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2110:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2117:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2190:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2204:9 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2219:9 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2274:59 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2274:138 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2363:25 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2364:25 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2372:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2372:88 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2373:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2373:91 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2374:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2374:94 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2381:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2382:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2387:29 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2387:125 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2388:29 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2388:135 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2392:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2393:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2405:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2406:33 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2435:137 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2438:206 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2443:25 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2443:119 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2446:25 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/extrem_block.kt:2459:25 Overload resolution ambiguity: 
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/study_tools.kt:151:39 Overload resolution ambiguity: 
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/study_tools.kt:1907:37 Overload resolution ambiguity: 
 
@@ -392,7 +984,7 @@ e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/
 > Task :app:compileFullReleaseKotlin FAILED
 * What went wrong:
 Execution failed for task ':app:compileFullReleaseKotlin'.
-BUILD FAILED in 3m 2s
+BUILD FAILED in 2m 58s
 
 === LAST 50 LINES ===
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/study_tools.kt:1102:71 Cannot access 'PomodoroPhase': it is private in file
@@ -421,7 +1013,7 @@ public fun AsyncImageOrBitmap(uri: Uri, context: Context, modifier: Modifier): U
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/study_tools.kt:1933:1 Conflicting overloads: public fun AsyncImageOrBitmap(uri: Uri, context: Context, modifier: Modifier): Unit defined in com.rasel.RasFocus.selfcontrol.study_tools in file study_tools.kt, public fun AsyncImageOrBitmap(uri: Uri, context: Context, modifier: Modifier): Unit defined in com.rasel.RasFocus.selfcontrol.study_tools in file study_tools.kt
 
 > Task :app:compileFullReleaseKotlin FAILED
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784625247856.json
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784626658558.json
 
 FAILURE: Build failed with an exception.
 
@@ -442,6 +1034,6 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.9/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 3m 2s
+BUILD FAILED in 2m 58s
 32 actionable tasks: 22 executed, 10 from cache
 Configuration cache entry stored.
