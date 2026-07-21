@@ -1,4 +1,4 @@
-package com.rasel.RasFocus.combo.selfcontrol.study_tools
+﻿package com.rasel.RasFocus.combo.selfcontrol.study_tools
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
@@ -670,12 +670,16 @@ fun ProfessionalDiaryScreen(
             }
         }
     ) {
+        androidx.activity.compose.BackHandler {
+            viewModel.forceSaveOnExit()
+            showListScreen = true
+        }
         Scaffold(
             topBar = {
                 TopAppBar(
                     title = {
                         Text(
-                            "Write note",
+                            "RasDiary",
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
                             fontSize = 22.sp
@@ -686,8 +690,11 @@ fun ProfessionalDiaryScreen(
                         // sidebar drawer খোলে (Calendar, Folder filter, Cloud
                         // Sync, PDF Export, entry list — এগুলো হারিয়ে যাওয়া
                         // যাবে না)। আসল save & exit checkmark (✓) বাটনে।
-                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "Menu", tint = Color.White)
+                        IconButton(onClick = { 
+                            viewModel.forceSaveOnExit()
+                            showListScreen = true 
+                        }) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
                         }
                     },
                     actions = {
@@ -799,6 +806,7 @@ fun ProfessionalDiaryScreen(
         }
     }
 
+    }
     // ---- Dialogs ----
 
     if (showMoodDialog) {

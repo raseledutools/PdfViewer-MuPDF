@@ -1,4 +1,4 @@
-package com.rasel.RasFocus.selfcontrol.familybrowser
+﻿package com.rasel.RasFocus.selfcontrol.familybrowser
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -193,7 +193,11 @@ class YoutubeActivity : ComponentActivity() {
         private val AD_SERVERS = setOf(
             "googleads.g.doubleclick.net", "pagead2.googlesyndication.com", 
             "pubads.g.doubleclick.net", "youtube.com/api/stats/ads", "youtube.com/pagead",
-            "googleadservices.com", "adservice.google.com"
+            "googleadservices.com", "adservice.google.com",
+            "/ptracking", "youtube.com/ptracking",
+            "youtubei/v1/player/ad_break", "googlevideo.com/videoplayback?*&oad=",
+            "doubleclick.net", "ad.doubleclick.net", "ads.youtube.com",
+            "/ad_stat", "/aclk"
         )
 
         fun launch(activity: Activity) {
@@ -361,6 +365,12 @@ class YoutubeActivity : ComponentActivity() {
                     val url = request.url.toString()
 
                     if (AD_SERVERS.any { url.contains(it) }) {
+                        return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
+                    }
+                    if (url.contains("youtube.com/api/stats/qoe") && url.contains("adformat=")) {
+                        return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
+                    }
+                    if (url.contains("googlevideo.com/videoplayback") && (url.contains("&oad=") || url.contains("ctier=A"))) {
                         return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
                     }
 
@@ -1132,3 +1142,4 @@ class YoutubeActivity : ComponentActivity() {
         view.evaluateJavascript(js, null)
     }
 }
+

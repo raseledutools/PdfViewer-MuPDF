@@ -1,4 +1,4 @@
-package com.rasel.RasFocus.combo.selfcontrol.study_tools
+﻿package com.rasel.RasFocus.combo.selfcontrol.study_tools
 
 import com.rasel.RasFocus.selfcontrol.study_tools.PdfViewerActivity
 
@@ -1476,3 +1476,4 @@ private fun toolFieldColors() = OutlinedTextFieldDefaults.colors(
 // ─────────────────────────────────────────────────────────────────────────────
 // uriToBase64(context, uri) → String?
 // getFileName(context, uri) → String
+

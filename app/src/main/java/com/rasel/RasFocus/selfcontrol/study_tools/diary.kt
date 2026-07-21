@@ -1,4 +1,4 @@
-package com.rasel.RasFocus.selfcontrol.study_tools
+﻿package com.rasel.RasFocus.selfcontrol.study_tools
 
 import android.app.DatePickerDialog
 import android.net.Uri
@@ -585,7 +585,8 @@ fun DiaryListScreen(
     entries: List<DiaryEntry>,
     onEntryClick: (DiaryEntry) -> Unit,
     onNewEntry: () -> Unit,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onMenuClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val magenta = Color(0xFFE91E8C)
@@ -604,14 +605,14 @@ fun DiaryListScreen(
             TopAppBar(
                 title = {
                     Text(
-                        "WriteDiary",
+                        "RasDiary",
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
                         fontSize = 22.sp
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = onMenuClick) {
                         Icon(Icons.Default.Menu, contentDescription = "Menu", tint = Color.White)
                     }
                 },
@@ -812,46 +813,6 @@ fun ProfessionalDiaryScreen(
     }
 
     // ── Show list screen first ───────────────────────────────────────────
-    if (showListScreen) {
-        DiaryListScreen(
-            entries = allEntries,
-            onEntryClick = { entry ->
-                viewModel.loadEntry(entry)
-                showListScreen = false
-            },
-            onNewEntry = {
-                viewModel.startNewEntry()
-                showListScreen = false
-            },
-            onNavigateBack = onNavigateBack
-        )
-        return
-    }
-
-    // Show calendar — calendar icon click থেকে DatePickerDialog খোলে যাতে
-    // user যেকোনো date choose করে নতুন entry লিখতে পারে
-    if (showCalendar) {
-        DiaryCalendarScreen(
-            entries = allEntries,
-            onEntryClick = { entry ->
-                viewModel.loadEntry(entry)
-                showCalendar = false
-            },
-            onBack = { showCalendar = false }
-        )
-        return
-    }
-
-    // Show lock screen if entry is locked and not yet unlocked
-    if (currentEntry.isLocked && !isUnlocked) {
-        DiaryLockScreen(
-            entry = currentEntry,
-            onUnlock = { viewModel.unlockWithBiometric() },
-            onCancel = { showListScreen = true }
-        )
-        return
-    }
-
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -870,6 +831,7 @@ fun ProfessionalDiaryScreen(
                     },
                     onNewEntry = {
                         viewModel.startNewEntry()
+                        showListScreen = false
                         scope.launch { drawerState.close() }
                     },
                     onToggleTheme = { isDarkMode = !isDarkMode },
@@ -885,58 +847,44 @@ fun ProfessionalDiaryScreen(
                     allEntries = allEntries,
                     onEntryClick = { entry ->
                         viewModel.loadEntry(entry)
+                        showListScreen = false
                         scope.launch { drawerState.close() }
                     }
                 )
             }
         }
     ) {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = {
-                        Text(
-                            "Write note",
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 22.sp
-                        )
-                    },
-                    navigationIcon = {
-                        // Screenshot-এ "←" back-arrow দেখানো হলেও, এখানে এটা
-                        // sidebar drawer খোলে (Calendar, Folder filter, Cloud
-                        // Sync, PDF Export, entry list — এগুলো হারিয়ে যাওয়া
-                        // যাবে না)। আসল save & exit checkmark (✓) বাটনে।
-                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "Menu", tint = Color.White)
-                        }
-                    },
-                    actions = {
-                        // Cloud status icon
-                        when (cloudStatus) {
-                            CloudStatus.SYNCING -> CircularProgressIndicator(
-                                color = Color.White, modifier = Modifier.size(18.dp), strokeWidth = 2.dp
-                            )
-                            CloudStatus.SUCCESS -> Icon(Icons.Default.CloudDone, contentDescription = "Synced", tint = Color.Green)
-                            CloudStatus.ERROR -> Icon(Icons.Default.CloudOff, contentDescription = "Error", tint = Color.Red)
-                            CloudStatus.NOT_LOGGED_IN -> {}
-                            else -> {}
-                        }
-
-                        // Mood/emoji button — screenshot এর 😊 icon
-                        IconButton(onClick = { showMoodDialog = true }) {
-                            Icon(
-                                Icons.Default.Face,
-                                contentDescription = "Mood",
-                                tint = if (currentEntry.mood.isNotBlank()) Color(0xFFDD0099) else Color.White
-                            )
-                        }
-
-                        // Checkmark — save + close, screenshot এর ✓ icon
-                        IconButton(onClick = {
-                            viewModel.forceSaveOnExit()
-                            onNavigateBack()
-                        }) {
+        if (showListScreen) {
+            DiaryListScreen(
+                entries = allEntries,
+                onEntryClick = { entry ->
+                    viewModel.loadEntry(entry)
+                    showListScreen = false
+                },
+                onNewEntry = {
+                    viewModel.startNewEntry()
+                    showListScreen = false
+                },
+                onNavigateBack = onNavigateBack,
+                onMenuClick = { scope.launch { drawerState.open() } }
+            )
+        } else if (showCalendar) {
+            DiaryCalendarScreen(
+                entries = allEntries,
+                onEntryClick = { entry ->
+                    viewModel.loadEntry(entry)
+                    showCalendar = false
+                    showListScreen = false
+                },
+                onClose = { showCalendar = false }
+            )
+        } else if (currentEntry.isLocked && !isUnlocked) {
+            DiaryLockScreen(
+                entry = currentEntry,
+                onUnlock = { viewModel.unlockWithBiometric() },
+                onCancel = { showListScreen = true }
+            )
+        } else {
                             Icon(Icons.Default.Check, contentDescription = "Save", tint = Color.White)
                         }
 
@@ -1020,6 +968,7 @@ fun ProfessionalDiaryScreen(
         }
     }
 
+    }
     // ---- Dialogs ----
 
     if (showMoodDialog) {
@@ -1742,3 +1691,4 @@ fun Chip(label: String, onClose: () -> Unit) {
         }
     }
 }
+

@@ -1,4 +1,4 @@
-package com.rasel.RasFocus.selfcontrol.study_tools
+﻿package com.rasel.RasFocus.selfcontrol.study_tools
 
 import android.content.ContentUris
 import android.content.Intent
@@ -1479,3 +1479,4 @@ private fun toolFieldColors() = OutlinedTextFieldDefaults.colors(
 // ─────────────────────────────────────────────────────────────────────────────
 // uriToBase64(context, uri) → String?
 // getFileName(context, uri) → String
+

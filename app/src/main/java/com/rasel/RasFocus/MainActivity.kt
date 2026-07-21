@@ -1295,6 +1295,9 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onSkip: () -> Unit) {
         isLoading = true; errorMsg = null; exactException = null
         val gso = GoogleSignInOptions.Builder(
             GoogleSignInOptions.DEFAULT_SIGN_IN
+        ).requestScopes(
+            com.google.android.gms.common.api.Scope(com.google.android.gms.common.Scopes.DRIVE_APPFOLDER),
+            com.google.android.gms.common.api.Scope(com.google.android.gms.common.Scopes.DRIVE_FILE)
         ).requestIdToken(webClientId).requestEmail().build()
         val googleSignInClient = GoogleSignIn.getClient(activity, gso)
 

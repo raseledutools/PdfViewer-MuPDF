@@ -181,6 +181,10 @@ private fun StudyToolsMain(
             }
         }
 
+        // ── Personal Diary ──────────────────────────────────────────────
+        SectionTitle("📓 Personal Diary", AccentPurple, AccentPink)
+        PersonalDiaryCard(onClick = onOpenDiary)
+
         // ── Doc Scanner (CamScanner-style) ──────────────────────────────
         SectionTitle("📷 Doc Scanner", AccentCyan, AccentBlue)
         DocScannerCard(onClick = onDocScanner)
@@ -238,10 +242,6 @@ private fun StudyToolsMain(
             onOpenUrl = onOpenUrl
         )
 
-        // ── Personal Diary ──────────────────────────────────────────────
-        SectionTitle("📓 Personal Diary", AccentPurple, AccentPink)
-        PersonalDiaryCard(onClick = onOpenDiary)
-
         // ── Tomorrow's Tasks ────────────────────────────────────────────
         SectionTitle("✅ Tomorrow's Tasks", AccentGreen, AccentTeal)
         TaskSection()
@@ -297,8 +297,8 @@ private fun NativeToolCard(
     onClick: () -> Unit, modifier: Modifier
 ) {
     Card(
-        modifier = modifier.height(110.dp).clickable { onClick() },
-        shape = RoundedCornerShape(20.dp),
+        modifier = modifier.height(90.dp).clickable { onClick() },
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         elevation = CardDefaults.cardElevation(8.dp)
     ) {
@@ -307,9 +307,9 @@ private fun NativeToolCard(
                 .fillMaxSize()
                 .background(
                     Brush.linearGradient(listOf(BgCard, Color(0xFF252540))),
-                    RoundedCornerShape(20.dp)
+                    RoundedCornerShape(16.dp)
                 )
-                .padding(16.dp)
+                .padding(12.dp)
         ) {
             Box(
                 modifier = Modifier.size(36.dp).align(Alignment.TopEnd)
@@ -331,8 +331,8 @@ private fun NativeToolCard(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.Start
             ) {
-                Text(emoji, fontSize = 26.sp)
-                Spacer(Modifier.height(6.dp))
+                Text(emoji, fontSize = 22.sp)
+                Spacer(Modifier.height(4.dp))
                 Text(label, fontSize = 13.sp, fontWeight = FontWeight.Bold,
                     color = colorA)
                 Spacer(Modifier.height(4.dp))
@@ -564,16 +564,16 @@ private fun ToolGrid(items: List<ToolItem>, onOpenUrl: (String, String) -> Unit)
 @Composable
 private fun ToolCard(item: ToolItem, modifier: Modifier, onOpenUrl: (String, String) -> Unit) {
     Card(
-        modifier = modifier.height(110.dp).clickable { onOpenUrl(item.url, "${item.emoji} ${item.label}") },
-        shape = RoundedCornerShape(20.dp),
+        modifier = modifier.height(90.dp).clickable { onOpenUrl(item.url, "${item.emoji} ${item.label}") },
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         elevation = CardDefaults.cardElevation(8.dp)
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Brush.linearGradient(listOf(BgCard, Color(0xFF252540))), RoundedCornerShape(20.dp))
-                .padding(16.dp)
+                .background(Brush.linearGradient(listOf(BgCard, Color(0xFF252540))), RoundedCornerShape(16.dp))
+                .padding(12.dp)
         ) {
             Box(
                 modifier = Modifier.size(36.dp).align(Alignment.TopEnd)
@@ -587,8 +587,8 @@ private fun ToolCard(item: ToolItem, modifier: Modifier, onOpenUrl: (String, Str
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.Start
             ) {
-                Text(item.emoji, fontSize = 26.sp)
-                Spacer(Modifier.height(8.dp))
+                Text(item.emoji, fontSize = 22.sp)
+                Spacer(Modifier.height(4.dp))
                 Text(item.label, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = item.color)
                 Spacer(Modifier.height(4.dp))
                 Box(
