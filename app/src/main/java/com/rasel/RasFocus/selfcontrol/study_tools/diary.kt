@@ -791,7 +791,8 @@ fun ProfessionalDiaryScreen(
     var showMoodDialog by remember { mutableStateOf(false) }
     var showTagDialog by remember { mutableStateOf(false) }
     var tagInput by remember { mutableStateOf("") }
-    var showExportMenu by remember { mutableStateOf(false) }
+    var showExportMenu by remember { mutableStateOf(false) }        // canvas (editor) এ export dialog
+    var showListExportMenu by remember { mutableStateOf(false) }   // ✅ FIX: list screen-এর আলাদা export dialog
     var showFolderMenu by remember { mutableStateOf(false) }
     var showSetPinDialog by remember { mutableStateOf(false) }
     var showReminderDialog by remember { mutableStateOf(false) }
@@ -835,9 +836,10 @@ fun ProfessionalDiaryScreen(
                             showListScreen = false
                         },
                         onToggleTheme = { isDarkMode = !isDarkMode },
+                        // ✅ FIX: list screen এ নিজস্ব export dialog খোলো, canvas export নয়
                         onExportClick = {
                             scope.launch { drawerState.close() }
-                            showExportMenu = true
+                            showListExportMenu = true
                         },
                         onCalendarClick = {
                             scope.launch { drawerState.close() }
@@ -866,6 +868,128 @@ fun ProfessionalDiaryScreen(
                 },
                 onNavigateBack = onNavigateBack,
                 onMenuClick = { scope.launch { drawerState.open() } }
+            )
+        }
+
+        // ✅ FIX: List screen এ থাকাকালীন Export dialog (canvas এর showExportMenu নয়)
+        if (showListExportMenu) {
+            val listExportContext = LocalContext.current
+            val listExportScope = rememberCoroutineScope()
+            val driveAvailableForList = DriveBackupManager.isAvailable(listExportContext)
+            var listBusyMsg by remember { mutableStateOf("") }
+
+            val listJsonPickerLauncher = rememberLauncherForActivityResult(
+                ActivityResultContracts.GetContent()
+            ) { uri: Uri? ->
+                if (uri == null) return@rememberLauncherForActivityResult
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        val text = listExportContext.contentResolver.openInputStream(uri)
+                            ?.bufferedReader()?.readText() ?: return@launch
+                        val root = JSONObject(text)
+                        val arr  = root.optJSONArray("entries") ?: return@launch
+                        val db   = DiaryDatabase.getDatabase(listExportContext)
+                        val toInsert = (0 until arr.length()).map { i ->
+                            val o = arr.getJSONObject(i)
+                            DiaryEntry(
+                                id        = 0,
+                                title     = o.optString("title"),
+                                body      = o.optString("body"),
+                                date      = o.optString("date"),
+                                mood      = o.optString("mood"),
+                                folder    = o.optString("folder", "Personal"),
+                                tags      = o.optString("tags").split(",").filter { it.isNotBlank() },
+                                isLocked  = o.optBoolean("locked", false),
+                                timestamp = o.optLong("timestamp", System.currentTimeMillis())
+                            )
+                        }
+                        db.diaryDao().upsertAll(toInsert)
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(listExportContext, "✅ Imported ${toInsert.size} entries", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: Exception) {
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(listExportContext, "Import failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+                showListExportMenu = false
+            }
+
+            AlertDialog(
+                onDismissRequest = { showListExportMenu = false },
+                title = { Text("📂 Backup & Restore", fontWeight = FontWeight.Bold) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        if (listBusyMsg.isNotBlank()) {
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                            Text(listBusyMsg, fontSize = 12.sp, color = Color(0xFF888888))
+                        }
+                        Text("📱 Local Export", fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp, color = Color(0xFFE91E8C))
+                        OutlinedButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = {
+                                val file = DiaryPdfExporter.exportAllEntries(listExportContext, allEntries)
+                                if (file != null) {
+                                    listExportContext.startActivity(Intent.createChooser(
+                                        DiaryPdfExporter.getShareIntent(listExportContext, file), "Share PDF"))
+                                } else Toast.makeText(listExportContext, "Export failed", Toast.LENGTH_SHORT).show()
+                                showListExportMenu = false
+                            }
+                        ) { Text("PDF (all entries)") }
+
+                        OutlinedButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = { listJsonPickerLauncher.launch("application/json") }
+                        ) {
+                            Icon(Icons.Default.FileUpload, null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Import JSON from device")
+                        }
+
+                        HorizontalDivider()
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("☁️ Google Drive", fontWeight = FontWeight.SemiBold,
+                                fontSize = 13.sp, color = Color(0xFF4A90D9))
+                            if (!driveAvailableForList) {
+                                Spacer(Modifier.width(8.dp))
+                                Text("(Google Sign-In দরকার)", fontSize = 11.sp, color = Color(0xFFFF6B6B))
+                            }
+                        }
+                        if (!driveAvailableForList) {
+                            Text(
+                                "Settings → Google Sign-In করুন এবং Drive permission দিন।",
+                                fontSize = 11.sp, color = Color(0xFF888888)
+                            )
+                        }
+                        if (driveAvailableForList) {
+                            Button(
+                                modifier = Modifier.fillMaxWidth(),
+                                onClick = {
+                                    listBusyMsg = "Exporting PDF to Drive..."
+                                    listExportScope.launch {
+                                        val f = withContext(Dispatchers.IO) {
+                                            DiaryPdfExporter.exportAllEntries(listExportContext, allEntries)
+                                        }
+                                        val ok = if (f != null) DriveBackupManager.uploadDiaryPdf(listExportContext, f) else false
+                                        listBusyMsg = ""
+                                        Toast.makeText(listExportContext,
+                                            if (ok) "✅ PDF saved to Drive" else "❌ Upload failed",
+                                            Toast.LENGTH_SHORT).show()
+                                        showListExportMenu = false
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A90D9))
+                            ) { Text("Export PDF to Drive") }
+                        }
+                    }
+                },
+                confirmButton = {},
+                dismissButton = {
+                    TextButton(onClick = { showListExportMenu = false }) { Text("Close") }
+                }
             )
         }
         return
@@ -981,10 +1105,10 @@ fun ProfessionalDiaryScreen(
                             )
                         }
 
-                        // Checkmark — save + close, screenshot এর ✓ icon
+                        // Checkmark — save + go back to diary list (NOT out of diary)
                         IconButton(onClick = {
                             viewModel.forceSaveOnExit()
-                            onNavigateBack()
+                            showListScreen = true   // ✅ FIX: diary list এ ফেরত যাও, app থেকে বের নয়
                         }) {
                             Icon(Icons.Default.Check, contentDescription = "Save", tint = Color.White)
                         }

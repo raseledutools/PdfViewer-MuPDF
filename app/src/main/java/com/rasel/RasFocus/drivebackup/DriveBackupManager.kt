@@ -35,11 +35,20 @@ object DriveBackupManager {
     )
 
     // ── Public check ─────────────────────────────────────────────────────────
+    // ✅ FIX: DRIVE_FILE scope না থাকলেও account আছে কিনা দেখো — Drive service
+    //         build করার সময় scope automatically request হবে। শুধু account null
+    //         হলে unavailable বলো।
     fun isAvailable(context: Context): Boolean {
         return try {
             val account = GoogleSignIn.getLastSignedInAccount(context) ?: return false
-            // DRIVE_FILE scope চেক করো — sign in করা থাকলেও scope না থাকলে upload fail করবে
-            GoogleSignIn.hasPermissions(account, Scope(DriveScopes.DRIVE_FILE))
+            // account আছে মানে sign-in হয়েছে। DRIVE_FILE scope check
+            // করি কিন্তু না থাকলেও true return করি — buildDriveService এ
+            // credential এ scope add করা হবে, তাই upload try করতে পারবে।
+            val hasDriveScope = GoogleSignIn.hasPermissions(account, Scope(DriveScopes.DRIVE_FILE))
+            if (!hasDriveScope) {
+                Log.w(TAG, "isAvailable: DRIVE_FILE scope missing — Drive buttons এ click করলে error toast দেখাবে")
+            }
+            true  // ✅ account থাকলেই Drive section দেখাও; actual failure upload সময় handle হবে
         } catch (e: Exception) {
             Log.w(TAG, "isAvailable check failed: ${e.message}")
             false
@@ -54,16 +63,14 @@ object DriveBackupManager {
                 Log.w(TAG, "buildDriveService: no signed-in account")
                 return null
             }
-            val hasDriveScope = GoogleSignIn.hasPermissions(account, Scope(DriveScopes.DRIVE_FILE))
-            if (!hasDriveScope) {
-                Log.w(TAG, "buildDriveService: DRIVE_FILE scope not granted — user needs to re-sign-in")
-                return null
-            }
             val androidAccount = account.account
             if (androidAccount == null) {
                 Log.w(TAG, "buildDriveService: account.account is null")
                 return null
             }
+            // ✅ FIX: DRIVE_FILE scope না থাকলেও credential এ scope দাও।
+            // GoogleAccountCredential OAuth2 scope automatically token request করে।
+            // পুরনো code DRIVE_FILE scope না থাকলে null return করত — সেটাই upload fail করাত।
             val credential = GoogleAccountCredential.usingOAuth2(
                 context, listOf(DriveScopes.DRIVE_FILE)
             ).also { it.selectedAccount = androidAccount }
