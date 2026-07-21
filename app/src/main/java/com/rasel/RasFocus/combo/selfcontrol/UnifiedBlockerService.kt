@@ -53,60 +53,40 @@ class UnifiedBlockerService : AccessibilityService() {
     private lateinit var recoveryPrefs: SharedPreferences
 
     // ── Adult Block: Keyword & Site Lists ─────────────────────────────
-    private val hardcoreKeywords = listOf(
-        "porn", "xxx", "sex", "nude", "nsfw", "sexy", "hentai", "rule34", "milf",
-        "blowjob", "tits", "boobs", "pussy", "dick", "cock", "escort", "bdsm",
-        "fetish", "erotica", "dildo", "webcam", "camgirls", "xvideos", "pornhub",
-        "xnxx", "xhamster", "brazzers", "onlyfans", "playboy", "chaturbate",
-        "stripchat", "eporner", "spankbang", "redtube", "youporn",
-        "চটি", "পর্ণ", "সেক্স", "নগ্ন", "উলঙ্গ", "বেশ্যা", "মাগি", "খানকি",
-        "যৌন", "পর্ণগ্রাফি", "রেন্ডি", "চোদাচুতি", "গরম ভিডিও", "খারাপ ছবি",
-        "যৌন মিলন", "যৌনাঙ্গ", "চুদো", "নগ্নতা"
-    )
-    private val romanticKeywords = listOf(
-        "hot dance", "seductive dance", "item song", "belly dance",
-        "kissing scene", "bikini", "swimsuit", "sexy dance", "cleavage", "hot scene",
-        "romantic kiss", "bedroom scene", "bath scene", "rain dance", "bold scene",
-        "semi nude", "lingerie", "erotic", "hot song", "romantic video hot",
-        "navel show", "deep neck", "short dress sexy", "unfaithful scene"
-    )
-    private val adultWebsites = listOf(
-        "pornhub.com", "xvideos.com", "xnxx.com", "xhamster.com", "redtube.com",
-        "youporn.com", "brazzers.com", "spankbang.com", "eporner.com", "chaturbate.com"
-    )
+    // ⚠️ FIREBASE-ONLY: কোনো hardcoded keyword/domain নেই।
+    // সব কিছু FirebaseKeywordSync থেকে real-time আসে।
+    // Firebase console এ keyword_data/adult_keywords বা adult_domains আপডেট করলে
+    // সাথে সাথে (কোনো app restart ছাড়াই) কাজ করবে।
     private var dynamicAdultList = listOf<String>()
 
-    // extrem_block এর baked-in adult site keywords
-    private val adultSiteKeywords = listOf(
-        "porn", "xxx", "nude", "nsfw", "sexy", "hentai", "rule34", "milf",
-        "blowjob", "tits", "boobs", "pussy", "dick", "cock", "escort", "bdsm",
-        "fetish", "erotica", "dildo", "webcam", "camgirls", "onlyfans", "chaturbate",
-        "hot dance", "seductive dance", "item song", "belly dance",
-        "kissing scene", "bikini", "swimsuit", "sexy dance", "cleavage", "hot scene",
-        "romantic kiss", "bedroom scene", "bath scene", "rain dance", "bold scene",
-        "semi nude", "lingerie", "erotic", "hot song", "romantic video hot",
-        "navel show", "deep neck", "short dress sexy", "unfaithful scene",
-        "চটি", "পর্ণ", "সেক্স", "নগ্ন", "উলঙ্গ", "বেশ্যা", "মাগি", "খানকি",
-        "যৌন", "পর্ণগ্রাফি", "রেন্ডি", "চোদাচুতি", "গরম ভিডিও", "খারাপ ছবি",
-        "যৌন মিলন", "যৌনাঙ্গ", "চুদো", "নগ্নতা",
-        "18videosz", "24porn", "3movs", "4tube", "adulttime", "beeg", "brazzers",
-        "chaturbate", "eporner", "hentai", "onlyfans", "pornhub", "redtube",
-        "spankbang", "stripchat", "xhamster", "xnxx", "xvideos", "youporn"
-    )
+    // ── Firebase-backed dynamic accessors ────────────────────────────
+    // এই property গুলো প্রতিটি call এ FirebaseKeywordSync এর in-memory Set
+    // থেকে পড়ে — addValueEventListener Firebase update দিলে Set update হয়,
+    // পরের call এই property এ নতুন data পাবে।
 
-    // Typing block এ ব্যবহৃত keyword list (adultSiteKeywords এরই alias)
-    private val adultSiteKeywordsForTyping get() = adultSiteKeywords
+    // URL/screen scan/typing সবার জন্য একই set — Firebase keyword_data/adult_keywords
+    private val adultSiteKeywords: Set<String>
+        get() = FirebaseKeywordSync.getAdultKeywords()
 
-    // extrem_block এর full domain set
-    private val adultDomains = setOf(
-        "pornhub.com", "xvideos.com", "xnxx.com", "xhamster.com", "redtube.com",
-        "youporn.com", "brazzers.com", "spankbang.com", "eporner.com", "chaturbate.com",
-        "onlyfans.com", "stripchat.com", "beeg.com", "hentaigasm.com", "hentaihaven.org",
-        "playboy.com", "pornmd.com", "tube8.com", "tubegalore.com", "txxx.com",
-        "realitykings.com", "digitalplayground.com", "fakehub.com", "evilangel.com",
-        "teamskeet.com", "mofosex.com", "bangbrosnetwork.com", "jerkmate.com",
-        "luckycrush.live", "redgifs.com", "motherless.com", "hardsextube.com"
-    )
+    // Typing block এ ব্যবহৃত keyword set (same Firebase source)
+    private val adultSiteKeywordsForTyping: Set<String>
+        get() = FirebaseKeywordSync.getAdultKeywords()
+
+    // "Hardcore" subset — Firebase এ সব adult_keywords এই আছে, আলাদা নেই
+    private val hardcoreKeywords: Set<String>
+        get() = FirebaseKeywordSync.getAdultKeywords()
+
+    // Romantic keywords — Firebase এ adult_keywords এর অংশ হিসেবে রাখো
+    private val romanticKeywords: Set<String>
+        get() = FirebaseKeywordSync.getAdultKeywords()
+
+    // Domain block — Firebase keyword_data/adult_domains
+    private val adultDomains: Set<String>
+        get() = FirebaseKeywordSync.getAdultDomains()
+
+    // Legacy list — URL-block এ ব্যবহার হতো, Firebase domains দিয়ে replace
+    private val adultWebsites: Set<String>
+        get() = FirebaseKeywordSync.getAdultDomains()
 
     // ── Quote lists (AdultBlockService থেকে) ─────────────────────────
     private val muslimQuotesBn = listOf("মুমিনদের বলুন, তারা যেন তাদের দৃষ্টি নত রাখে...", "লজ্জাশীলতা ঈমানের অঙ্গ।")
@@ -245,9 +225,23 @@ class UnifiedBlockerService : AccessibilityService() {
         }
         serviceInfo = info
 
-        // AccessibilityService system-managed — startForeground() ছাড়াই চলে।
-        // আলাদা notification সরানো হলো। Lock/unlock status UsageNotificationService এ দেখানো হয়।
+        // FIX: আলাদা "RasFocus Protection Active" notification সরিয়ে ফেলা হলো।
+        // AccessibilityService স্বাভাবিক Service এর মতো না — এটা system-managed,
+        // startForeground() ছাড়াই চলে যতক্ষণ accessibility permission on থাকে।
+        // Lock/unlock status এখন MainActivity-এর UsageNotificationService
+        // (Screen Time notification) এর icon হিসেবে দেখানো হয় — এখানে আলাদা
+        // কোনো notification আর দরকার নেই।
+        // ⚠️ সতর্কতা: কিছু aggressive battery-optimization OEM (Xiaomi/MIUI,
+        // Oppo/ColorOS) কোনো foreground notification না থাকলে background
+        // service বেশি agressively kill করতে পারে। যদি ভবিষ্যতে দেখা যায়
+        // service মাঝেমধ্যে নিজে থেকে বন্ধ হয়ে যাচ্ছে, সেক্ষেত্রে আবার
+        // startForeground() ফিরিয়ে আনা প্রয়োজন হতে পারে।
         startPeriodicPopupChecker()
+
+        // ── Firebase real-time keyword/domain sync শুরু করো ──
+        // addValueEventListener ব্যবহার করায় Firebase console এ keyword/domain
+        // update করলে কোনো app restart ছাড়াই সাথে সাথে কাজ করবে।
+        FirebaseKeywordSync.init(this)
 
         // Deep Study resume
         val isSavedActive = recoveryPrefs.getBoolean("isTimerActive", false)
@@ -313,7 +307,13 @@ class UnifiedBlockerService : AccessibilityService() {
             if (!typingBlockOn || isSystemApp(pkg0)) return
             val typedText = event.text.joinToString(" ").lowercase().trim()
             if (typedText.isNotBlank()) {
-                val hasAdult = adultSiteKeywordsForTyping.any { typedText.contains(it) }
+                // Firebase keywords — real-time update এ সাথে সাথে নতুন keyword কাজ করবে
+                val firebaseKw = FirebaseKeywordSync.getAdultKeywords()
+                val hasAdult = if (firebaseKw.isNotEmpty()) {
+                    firebaseKw.any { typedText.contains(it) }
+                } else {
+                    adultSiteKeywordsForTyping.any { typedText.contains(it) }
+                }
                 if (hasAdult) {
                     try {
                         val source = event.source
@@ -490,18 +490,22 @@ class UnifiedBlockerService : AccessibilityService() {
         if (DataManager.isAdultFocusActive || DataManager.is24HourLockActive) {
             // বাটন ১: Normal Adult Block — URL only
             if (blockerPrefs.blockNormalLoading) {
+                // Firebase real-time keywords ও domains — Firebase update এ সাথে সাথে কাজ করবে
+                val fbKw = FirebaseKeywordSync.getAdultKeywords()
+                val fbDm = FirebaseKeywordSync.getAdultDomains()
                 when {
                     dynamicAdultList.any { url.contains(it) } -> {
                         isAdultViolation = true; blockReason = "Restricted Website"
                     }
-                    adultWebsites.any { url.contains(it) } -> {
+                    fbDm.isNotEmpty() && fbDm.any { url.contains(it) } -> {
                         isAdultViolation = true; blockReason = "Adult Website Detected"
                     }
-                    hardcoreKeywords.any { url.contains(it) } -> {
+                    fbKw.isNotEmpty() && fbKw.any { url.contains(it) } -> {
                         isAdultViolation = true; blockReason = "Explicit Keyword in URL"
                     }
-                    romanticKeywords.any { url.contains(it) } -> {
-                        isAdultViolation = true; blockReason = "Softcore Content in URL"
+                    // Fallback: Firebase empty হলে hardcoded list use করো (offline বা প্রথম load এ)
+                    fbKw.isEmpty() && (hardcoreKeywords.any { url.contains(it) } || romanticKeywords.any { url.contains(it) }) -> {
+                        isAdultViolation = true; blockReason = "Explicit Keyword in URL"
                     }
                     cbYtShorts && url.contains("shorts") -> {
                         shouldBlockNormal = true; blockReason = "YouTube Shorts are blocked!"
@@ -703,15 +707,26 @@ class UnifiedBlockerService : AccessibilityService() {
 
     private fun isAdultUrlForLoading(text: String): Boolean {
         if (!blockerPrefs.blockNormalLoading) return false
-        if (adultSiteKeywords.any { text.contains(it) }) return true
-        if (getCustomAdultKeywords().any { text.contains(it) }) return true
+        val lower = text.lowercase()
+        // ── Firebase real-time keywords (primary) ──
+        val fbKeywords = FirebaseKeywordSync.getAdultKeywords()
+        if (fbKeywords.isNotEmpty() && fbKeywords.any { lower.contains(it) }) return true
+        // ── Local user-added keywords (secondary) ──
+        if (getCustomAdultKeywords().any { lower.contains(it) }) return true
         val host = try {
-            val raw = if (text.startsWith("http")) text.trim() else "https://${text.trim()}"
+            val raw = if (lower.startsWith("http")) lower.trim() else "https://${lower.trim()}"
             android.net.Uri.parse(raw).host?.lowercase()?.removePrefix("www.") ?: ""
         } catch (e: Exception) { "" }
         if (host.isNotEmpty()) {
-            if (adultDomains.contains(host)) return true
+            // ── Firebase real-time domains ──
+            val fbDomains = FirebaseKeywordSync.getAdultDomains()
+            if (fbDomains.isNotEmpty()) {
+                if (fbDomains.contains(host)) return true
+                if (fbDomains.any { host.endsWith(".$it") }) return true
+            }
+            // ── Local user-added domains ──
             if (getCustomAdultDomains().any { host == it || host.endsWith(".$it") }) return true
+            // ── assets adultsite.txt ──
             if (getAdultDomainListLazy().any { host == it || host.endsWith(".$it") }) return true
         }
         return false
@@ -722,15 +737,26 @@ class UnifiedBlockerService : AccessibilityService() {
     // so this toggle is now fully independent of button 1's on/off state.
     private fun isAdultUrlForScan(text: String): Boolean {
         if (!blockerPrefs.blockAdultImageWeb) return false
-        if (adultSiteKeywords.any { text.contains(it) }) return true
-        if (getCustomAdultKeywords().any { text.contains(it) }) return true
+        val lower = text.lowercase()
+        // ── Firebase real-time keywords (primary) ──
+        val fbKeywords = FirebaseKeywordSync.getAdultKeywords()
+        if (fbKeywords.isNotEmpty() && fbKeywords.any { lower.contains(it) }) return true
+        // ── Local user-added keywords (secondary) ──
+        if (getCustomAdultKeywords().any { lower.contains(it) }) return true
         val host = try {
-            val raw = if (text.startsWith("http")) text.trim() else "https://${text.trim()}"
+            val raw = if (lower.startsWith("http")) lower.trim() else "https://${lower.trim()}"
             android.net.Uri.parse(raw).host?.lowercase()?.removePrefix("www.") ?: ""
         } catch (e: Exception) { "" }
         if (host.isNotEmpty()) {
-            if (adultDomains.contains(host)) return true
+            // ── Firebase real-time domains ──
+            val fbDomains = FirebaseKeywordSync.getAdultDomains()
+            if (fbDomains.isNotEmpty()) {
+                if (fbDomains.contains(host)) return true
+                if (fbDomains.any { host.endsWith(".$it") }) return true
+            }
+            // ── Local user-added domains ──
             if (getCustomAdultDomains().any { host == it || host.endsWith(".$it") }) return true
+            // ── assets adultsite.txt ──
             if (getAdultDomainListLazy().any { host == it || host.endsWith(".$it") }) return true
         }
         return false
@@ -929,7 +955,13 @@ class UnifiedBlockerService : AccessibilityService() {
         if (pkg !in targetPkgs || event?.eventType != AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED) return false
         val typedText = event.text.joinToString(" ").lowercase().trim()
         if (typedText.isBlank()) return false
-        val matched = adultSiteKeywords.any { kw -> typedText.contains(kw) }
+        // Firebase real-time keywords — update হলে সাথে সাথে কাজ করবে
+        val firebaseKw = FirebaseKeywordSync.getAdultKeywords()
+        val matched = if (firebaseKw.isNotEmpty()) {
+            firebaseKw.any { kw -> typedText.contains(kw) }
+        } else {
+            adultSiteKeywords.any { kw -> typedText.contains(kw) }
+        }
         if (!matched) return false
         try {
             val source = event.source
@@ -991,7 +1023,11 @@ class UnifiedBlockerService : AccessibilityService() {
         if (isSearchFieldActivelyFocused(root)) return false   // এখনও টাইপ করছে — block না
         val screenTxt = collectAllText(root).lowercase()
         if (screenTxt.isBlank()) return false
-        if (adultSiteKeywords.none { screenTxt.contains(it) }) return false
+        // Firebase keywords — real-time update কাজ করবে
+        val fbKw = FirebaseKeywordSync.getAdultKeywords()
+        val blocked = if (fbKw.isNotEmpty()) fbKw.any { screenTxt.contains(it) }
+                      else adultSiteKeywords.any { screenTxt.contains(it) }
+        if (!blocked) return false
         blockWithMessage("Adult Content", "YouTube search results contain blocked content.")
         return true
     }
@@ -1002,7 +1038,11 @@ class UnifiedBlockerService : AccessibilityService() {
         if (isSearchFieldActivelyFocused(root)) return false   // এখনও টাইপ করছে — block না
         val screenTxt = collectAllText(root).lowercase()
         if (screenTxt.isBlank()) return false
-        if (adultSiteKeywords.none { screenTxt.contains(it) }) return false
+        // Firebase keywords — real-time update কাজ করবে
+        val fbKw = FirebaseKeywordSync.getAdultKeywords()
+        val blocked = if (fbKw.isNotEmpty()) fbKw.any { screenTxt.contains(it) }
+                      else adultSiteKeywords.any { screenTxt.contains(it) }
+        if (!blocked) return false
         blockFacebookContent("Adult Content", "Facebook search results contain blocked content.")
         return true
     }
@@ -1313,6 +1353,8 @@ class UnifiedBlockerService : AccessibilityService() {
             .putInt("sessionType", 0).putBoolean("playSound", playSound).putInt("soundType", soundType).apply()
         if (playSound) playAmbientSound(soundType)
         showFloatingTimer()
+        // Deep Study active থাকাকালীন notification persistent (swipe করে সরানো
+        // যাবে না) — session শেষ হলে stopForeground() এ ফিরে যাবে।
         startForeground(NOTIFICATION_ID, buildNotification("Deep Study Active", "Focus session running...", R.drawable.ic_notif_lock_locked))
         dsTimer?.cancel()
         dsTimer = object : android.os.CountDownTimer(timeMillis, 30) {
@@ -1336,6 +1378,8 @@ class UnifiedBlockerService : AccessibilityService() {
         showBreakScreenOverlay()
         recoveryPrefs.edit().putBoolean("isTimerActive", true)
             .putLong("targetEndTime", System.currentTimeMillis() + timeMillis).putInt("sessionType", 1).apply()
+        // Break active থাকাকালীন notification persistent — break শেষ হলে
+        // stopForeground() এ ফিরে যাবে।
         startForeground(NOTIFICATION_ID, buildNotification("Break Time!", "Enjoy your break", R.drawable.ic_notif_lock_locked))
         dsTimer?.cancel()
         dsTimer = object : android.os.CountDownTimer(timeMillis, 1000) {
@@ -1398,13 +1442,26 @@ class UnifiedBlockerService : AccessibilityService() {
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                NOTIFICATION_CHANNEL_ID, "RasFocus Unified Protection", NotificationManager.IMPORTANCE_LOW
-            )
+                NOTIFICATION_CHANNEL_ID, "RasFocus Unified Protection",
+                // FIX: IMPORTANCE_LOW থেকে IMPORTANCE_MIN — এটা status bar icon
+                // দেখায় কিন্তু notification shade-এ pull করলেও সবচেয়ে নিচে চাপা
+                // থাকে, silent, কোনো heads-up/badge নেই। "সবসময় চোখে পড়া fixed
+                // notification" এর সমাধান — user চাইলেও এটা প্রায় নজরে পড়বে না।
+                NotificationManager.IMPORTANCE_MIN
+            ).apply {
+                setShowBadge(false)
+                lockscreenVisibility = Notification.VISIBILITY_SECRET
+            }
             getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
     }
 
-    private fun buildNotification(title: String, content: String, iconRes: Int = android.R.drawable.ic_secure): Notification {
+    private fun buildNotification(
+        title: String,
+        content: String,
+        iconRes: Int = R.drawable.ic_notif_lock_locked,
+        minimal: Boolean = false
+    ): Notification {
         // ── Main tap → RasFocus MainActivity ──────────────────────────────────
         val mainIntent = PendingIntent.getActivity(
             this, 0,
@@ -1424,25 +1481,38 @@ class UnifiedBlockerService : AccessibilityService() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+        val builder = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(content)
             .setSmallIcon(iconRes)
             .setContentIntent(mainIntent)
             .setOngoing(true)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            // Notification action centre এ RasBrowser shortcut
-            .addAction(
+            .setSilent(true)
+            .setPriority(NotificationCompat.PRIORITY_MIN)
+
+        // FIX: idle/base state (Deep Study বা Break active না থাকলে) এ এখন
+        // একদম minimal — কোনো action button, কোনো verbose text নেই। শুধু
+        // status bar এ lock/unlock icon-ই মূল উদ্দেশ্য। Deep Study/Break
+        // timer চললে (minimal=false) আগের মতোই RasBrowser shortcut থাকে।
+        if (!minimal) {
+            builder.addAction(
                 android.R.drawable.ic_menu_view,
                 "🌐 RasBrowser",
                 browserIntent
             )
-            .build()
+        }
+
+        return builder.build()
     }
 
-    private fun updateNotification(title: String, content: String) {
+    private fun updateNotification(
+        title: String,
+        content: String,
+        iconRes: Int = R.drawable.ic_notif_lock_locked,
+        minimal: Boolean = false
+    ) {
         (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
-            .notify(NOTIFICATION_ID, buildNotification(title, content))
+            .notify(NOTIFICATION_ID, buildNotification(title, content, iconRes, minimal))
     }
 
     // ══════════════════════════════════════════════════════════════════
