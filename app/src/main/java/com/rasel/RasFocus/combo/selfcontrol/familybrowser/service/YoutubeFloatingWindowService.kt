@@ -14,9 +14,60 @@ import android.view.*
 import android.webkit.*
 import androidx.core.app.NotificationCompat
 import com.rasel.RasFocus.combo.selfcontrol.familybrowser.FamilyBrowserActivity
+import java.io.ByteArrayInputStream
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.abs
+
+// ✅ FIX: এই WebView এ আগে কোনো network-level ad-blocking ছিলই না (শুধু
+// adult-content block ছিল) — main YoutubeActivity এর shouldInterceptRequest
+// এ থাকা AD_SERVERS/endpoint/pattern list এখানে কখনো port করা হয়নি। ফলে
+// floating-window mode এ ads একদমই block হতো না। নিচের ৩টা list হুবহু
+// youtubeactivity.kt এর companion object থেকে আনা — same domains, same
+// patterns, যাতে দুই জায়গাতেই একই protection থাকে।
+private object YtFloatingAdBlockLists {
+    val AD_SERVERS = setOf(
+        "googleads.g.doubleclick.net",
+        "pagead2.googlesyndication.com",
+        "pubads.g.doubleclick.net",
+        "adservice.google.com",
+        "googleadservices.com",
+        "ad.doubleclick.net",
+        "amazon-adsystem.com",
+        "adsystem.amazon.com",
+        "moatads.com",
+        "adsafeprotected.com",
+        "securepubads.g.doubleclick.net"
+    )
+
+    val YT_AD_ENDPOINTS = listOf(
+        "/api/stats/ads",
+        "/pagead/adview",
+        "/ptracking",
+        "/api/stats/qoe?",
+        "/pagead/paralleladload",
+        "/pagead/viewthroughconversion",
+        "/pagead/interaction",
+        "/pagead/adformat",
+        "/annotations_auth",
+        "/get_midroll_info",
+        "/api/stats/delayplay",
+        "/api/stats/atr",
+        "youtubei/v1/player/ad_break",
+        "youtubei/v1/ad_break",
+        "youtubei/v1/log_event",
+        "imasdk.googleapis.com/js/sdkloader",
+        "imasdk.googleapis.com/admob"
+    )
+
+    val AD_URL_PATTERNS = listOf(
+        "/pagead/", "/ads/", "/adview/", "adformat=",
+        "//ad.", "//ads.", "//adserver.", "//adservice.",
+        "tracking_pixel", "track/click", "ad_impression",
+        "affiliates/", "click.php?aff", "bannerfarm",
+        "adrotate", "sponsored_links"
+    )
+}
 
 /**
  * ═══════════════════════════════════════════════════════════════════════
@@ -1031,6 +1082,51 @@ class YoutubeFloatingWindowService : Service() {
                     request: android.webkit.WebResourceRequest
                 ): android.webkit.WebResourceResponse? {
                     val reqUrl = request.url.toString()
+                    val reqHost = request.url?.host?.lowercase() ?: ""
+
+                    // ✅ FIX: এই WebView এ আগে শুধু adult-content block ছিল, কোনো
+                    // ad-blocking layer ছিলই না। নিচের ৫ layer ঠিক main
+                    // YoutubeActivity এর shouldInterceptRequest থেকে হুবহু আনা।
+                    if (YtFloatingAdBlockLists.AD_SERVERS.any { reqHost == it || reqHost.endsWith(".$it") }) {
+                        return android.webkit.WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
+                    }
+                    if (reqHost.contains("youtube.com") || reqHost.contains("imasdk.googleapis.com")) {
+                        if (YtFloatingAdBlockLists.YT_AD_ENDPOINTS.any { reqUrl.contains(it) }) {
+                            return android.webkit.WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
+                        }
+                    }
+                    if (reqUrl.contains("googlevideo.com/videoplayback")) {
+                        val isAdStream =
+                            reqUrl.contains("&oad=")         ||
+                            reqUrl.contains("ctier=A")        ||
+                            reqUrl.contains("&adformat=")     ||
+                            reqUrl.contains("&ad_type=")      ||
+                            reqUrl.contains("&source=ytads")  ||
+                            reqUrl.contains("&adsid=")        ||
+                            (reqUrl.contains("&pot=") && reqUrl.contains("&c=WEB") && !reqUrl.contains("&id="))
+                        if (isAdStream) {
+                            return android.webkit.WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
+                        }
+                    }
+                    if (YtFloatingAdBlockLists.AD_URL_PATTERNS.any { reqUrl.contains(it) } &&
+                        !reqUrl.contains("youtube.com/watch") &&
+                        !reqUrl.contains("googleapis.com/youtube") &&
+                        !reqUrl.contains("youtube.com/results")) {
+                        return android.webkit.WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
+                    }
+                    if (reqHost.contains("googlevideo.com")) {
+                        val isGvAdUrl =
+                            reqUrl.contains("initplayback")      ||
+                            reqUrl.contains("generate_204")      ||
+                            reqUrl.contains("/pcs/activeview")   ||
+                            reqUrl.contains("ctier=SA")          ||
+                            reqUrl.contains("ctier=SR")          ||
+                            (reqUrl.contains("initplayback") && reqUrl.contains("adformat"))
+                        if (isGvAdUrl) {
+                            return android.webkit.WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
+                        }
+                    }
+
                     // FIX: this only ever checked the DOMAIN (isAdultSite) —
                     // so a keyword typed into YouTube's own search box (still
                     // under the youtube.com domain, not an "adult site" by
