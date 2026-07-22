@@ -434,8 +434,7 @@ class YoutubeActivity : ComponentActivity() {
                     // YouTube ad video এর videoplayback URL এ নির্দিষ্ট params থাকে।
                     // ⚠️ এখানে শুধু empty response দিচ্ছি — video.currentTime
                     // বা DOM touch করছি না, তাই render pipeline safe থাকে।
-                    if (url.contains("googlevideo.com/videoplayback") ||
-                        url.contains("googlevideo.com/videoplayback")) {
+                    if (url.contains("googlevideo.com/videoplayback")) {
                         val isAdStream =
                             url.contains("&oad=")         ||  // old ad token
                             url.contains("ctier=A")       ||  // ad tier marker
@@ -443,9 +442,8 @@ class YoutubeActivity : ComponentActivity() {
                             url.contains("&ad_type=")     ||  // ad type
                             url.contains("&source=ytads") ||  // source = ytads
                             url.contains("&adsid=")       ||  // ad session id
-                            url.contains("&pot=")         &&
-                            url.contains("&c=WEB")        &&
-                            !url.contains("&id=")            // ad streams lack content id
+                            // FIX: &&-precedence bug — parentheses দিয়ে group করা হয়েছে
+                            (url.contains("&pot=") && url.contains("&c=WEB") && !url.contains("&id="))
                         if (isAdStream) {
                             return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
                         }
