@@ -270,7 +270,10 @@ class RasFocusBlockingService : AccessibilityService() {
         val now = System.currentTimeMillis()
         if (now - lastPopupTime > 1500L) {
             lastPopupTime = now
-            mainHandler.post { showBlockOverlay(featureTitle, reason) }
+            // ✅ FIX: mainHandler.post{} বাদ — আমরা already main thread এ
+            // আছি (onAccessibilityEvent chain), তাই সরাসরি call করলে overlay
+            // এক message-queue round-trip আগে দেখা যায়।
+            showBlockOverlay(featureTitle, reason)
             mainHandler.postDelayed({ performGlobalAction(GLOBAL_ACTION_HOME) }, 80L)
         }
     }
@@ -287,7 +290,8 @@ class RasFocusBlockingService : AccessibilityService() {
             lastPopupTime = now
 
             // ১. সবার আগে blocking overlay দেখাও (Instant Cover)
-            mainHandler.post { showBlockOverlay(featureTitle, reason) }
+            // ✅ FIX: mainHandler.post{} বাদ — already main thread এ আছি
+            showBlockOverlay(featureTitle, reason)
 
             // ২. Current screen / tab destroy করতে BACK press
             mainHandler.postDelayed({
@@ -723,7 +727,13 @@ class RasFocusBlockingService : AccessibilityService() {
         val now = System.currentTimeMillis()
         if (now - lastPopupTime > 1200L) {
             lastPopupTime = now
-            mainHandler.post { showBlockOverlay("Adult Content", "This page contains adult content and has been blocked.") }
+            // ✅ FIX: mainHandler.post{} বাদ — already main thread এ আছি
+            // (onAccessibilityEvent এর synchronous call chain থেকে আসছি)।
+            // আগে এই extra round-trip + BlockPage.show() এর ভেতরের আরেকটা
+            // mainHandler.post{} — দুটো মিলে overlay দেখাতে অপ্রয়োজনীয় দেরি
+            // করাচ্ছিল, যার ফলে ততক্ষণে browser এর নিজের page (Google
+            // homepage) আগেই ভিজিবল হয়ে যাচ্ছিল।
+            showBlockOverlay("Adult Content", "This page contains adult content and has been blocked.")
             mainHandler.postDelayed({ performGlobalAction(GLOBAL_ACTION_HOME) }, 120)
             mainHandler.postDelayed({ closeBrowserTab(pkg) }, 600)
             mainHandler.postDelayed({
@@ -1266,7 +1276,8 @@ class RasFocusBlockingService : AccessibilityService() {
         val now = System.currentTimeMillis()
         if (now - fbBlockLastTime < 1200L) return
         fbBlockLastTime = now
-        mainHandler.post { showBlockOverlay(featureTitle, reason) }
+        // ✅ FIX: mainHandler.post{} বাদ — already main thread এ আছি
+        showBlockOverlay(featureTitle, reason)
         mainHandler.postDelayed({
             try {
                 val intent = android.content.Intent(android.content.Intent.ACTION_MAIN).apply {

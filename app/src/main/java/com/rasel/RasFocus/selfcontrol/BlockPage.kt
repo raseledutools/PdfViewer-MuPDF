@@ -93,6 +93,14 @@ object BlockPage {
     }
 
     // ── Main API: show ───────────────────────────────────────────────────
+    // ✅ FIX: আগে এখানে mainHandler.post{} দিয়ে wrap করা হতো, কিন্তু এই
+    // ফাংশন সবসময় AccessibilityService এর onAccessibilityEvent chain থেকে
+    // call হয় — যেটা ইতিমধ্যেই main thread এ চলে। অপ্রয়োজনীয় Handler
+    // round-trip প্রতিটা extra মিলিসেকেন্ড latency যোগ করছিল, যার ফলে
+    // browser এর নিজের page (Google homepage) block overlay এর আগেই
+    // ভিজিবল হয়ে যাচ্ছিল। এখন already main thread এ থাকলে সরাসরি call
+    // করি — কোনো future caller ভুলে অন্য thread থেকে call করলে (অসম্ভাব্য
+    // কিন্তু safety এর জন্য) তখনই Handler ব্যবহার হবে।
     fun show(
         service: AccessibilityService,
         type: Type,
@@ -100,10 +108,16 @@ object BlockPage {
         reason: String
     ) {
         if (isVisible) return
-        mainHandler.post {
-            if (isVisible) return@post
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            if (isVisible) return
             isVisible = true
             buildAndShow(service, type, title, reason)
+        } else {
+            mainHandler.post {
+                if (isVisible) return@post
+                isVisible = true
+                buildAndShow(service, type, title, reason)
+            }
         }
     }
 
@@ -126,16 +140,51 @@ object BlockPage {
         val sh = ctx.resources.displayMetrics.heightPixels
         val cfg = configFor(type, ctx)
 
+        // ── Root — ✅ FIX: root এখনই তৈরি ও attach করব, খালি কিন্তু solid
+        // রঙে (আগে পুরো UI — icon, quote, progress bar, ~১৫টা nested view —
+        // সম্পূর্ণ তৈরি হওয়ার পরে attach হতো, ততক্ষণে browser এর নিজের
+        // page (Google homepage) already ভিজিবল হয়ে যেত)। এখন screen
+        // সাথে সাথে ঢেকে যাবে; বাকি সব content পরে এই already-attached
+        // root এ যোগ হবে — ততক্ষণে underlying page আর দেখা যাবে না।
+        val root = FrameLayout(ctx).apply {
+            setBackgroundColor(if (cfg.adultMode) Color.BLACK else Color.WHITE)
+        }
+
+        val wmType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
+        else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE
+
+        val params = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
+            wmType,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                    WindowManager.LayoutParams.FLAG_FULLSCREEN,
+            PixelFormat.OPAQUE
+        ).apply { gravity = Gravity.TOP or Gravity.START }
+
+        overlayView = root
+        try {
+            wm.addView(root, params)
+        } catch (e: Exception) {
+            // root attach-ই ব্যর্থ — screen এ কিছুই নেই, তাই safely reset করা যায়
+            isVisible = false
+            overlayView = null
+            return
+        }
+
+        // ── root এখন attach হয়ে গেছে, screen ইতিমধ্যে ঢাকা ──
+        // এখন থেকে বাকি সব rich content (icon, quote, progress bar) নিরাপদে
+        // বসাতে পারি — user আর কখনো underlying page দেখতে পাবে না, কারণ
+        // solid color cover ইতিমধ্যে screen ঢেকে রেখেছে।
+        try {
+
         // ── Quote pick ──────────────────────────────────────────────────
         val quotePair = if (cfg.adultMode)
             islamicQuotesBn.random()
         else
             motivationalQuotesBn.random()
-
-        // ── Root ────────────────────────────────────────────────────────
-        val root = FrameLayout(ctx).apply {
-            setBackgroundColor(if (cfg.adultMode) Color.BLACK else Color.WHITE)
-        }
 
         // ── Header (top 38% — gradient) ─────────────────────────────────
         val headerGrad = GradientDrawable(
@@ -334,47 +383,29 @@ object BlockPage {
         bodyScroll.addView(body)
         root.addView(header); root.addView(bodyScroll)
 
-        // ── WindowManager params ─────────────────────────────────────────
-        val wmType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-            WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
-        else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE
-
-        val params = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.MATCH_PARENT,
-            wmType,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                    WindowManager.LayoutParams.FLAG_FULLSCREEN,
-            PixelFormat.OPAQUE
-        ).apply { gravity = Gravity.TOP or Gravity.START }
-
-        overlayView = root
-        try {
-            wm.addView(root, params)
-
-            // Animated progress bar
-            val totalMs = cfg.autoDismissMs.takeIf { it > 0 } ?: 5000L
-            val updateMs = 50L; var elapsed = 0L
-            val progressTick = object : Runnable {
-                override fun run() {
-                    elapsed += updateMs
-                    val fraction = 1f - (elapsed.toFloat() / totalMs)
-                    progressFill.scaleX = fraction.coerceIn(0f, 1f)
-                    progressFill.pivotX = 0f
-                    if (elapsed < totalMs) mainHandler.postDelayed(this, updateMs)
-                }
+        // Animated progress bar
+        val totalMs = cfg.autoDismissMs.takeIf { it > 0 } ?: 5000L
+        val updateMs = 50L; var elapsed = 0L
+        val progressTick = object : Runnable {
+            override fun run() {
+                elapsed += updateMs
+                val fraction = 1f - (elapsed.toFloat() / totalMs)
+                progressFill.scaleX = fraction.coerceIn(0f, 1f)
+                progressFill.pivotX = 0f
+                if (elapsed < totalMs) mainHandler.postDelayed(this, updateMs)
             }
-            mainHandler.postDelayed(progressTick, updateMs)
+        }
+        mainHandler.postDelayed(progressTick, updateMs)
 
-            // Auto-dismiss (except adult)
-            if (cfg.autoDismissMs > 0) {
-                mainHandler.postDelayed({ removeOverlay() }, cfg.autoDismissMs)
-            }
+        // Auto-dismiss (except adult)
+        if (cfg.autoDismissMs > 0) {
+            mainHandler.postDelayed({ removeOverlay() }, cfg.autoDismissMs)
+        }
 
         } catch (e: Exception) {
-            isVisible = false
-            overlayView = null
+            // root ইতিমধ্যে attach করা এবং screen ঢেকে আছে — সেটা untouched
+            // রাখব (uncover করলে ঠিক যে bug fix করছি সেটাই আবার ঘটবে)।
+            // শুধু rich content আংশিক বসতে ব্যর্থ হয়েছে, blocking ঠিকই কাজ করছে।
         }
     }
 
