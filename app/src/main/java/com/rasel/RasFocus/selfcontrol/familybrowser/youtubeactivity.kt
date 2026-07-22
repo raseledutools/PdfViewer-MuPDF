@@ -345,7 +345,11 @@ class YoutubeActivity : ComponentActivity() {
                     injectAdBlocker(view)
                     injectRemoveOpenInAppButton(view)
                     injectSettingsRemover(view)
-                    adBlocker.injectContentScanner(view)
+                    // ⚠️ DISABLED: adBlocker.injectContentScanner — এই JS system
+                    // video element এর render pipeline এ interfere করে, ফলে
+                    // কিছু device এ video frame drop বা black screen হয়।
+                    // Network-level block (shouldInterceptRequest) যথেষ্ট।
+                    // adBlocker.injectContentScanner(view)
 
                     // FIX: ?? navigation ? shouldOverrideUrlLoading/shouldInterceptRequest
                     // ? URL-level check ??? ???????? ????? block page ?????? ???? ?????,
@@ -379,21 +383,89 @@ class YoutubeActivity : ComponentActivity() {
                 ): WebResourceResponse? {
                     val url = request.url.toString()
 
+                    // ── LAYER 1: Network-level block ─────────────────────────────────────
+                    // এটাই প্রধান ad block — request যাওয়ার আগেই শূন্য response দেওয়া হয়।
+                    // JS-based skip এর মতো video render pipeline এ কোনো interference নেই।
+
+                    // ── 1a. Known ad server domains ───────────────────────────────────────
                     if (AD_SERVERS.any { url.contains(it) }) {
                         return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
                     }
-                    if (url.contains("youtube.com/api/stats/qoe") && url.contains("adformat=")) {
+
+                    // ── 1b. YouTube ad-specific API endpoints ─────────────────────────────
+                    val ytAdEndpoints = listOf(
+                        // Ad impression / tracking
+                        "youtube.com/api/stats/ads",
+                        "youtube.com/pagead/adview",
+                        "youtube.com/ptracking",
+                        "youtube.com/api/stats/qoe",
+                        "youtube.com/pagead/paralleladload",
+                        "youtube.com/pagead/viewthroughconversion",
+                        "youtubei/v1/player/ad_break",
+                        "youtubei/v1/log_event",
+                        "youtubei/v1/ad_break",
+                        // Companion / display ads
+                        "youtube.com/get_midroll_info",
+                        "youtube.com/api/stats/watchtime",
+                        // Ad pod loading
+                        "youtube.com/api/stats/delayplay",
+                        "youtube.com/api/stats/atr",
+                        // Survey / feedback related to ads
+                        "youtube.com/pagead/interaction",
+                        // Beacon / pixel tracking
+                        "youtube.com/api/stats/playback",
+                        // Ad config
+                        "youtube.com/get_endscreen",
+                        // Third-party ad measurement
+                        "securepubads.g.doubleclick.net",
+                        "cm.g.doubleclick.net",
+                        "tpc.googlesyndication.com",
+                        "imasdk.googleapis.com/js/sdkloader",
+                        "imasdk.googleapis.com/admob",
+                        // In-video overlay ads
+                        "youtube.com/annotations_auth",
+                        "youtube.com/pagead/adformat"
+                    )
+                    if (ytAdEndpoints.any { url.contains(it) }) {
                         return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
                     }
-                    // YouTube ad video streams — multiple param signatures
-                    if (url.contains("googlevideo.com/videoplayback")) {
-                        val isAd = url.contains("&oad=") ||
-                                   url.contains("ctier=A") ||
-                                   url.contains("&adformat=") ||
-                                   url.contains("&ad_type=") ||
-                                   (url.contains("&source=ytads"))
-                        if (isAd) return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
+
+                    // ── 1c. Ad video stream detection (googlevideo.com) ───────────────────
+                    // YouTube ad video এর videoplayback URL এ নির্দিষ্ট params থাকে।
+                    // ⚠️ এখানে শুধু empty response দিচ্ছি — video.currentTime
+                    // বা DOM touch করছি না, তাই render pipeline safe থাকে।
+                    if (url.contains("googlevideo.com/videoplayback") ||
+                        url.contains("googlevideo.com/videoplayback")) {
+                        val isAdStream =
+                            url.contains("&oad=")         ||  // old ad token
+                            url.contains("ctier=A")       ||  // ad tier marker
+                            url.contains("&adformat=")    ||  // ad format param
+                            url.contains("&ad_type=")     ||  // ad type
+                            url.contains("&source=ytads") ||  // source = ytads
+                            url.contains("&adsid=")       ||  // ad session id
+                            url.contains("&pot=")         &&
+                            url.contains("&c=WEB")        &&
+                            !url.contains("&id=")            // ad streams lack content id
+                        if (isAdStream) {
+                            return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
+                        }
                     }
+
+                    // ── 1d. Generic ad/tracker URL pattern matching ───────────────────────
+                    val adUrlPatterns = listOf(
+                        "/pagead/", "/ads/", "/adview/", "adformat=",
+                        "//ad.", "//ads.", "//adserver.", "//adservice.",
+                        "tracking_pixel", "track/click", "ad_impression",
+                        "affiliates/", "click.php?aff", "bannerfarm",
+                        "adrotate", "sponsored_links"
+                    )
+                    if (adUrlPatterns.any { url.contains(it) } &&
+                        !url.contains("youtube.com/watch") &&
+                        !url.contains("googleapis.com/youtube") &&
+                        !url.contains("youtube.com/results")) {
+                        return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
+                    }
+                    // ── END LAYER 1 ──────────────────────────────────────────────────────
 
                     // YouTube-?? ?????? search box ???? search ???? page navigate ??? ?? �
                     // internally ???? XHR/fetch request ??????, ???? shouldOverrideUrlLoading
@@ -975,10 +1047,17 @@ class YoutubeActivity : ComponentActivity() {
 
                 var wasAdShowing = false;
 
-                // -- Run immediately on inject --
+                // ⚠️ Layer 3 & 4 DISABLED: video.currentTime = duration এবং
+                // wakeMainVideo() — এই দুটো video element এর render pipeline এ
+                // সরাসরি interfere করে। YouTube এর compositor এই ধরনের forced
+                // seek কে ad-transition state হিসেবে ধরে নেয় এবং main video
+                // surface allocate করতে ব্যর্থ হয় → black screen।
+                // Layer 1 (network block) যথেষ্ট শক্তিশালী।
+
+                // Layer 2 JS only: skip button click + banner hide (render-safe)
                 function runAdBlock() {
                     try {
-                        // 1. Skip button — multiple selectors for all YouTube versions
+                        // Skip button — সব YouTube version এর selectors
                         var skipSelectors = [
                             '.ytp-ad-skip-button',
                             '.ytp-ad-skip-button-modern',
@@ -995,7 +1074,7 @@ class YoutubeActivity : ComponentActivity() {
                             }
                         }
 
-                        // 2. Banner / overlay / promoted ads hide
+                        // Banner / overlay / promoted ads — শুধু display:none, DOM touch নেই
                         document.querySelectorAll(
                             '.ytp-ad-overlay-container, ytm-promoted-video-renderer, ' +
                             '.ytp-ad-text-overlay, .ytp-ad-image-overlay, ' +
@@ -1005,33 +1084,9 @@ class YoutubeActivity : ComponentActivity() {
                             '[class*="ad-div"], [id*="ad_slot"]'
                         ).forEach(function(ad) { ad.style.display = 'none'; });
 
-                        // 3. Video ad — duration skip + black screen fix
-                        var player = document.querySelector('#movie_player, .html5-video-player, ytm-player');
-                        if (!player) return;
-
-                        var isAdShowing = player.classList.contains('ad-showing') ||
-                                          player.classList.contains('ad-interrupting') ||
-                                          !!document.querySelector('.ad-showing, .ad-interrupting');
-
-                        if (isAdShowing) {
-                            wasAdShowing = true;
-                            var videos = player.querySelectorAll('video');
-                            videos.forEach(function(v) {
-                                if (v.duration > 0 && !v.ended) {
-                                    try { v.currentTime = v.duration; } catch(e) {}
-                                }
-                            });
-                            // Mute ad video to avoid audio bleed
-                            if (videos.length > 0) videos[0].muted = true;
-                        } else if (wasAdShowing) {
-                            wasAdShowing = false;
-                            setTimeout(function() { wakeMainVideo(player); }, 100);
-                        }
-
                     } catch(e) {}
                 }
 
-                // Run every 200ms for faster skip
                 setInterval(runAdBlock, 200);
                 runAdBlock();
             })();
