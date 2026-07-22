@@ -113,40 +113,50 @@ object DriveBackupManager {
     }
 
     // ── Get or create the "RasFocus+" folder in Drive ────────────────────────
-    private fun getOrCreateFolderId(context: Context, drive: Drive): String? = try {
+    private fun getOrCreateFolderId(context: Context, drive: Drive): String? {
         val prefs = context.getSharedPreferences(FOLDER_PREF_FILE, Context.MODE_PRIVATE)
         val cached = prefs.getString(FOLDER_PREF_KEY, null)
-        // ✅ FIX: cached folder ID আগে কখনো verify করা হতো না — folder delete হয়ে
-        // গেলে, account switch হলে, বা drive.file scope এর কারণে আর access না
-        // থাকলে, একই ভাঙা ID বারবার ব্যবহার হতো এবং নতুন folder কখনো তৈরি হতো
-        // না। এটাই সম্ভবত "যতবারই try করি একইভাবে fail করে" এর আসল কারণ।
-        val verifiedCached = cached?.let { id ->
+
+        cached?.let { id ->
             try {
-                val f = drive.files().get(id).setFields("id,trashed").execute()
-                if (f.trashed == true) null else id
-            } catch (e: Exception) {
-                Log.w(TAG, "getOrCreateFolderId: cached folder $id no longer valid (${e.message}) — creating fresh one")
-                null
-            }
-        }
-        if (verifiedCached != null) {
-            verifiedCached
-        } else {
-            val query = "name='$APP_FOLDER_NAME' and mimeType='application/vnd.google-apps.folder' and trashed=false"
-            val existing = drive.files().list().setQ(query).setSpaces("drive")
-                .setFields("files(id)").execute().files?.firstOrNull()
-            val folderId = existing?.id ?: run {
-                val meta = DriveFile().apply {
-                    name     = APP_FOLDER_NAME
-                    mimeType = "application/vnd.google-apps.folder"
+                val f = drive.files().get(id).setFields("id,trashed,mimeType").execute()
+                if (f.trashed == true || f.mimeType != "application/vnd.google-apps.folder") {
+                    Log.w(TAG, "getOrCreateFolderId: cached folder $id invalid (trashed=${f.trashed}, mimeType=${f.mimeType}), clearing cache")
+                    prefs.edit().remove(FOLDER_PREF_KEY).apply()
+                } else {
+                    return id
                 }
-                drive.files().create(meta).setFields("id").execute().id
+            } catch (e: Exception) {
+                Log.w(TAG, "getOrCreateFolderId: cached folder $id is not accessible (${e.message}), clearing cache")
+                prefs.edit().remove(FOLDER_PREF_KEY).apply()
             }
-            folderId?.also { prefs.edit().putString(FOLDER_PREF_KEY, it).apply() }
         }
-    } catch (e: Exception) {
-        recordFailure("getOrCreateFolderId", e)
-        null
+
+        val existingId = try {
+            val query = "name='$APP_FOLDER_NAME' and mimeType='application/vnd.google-apps.folder' and trashed=false"
+            drive.files().list().setQ(query).setSpaces("drive")
+                .setFields("files(id)").execute().files?.firstOrNull()?.id
+        } catch (e: Exception) {
+            Log.w(TAG, "getOrCreateFolderId: folder query failed (${e.message}), trying folder create")
+            null
+        }
+
+        val folderId = existingId ?: try {
+            val meta = DriveFile().apply {
+                name = APP_FOLDER_NAME
+                mimeType = "application/vnd.google-apps.folder"
+            }
+            drive.files().create(meta).setFields("id").execute().id
+        } catch (e: Exception) {
+            recordFailure("getOrCreateFolderId:createFolder", e)
+            null
+        }
+
+        folderId?.also {
+            Log.d(TAG, "getOrCreateFolderId: using folderId=$it")
+            prefs.edit().putString(FOLDER_PREF_KEY, it).apply()
+        }
+        return folderId
     }
 
     // ── Generic upload (create or update named file in Drive folder) ──────────
@@ -156,6 +166,11 @@ object DriveBackupManager {
         lastError = null
         lastRecoveryIntent = null
         try {
+            if (!localFile.exists()) {
+                lastError = "Upload failed: local file not found (${localFile.absolutePath})"
+                Log.e(TAG, "uploadNamedFile($name): local file does not exist: ${localFile.absolutePath}")
+                return@withContext false
+            }
             val drive    = buildDriveService(context) ?: return@withContext false
             val folderId = getOrCreateFolderId(context, drive) ?: return@withContext false
             val content  = FileContent(mime, localFile)
@@ -164,12 +179,14 @@ object DriveBackupManager {
                 .setFields("files(id)").execute().files?.firstOrNull()
             if (existing != null) {
                 drive.files().update(existing.id, DriveFile(), content).execute()
+                Log.d(TAG, "uploadNamedFile($name): updated existing Drive file id=${existing.id}")
             } else {
                 val meta = DriveFile().apply {
                     this.name    = name
                     parents      = listOf(folderId)
                 }
-                drive.files().create(meta, content).setFields("id").execute()
+                val createdId = drive.files().create(meta, content).setFields("id").execute().id
+                Log.d(TAG, "uploadNamedFile($name): created new Drive file id=$createdId")
             }
             true
         } catch (e: Exception) {
