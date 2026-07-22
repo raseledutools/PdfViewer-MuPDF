@@ -250,16 +250,21 @@ object AutoUpdater {
             notificationManager.createNotificationChannel(channel)
         }
 
-        val installIntent = getInstallIntent(context, apkFile)
-        val pendingIntent = PendingIntent.getActivity(
-            context, 0, installIntent,
+        // Use BroadcastReceiver so we can check canRequestPackageInstalls()
+        // before attempting install — prevents hang on notification tap
+        val broadcastIntent = Intent(InstallUpdateReceiver.ACTION_INSTALL_UPDATE).apply {
+            setClass(context, InstallUpdateReceiver::class.java)
+            putExtra(InstallUpdateReceiver.EXTRA_APK_PATH, apkFile.absolutePath)
+        }
+        val pendingIntent = PendingIntent.getBroadcast(
+            context, NOTIFICATION_ID, broadcastIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.stat_sys_download_done) // built-in icon
+            .setSmallIcon(android.R.drawable.stat_sys_download_done)
             .setContentTitle("RasFocus Update Ready")
-            .setContentText("Version $newTag is downloaded. Tap to install.")
+            .setContentText("Version $newTag downloaded. Tap to install.")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)

@@ -669,6 +669,15 @@
         </intent-filter>
     </receiver>
 
+    <!-- Auto-update install receiver: handles notification tap safely with permission check -->
+    <receiver
+        android:name=".InstallUpdateReceiver"
+        android:exported="false">
+        <intent-filter>
+            <action android:name="com.rasel.RasFocus.ACTION_INSTALL_UPDATE" />
+        </intent-filter>
+    </receiver>
+
 </application>
 
 </manifest>
