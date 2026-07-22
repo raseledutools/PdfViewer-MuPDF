@@ -23,20 +23,20 @@ import androidx.core.view.WindowInsetsControllerCompat
 import java.io.ByteArrayInputStream
 
 /**
- * YoutubeActivity — ???? native YouTube app ?? ??? ????????
+ * YoutubeActivity ï¿½ ???? native YouTube app ?? ??? ????????
  */
 class YoutubeActivity : ComponentActivity() {
 
     private var webView: WebView? = null
     // Feed/search ? visible content (thumbnails, titles, alt-text) scan ???
-    // adult content ???? ???? — AdBlocker.kt ?? existing multi-layer scanner
+    // adult content ???? ???? ï¿½ AdBlocker.kt ?? existing multi-layer scanner
     private val adBlocker by lazy { com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker(this) }
     private var customView: View? = null
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
 
     // FIX: shouldOverrideUrlLoading/shouldInterceptRequest ? URL-level check ?
     // adult content block ???? ??????? ???? onPageFinished ?? title-check safety
-    // net ??? ??? navigation ? ???? ???? ???? block page ?????? ??? — ??? ?????
+    // net ??? ??? navigation ? ???? ???? ???? block page ?????? ??? ï¿½ ??? ?????
     // ???? ?????? black block screen ?????? ?? flag ????? ??????? ??? ?? ??
     // navigation-? ???????? ????? URL-level ? block ?????? ????; ???
     // onPageFinished ?? ???????? check ????? ??? ?????
@@ -98,23 +98,23 @@ class YoutubeActivity : ComponentActivity() {
                         else true
 
                         if (hasOverlay) {
-                            // ? FIX: JS check skip ??? — ?????? floating launch ???
+                            // ? FIX: JS check skip ??? ï¿½ ?????? floating launch ???
                             // JS async ??????? screen off ?? ??? result ??? ?? ???????????
                             // ??? ?????? floating ? ???; audio ???? ?????
                             launchFloatingOnLock(wv)
                         } else {
-                            // Overlay permission ??? — ???? audio service
+                            // Overlay permission ??? ï¿½ ???? audio service
                             startBgAudioService()
                         }
                     } else if (isMiniPlayerActive) {
-                        // ? FIX: Mini player ???????? lock — audio ???? ?????,
+                        // ? FIX: Mini player ???????? lock ï¿½ audio ???? ?????,
                         // floating service ???????? WebView ??? ??????
                         startBgAudioService()
                     }
                 }
 
                 Intent.ACTION_SCREEN_ON -> {
-                    // Screen on — user unlock ?? ??? ??????? ???? ???? ??
+                    // Screen on ï¿½ user unlock ?? ??? ??????? ???? ???? ??
                 }
 
                 Intent.ACTION_USER_PRESENT -> {
@@ -123,7 +123,7 @@ class YoutubeActivity : ComponentActivity() {
                     // onResume() ? ???????? WebView re-attach ???
                     // ????? ???? service ?????? ? flag set ????? onResume() ???? ??? ????
                     if (isMiniPlayerActive) {
-                        // onResume() call ??? ??? activity visible ??? — ??????? WebView re-attach ???
+                        // onResume() call ??? ??? activity visible ??? ï¿½ ??????? WebView re-attach ???
                         // ????? ???? ???? ????? ???; onResume() ? isMiniPlayerActive check ??? ???
                     } else {
                         // Floating ?????? lock ??????? (overlay ??? ?? ?? video ????? ??)
@@ -160,7 +160,7 @@ class YoutubeActivity : ComponentActivity() {
 
         injectVisibilitySpoofBeforeLeave(wv)
 
-        // WebView service ? ??? — reload ??? ??
+        // WebView service ? ??? ï¿½ reload ??? ??
         com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView = wv
         com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.launchNoReload(
             this, currentUrl, currentTitle
@@ -183,21 +183,30 @@ class YoutubeActivity : ComponentActivity() {
 
         // FIX: ?? list ??? ?????? hardcoded ???, ??? ???? keyword ??? ???? ???
         // app update ?????? ??? ??? FirebaseKeywordSync (Firebase Realtime DB ??
-        // keyword_data/adult_keywords node) ???? ??? — main browser ?? AdBlocker
+        // keyword_data/adult_keywords node) ???? ??? ï¿½ main browser ?? AdBlocker
         // ??? FacebookActivity ?? ????? ??? ??? central list ?????? ???, ??? ?????
         // ????? ???????? sync ????? ?????? ???? Firebase console ? keyword ???/???
-        // ????? — ???? app update ?????? — YouTube search bar ? ???? ???? reflect ????
+        // ????? ï¿½ ???? app update ?????? ï¿½ YouTube search bar ? ???? ???? reflect ????
         private val ADULT_SEARCH_KEYWORDS: Set<String>
             get() = com.rasel.RasFocus.selfcontrol.FirebaseKeywordSync.getAdultKeywords()
 
         private val AD_SERVERS = setOf(
             "googleads.g.doubleclick.net", "pagead2.googlesyndication.com",
-            "pubads.g.doubleclick.net", "youtube.com/api/stats/ads", "youtube.com/pagead",
-            "googleadservices.com", "adservice.google.com",
-            "youtubei/v1/player/ad_break", "youtube.com/ptracking",
-            "googlesyndication.com", "doubleclick.net", "ad.doubleclick.net",
+            "pubads.g.doubleclick.net", "adservice.google.com",
+            "googleadservices.com", "googlesyndication.com",
+            "doubleclick.net", "ad.doubleclick.net", "static.doubleclick.net",
+            "imasdk.googleapis.com",
+            "youtube.com/api/stats/ads",
+            "youtube.com/pagead",
+            "youtube.com/ptracking",
+            "youtube.com/api/stats/qoe",
+            "youtubei/v1/player/ad_break",
+            "youtubei/v1/log_event",
+            "youtube.com/pagead/adview",
             "google-analytics.com", "ssl.google-analytics.com",
-            "static.doubleclick.net"
+            "googletagmanager.com", "googletagservices.com",
+            "amazon-adsystem.com", "moatads.com",
+            "scorecardresearch.com", "adsafeprotected.com", "2mdn.net"
         )
 
         fun launch(activity: Activity) {
@@ -226,7 +235,7 @@ class YoutubeActivity : ComponentActivity() {
         // FIX (startup speed): black frame ?? ??? setContentView ????? ????????
         // ?????? ??????, ????? receiver registration ? wakelock acquire ?????
         // ??? ?? non-UI ??????? setContentView ?? ??? ???, ??? ????? ?????
-        // ????? ?????? ???? ????? ??? app ????? ??? ??? ??? — ??? ????? ????
+        // ????? ?????? ???? ????? ??? app ????? ??? ??? ??? ï¿½ ??? ????? ????
         // ????? ???? ??????? ???? (blank/white flash ?? ????), ?? WebView ??
         // load ???? ??? ???? ??????? ???? ????? ????? ?????, ???? order ?????????
         val rootFrame = FrameLayout(this).apply {
@@ -274,7 +283,7 @@ class YoutubeActivity : ComponentActivity() {
             )
             // Android version ???????? ???? layer type:
             // Android 10 (API 29) ? inline <video> TextureView ????? render ???,
-            // ??? LAYER_TYPE_HARDWARE ???? — ?? ??? video frame black ????,
+            // ??? LAYER_TYPE_HARDWARE ???? ï¿½ ?? ??? video frame black ????,
             // ???? audio ???? Android 11+ ? Chromium ????? SurfaceControl ?????
             // compositor bypass ???, ??? LAYER_TYPE_NONE ?????? ?????
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
@@ -306,7 +315,7 @@ class YoutubeActivity : ComponentActivity() {
             cookieManager.setAcceptThirdPartyCookies(this, true)
 
             // Block page ?? "???? ???" ???? ???? ?????????? youtube.com ? ????
-            // ???? ???? — ??? ?? ????? block page ??????? ?? WebView ????????
+            // ???? ???? ï¿½ ??? ?? ????? block page ??????? ?? WebView ????????
             // ???? ???? ?????, ???? navigation/back ??? ???? ???
             addJavascriptInterface(YtBlockBridge(this), "RasYtBlockBridge")
             addJavascriptInterface(
@@ -319,7 +328,7 @@ class YoutubeActivity : ComponentActivity() {
             webViewClient = object : WebViewClient() {
                 override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
                     super.onPageStarted(view, url, favicon)
-                    // ???? navigation ???? — ???? load ?? block-flag ????? ???
+                    // ???? navigation ???? ï¿½ ???? load ?? block-flag ????? ???
                     adultBlockAlreadyShownForThisLoad = false
                 }
 
@@ -327,18 +336,19 @@ class YoutubeActivity : ComponentActivity() {
                     super.onPageFinished(view, url)
                     injectVisibilitySpoof(view)
                     injectYoutubeHacks(view)
+                    injectAdBlocker(view)
                     injectRemoveOpenInAppButton(view)
                     injectSettingsRemover(view)
                     adBlocker.injectContentScanner(view)
 
                     // FIX: ?? navigation ? shouldOverrideUrlLoading/shouldInterceptRequest
                     // ? URL-level check ??? ???????? ????? block page ?????? ???? ?????,
-                    // ????? title-check ?? ?????? ??? ?? — ????? ??? block ???? ??????
+                    // ????? title-check ?? ?????? ??? ?? ï¿½ ????? ??? block ???? ??????
                     // (double black screen) ???? ????
                     if (adultBlockAlreadyShownForThisLoad) return
 
                     // Second-layer safety net: shouldInterceptRequest only sees the
-                    // request URL, not POST body — and YouTube's internal search
+                    // request URL, not POST body ï¿½ and YouTube's internal search
                     // sometimes sends the query inside a POST body rather than as a
                     // URL query param, which the network-level check above can't see.
                     // Re-checking the rendered page title after load catches that case,
@@ -369,11 +379,16 @@ class YoutubeActivity : ComponentActivity() {
                     if (url.contains("youtube.com/api/stats/qoe") && url.contains("adformat=")) {
                         return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
                     }
-                    if (url.contains("googlevideo.com/videoplayback") && (url.contains("&oad=") || url.contains("ctier=A"))) {
-                        return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
+                    if (url.contains("googlevideo.com/videoplayback")) {
+                        val isAd = url.contains("&oad=") ||
+                                   url.contains("ctier=A") ||
+                                   url.contains("&adformat=") ||
+                                   url.contains("&ad_type=") ||
+                                   url.contains("&source=ytads")
+                        if (isAd) return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
                     }
 
-                    // YouTube-?? ?????? search box ???? search ???? page navigate ??? ?? —
+                    // YouTube-?? ?????? search box ???? search ???? page navigate ??? ?? ï¿½
                     // internally ???? XHR/fetch request ??????, ???? shouldOverrideUrlLoading
                     // ? ???? ??????? ?? (???? ???? full page navigation ? ???)? ????? ??? ??
                     // ????? address bar ? ?????? URL ???? ???? block ???, ?????? app ??
@@ -403,7 +418,7 @@ class YoutubeActivity : ComponentActivity() {
                         url.startsWith("youtube://") ||
                         url.startsWith("vnd.youtube://") ||
                         url.startsWith("market://")) {
-                        return true  // block — ????? ???? ??
+                        return true  // block ï¿½ ????? ???? ??
                     }
 
                     if (!url.startsWith("http://") && !url.startsWith("https://")) return true
@@ -566,7 +581,7 @@ class YoutubeActivity : ComponentActivity() {
             isMiniPlayerActive = false
             stopBgAudioService()
 
-            // Floating service ???? ??? — onDestroy() ? pendingWebView set ???
+            // Floating service ???? ??? ï¿½ onDestroy() ? pendingWebView set ???
             try {
                 stopService(Intent(
                     this,
@@ -584,7 +599,7 @@ class YoutubeActivity : ComponentActivity() {
                 if (immediateWv != null) {
                     reattachWebView(immediateWv, rootFrame)
                 } else {
-                    // Fallback: ???? ??????? ??? — service onDestroy() ???? ??????
+                    // Fallback: ???? ??????? ??? ï¿½ service onDestroy() ???? ??????
                     rootFrame?.postDelayed({
                         val pendingWv = com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView
                         if (pendingWv != null) {
@@ -646,7 +661,7 @@ class YoutubeActivity : ComponentActivity() {
         injectVisibilitySpoof(returnedWv)
         injectYoutubeHacksForced(returnedWv)
 
-        // ? FIX: 150ms ??? visible ??? — WebView render ?????? ???
+        // ? FIX: 150ms ??? visible ??? ï¿½ WebView render ?????? ???
         // ??? black flash ???? ???? ??
         returnedWv.postDelayed({
             returnedWv.visibility = View.VISIBLE
@@ -705,7 +720,7 @@ class YoutubeActivity : ComponentActivity() {
         super.onUserLeaveHint()
         if (isMiniPlayerActive) return
         val wv = webView ?: return
-        // Home button ????? floating window — same logic
+        // Home button ????? floating window ï¿½ same logic
         launchFloatingOnLock(wv)
     }
 
@@ -865,7 +880,7 @@ class YoutubeActivity : ComponentActivity() {
                 // ??????? ?????
                 removeOpenAppElements();
 
-                // MutationObserver — YouTube SPA navigation ? ???? element ???? ????
+                // MutationObserver ï¿½ YouTube SPA navigation ? ???? element ???? ????
                 try {
                     var observer = new MutationObserver(function(mutations) {
                         removeOpenAppElements();
@@ -893,9 +908,9 @@ class YoutubeActivity : ComponentActivity() {
                 // YouTube ad ???? ???? DOM ? ????? <video> ????:
                 //   [0] = ad video  (src = googlevideo.com/videoplayback?...&oad=...)
                 //   [1] = main video (src = googlevideo.com/videoplayback?...&id=...)
-                // ???? fix: player.querySelector('video') — ??? [0] ????, ???? ad
+                // ???? fix: player.querySelector('video') ï¿½ ??? [0] ????, ???? ad
                 // skip ????, ?????? YouTube ?? player state machine ???? ad-mode ?
-                // ???? — transition ? compositor ???? surface allocate ???? ????
+                // ???? ï¿½ transition ? compositor ???? surface allocate ???? ????
                 // ????? surface release ??? ????, ??? main video decode ???? ??????
                 // ?? ??????? screen blank ?????
                 //
@@ -906,8 +921,8 @@ class YoutubeActivity : ComponentActivity() {
                 // 3. ad skip ???? ???? ???? main video ??:
                 //    a. muted=false ??? (YouTube sometimes mutes it during ad)
                 //    b. visibility/display force ???
-                //    c. play() call ??? — renderer surface ???? ???
-                // 4. 300ms ??? ???? play() — transition delay cover ????
+                //    c. play() call ??? ï¿½ renderer surface ???? ???
+                // 4. 300ms ??? ???? play() ï¿½ transition delay cover ????
                 // --------------------------------------------------------------------
 
                 function isAdVideo(v) {
@@ -941,7 +956,7 @@ class YoutubeActivity : ComponentActivity() {
                         if (mainVideo.muted) mainVideo.muted = false;
                         mainVideo.play().catch(function(){});
 
-                        // Double-tap 300ms ??? — transition buffer
+                        // Double-tap 300ms ??? ï¿½ transition buffer
                         setTimeout(function() {
                             try {
                                 mainVideo.style.visibility = 'visible';
@@ -953,42 +968,65 @@ class YoutubeActivity : ComponentActivity() {
 
                 var wasAdShowing = false;
 
-                setInterval(function() {
+                // -- Run immediately on inject --
+                function runAdBlock() {
                     try {
-                        // -- 1. Skip button ????? (??????? safe) --
-                        var skipBtn = document.querySelector(
-                            '.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button'
-                        );
-                        if (skipBtn) { skipBtn.click(); return; }
+                        // 1. Skip button â€” multiple selectors for all YouTube versions
+                        var skipSelectors = [
+                            '.ytp-ad-skip-button',
+                            '.ytp-ad-skip-button-modern',
+                            '.ytp-skip-ad-button',
+                            '[class*="skip-ad"]',
+                            '[class*="skipAd"]',
+                            'button.ytp-ad-skip-button-container'
+                        ];
+                        for (var i = 0; i < skipSelectors.length; i++) {
+                            var btn = document.querySelector(skipSelectors[i]);
+                            if (btn && btn.offsetParent !== null) {
+                                btn.click();
+                                return;
+                            }
+                        }
 
-                        // -- 2. Banner / overlay ads hide ??? --
+                        // 2. Banner / overlay / promoted ads hide
                         document.querySelectorAll(
                             '.ytp-ad-overlay-container, ytm-promoted-video-renderer, ' +
-                            '.ytp-ad-text-overlay, .ytp-ad-image-overlay'
+                            '.ytp-ad-text-overlay, .ytp-ad-image-overlay, ' +
+                            '.ytp-ad-overlay-slot, ytm-in-read-ad-renderer, ' +
+                            'ytm-companion-ad-renderer, ytm-ads-renderer, ' +
+                            '.ytm-promoted-sparkles-web-renderer, ' +
+                            '[class*="ad-div"], [id*="ad_slot"]'
                         ).forEach(function(ad) { ad.style.display = 'none'; });
 
-                        // -- 3. Video ad skip + black screen fix --
-                        var player = document.querySelector('#movie_player, .html5-video-player');
+                        // 3. Video ad â€” duration skip + black screen fix
+                        var player = document.querySelector('#movie_player, .html5-video-player, ytm-player');
                         if (!player) return;
 
-                        var isAdShowing = player.classList.contains('ad-showing');
+                        var isAdShowing = player.classList.contains('ad-showing') ||
+                                          player.classList.contains('ad-interrupting') ||
+                                          !!document.querySelector('.ad-showing, .ad-interrupting');
 
                         if (isAdShowing) {
                             wasAdShowing = true;
-                            var adVideo = player.querySelector('video');
-                            if (adVideo && adVideo.duration > 0 && !adVideo.ended) {
-                                adVideo.currentTime = adVideo.duration;
-                            }
+                            var videos = player.querySelectorAll('video');
+                            videos.forEach(function(v) {
+                                if (v.duration > 0 && !v.ended) {
+                                    try { v.currentTime = v.duration; } catch(e) {}
+                                }
+                            });
+                            // Mute ad video to avoid audio bleed
+                            if (videos.length > 0) videos[0].muted = true;
                         } else if (wasAdShowing) {
-                            // -- ad ??? ??? ??? — ???? black screen moment --
-                            // player.classList ???? 'ad-showing' ??? ???? ????
-                            // transition ???? ?????? — ???? main video wake ???
                             wasAdShowing = false;
-                            wakeMainVideo(player);
+                            setTimeout(function() { wakeMainVideo(player); }, 100);
                         }
 
                     } catch(e) {}
-                }, 300);
+                }
+
+                // Run every 200ms for faster skip
+                setInterval(runAdBlock, 200);
+                runAdBlock();
             })();
         """.trimIndent(), null)
     }
@@ -1040,7 +1078,7 @@ class YoutubeActivity : ComponentActivity() {
 
     /**
      * Adult-blocked page ??????? ?? WebView ?? URL stuck ???? ??? ??? ?????
-     * ???? ????? ??? ?? — ?? bridge ?? attach ??? ????? block page ?? "????
+     * ???? ????? ??? ?? ï¿½ ?? bridge ?? attach ??? ????? block page ?? "????
      * ???" ???? ?????? Kotlin ???? youtube.com ? loadUrl ??? ?????
      */
     inner class YtBlockBridge(private val wv: WebView) {
@@ -1052,8 +1090,8 @@ class YoutubeActivity : ComponentActivity() {
 
     private fun startBgAudioService() {
         webView?.evaluateJavascript("(function() { return document.title; })();") { titleResult ->
-            val rawTitle = titleResult?.replace("\"", "")?.takeIf { it.isNotBlank() && it != "null" } ?: webView?.title ?: "YouTube — Playing"
-            val title = rawTitle.removeSuffix(" - YouTube").removeSuffix(" – YouTube").trim()
+            val rawTitle = titleResult?.replace("\"", "")?.takeIf { it.isNotBlank() && it != "null" } ?: webView?.title ?: "YouTube ï¿½ Playing"
+            val title = rawTitle.removeSuffix(" - YouTube").removeSuffix(" ï¿½ YouTube").trim()
             val url   = webView?.url ?: ""
 
             val videoId = try {
@@ -1064,7 +1102,7 @@ class YoutubeActivity : ComponentActivity() {
                     else uri.pathSegments.firstOrNull { it.length == 11 }
             } catch (_: Exception) { null }
 
-            // hqdefault (480px) ??????? ??? — mqdefault ???? ???? ?? ????? blank ???
+            // hqdefault (480px) ??????? ??? ï¿½ mqdefault ???? ???? ?? ????? blank ???
             val thumbUrl = if (videoId != null)
                 "https://img.youtube.com/vi/$videoId/hqdefault.jpg"
             else null
