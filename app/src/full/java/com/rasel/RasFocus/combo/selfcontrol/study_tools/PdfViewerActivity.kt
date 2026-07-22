@@ -1,4 +1,4 @@
-package com.rasel.RasFocus.combo.selfcontrol.study_tools
+package com.rasel.RasFocus.selfcontrol.study_tools
 
 import android.app.Activity
 import android.content.Context
@@ -371,14 +371,9 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
     LaunchedEffect(scale, visibleIdx) {
         delay(350)
         val current = pages.getOrNull(visibleIdx) ?: return@LaunchedEffect
-        // FIX: was scale > 1.05f which blocked the initial 1f render entirely —
-        // pages would stay in loading state forever since onLoadBitmap(1f) calls
-        // reRenderPageSharper(idx, 1f) but 1f > 1.05f is false.
-        // Now: render if no bitmap yet (initial load at any scale), OR if zoomed
-        // enough to warrant a sharper re-render.
-        val needsInitialRender = current.bitmap == null
-        val needsSharpUpgrade  = scale > 1.05f && scale > current.renderedAtScale * 1.4f
-        if (needsInitialRender || needsSharpUpgrade) {
+        // Only upgrade once real headroom is used up, and only bother past
+        // roughly 1x — avoids needless re-render churn for small pinches.
+        if (scale > 1.05f && scale > current.renderedAtScale * 1.4f) {
             reRenderPageSharper(visibleIdx, scale)
         }
     }
