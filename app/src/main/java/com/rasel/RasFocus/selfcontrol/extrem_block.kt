@@ -1292,6 +1292,34 @@ class RasFocusBlockingService : AccessibilityService() {
         }, 400)
     }
 
+    // ── Robust fallback video-surface detector ──────────────────────────
+    // Facebook এর নিজস্ব view-id (video_player_container, reels_viewer_root
+    // ইত্যাদি) app update এর সাথে প্রায়ই বদলে যায়, আর English text match
+    // ("Reels", "Watch") user এর phone/app Bengali বা অন্য ভাষায় থাকলে
+    // কখনোই মিলবে না — এই দুই কারণে "toggle on থাকলেও block হয় না" এই bug
+    // হতে পারে। SurfaceView/TextureView/VideoView হলো standard Android
+    // class যা প্রায় সব native video player ব্যবহার করে (Facebook এর নিজের
+    // view-id নাম যাই হোক না কেন), তাই এটা অনেক বেশি reliable fallback।
+    // শুধু বড়সড়, visible surface কেই ধরব — ছোট inline feed thumbnail বাদ।
+    private fun hasLargeVisibleVideoSurface(root: AccessibilityNodeInfo, minPercent: Int = 35): Boolean {
+        fun search(node: AccessibilityNodeInfo?, depth: Int): Boolean {
+            node ?: return false
+            if (depth > 30) return false
+            val cn = node.className?.toString() ?: ""
+            if (node.isVisibleToUser &&
+                (cn.contains("SurfaceView") || cn.contains("TextureView") || cn == "android.widget.VideoView")) {
+                val screenBounds = android.graphics.Rect(); root.getBoundsInScreen(screenBounds)
+                val nodeBounds = android.graphics.Rect(); node.getBoundsInScreen(nodeBounds)
+                val screenArea = (screenBounds.width().toLong() * screenBounds.height().toLong()).coerceAtLeast(1)
+                val nodeArea = nodeBounds.width().toLong() * nodeBounds.height().toLong()
+                if (nodeArea * 100 / screenArea >= minPercent) return true
+            }
+            for (i in 0 until node.childCount) if (search(node.getChild(i), depth + 1)) return true
+            return false
+        }
+        return search(root, 0)
+    }
+
     private fun isFbVideoPlayerActuallyOpen(root: AccessibilityNodeInfo): Boolean {
         val fullscreen = root.findAccessibilityNodeInfosByViewId("com.facebook.katana:id/fullscreen_video_container").isNotEmpty()
             || root.findAccessibilityNodeInfosByViewId("com.facebook.katana:id/fb_video_player").isNotEmpty()
@@ -1304,6 +1332,7 @@ class RasFocusBlockingService : AccessibilityService() {
             || root.findAccessibilityNodeInfosByViewId("com.facebook.katana:id/video_fullscreen_button").any { it.isVisibleToUser }
             || root.findAccessibilityNodeInfosByViewId("com.facebook.katana:id/pip_button").any { it.isVisibleToUser }
             || root.findAccessibilityNodeInfosByViewId("com.facebook.katana:id/video_player_progress_bar").any { it.isVisibleToUser }
+            || hasLargeVisibleVideoSurface(root)   // ✅ FIX: view-id মিস হলেও ধরার fallback
         if (fullscreen) return true
 
         val story = root.findAccessibilityNodeInfosByViewId("com.facebook.katana:id/story_viewer_container").isNotEmpty()
@@ -1347,6 +1376,14 @@ class RasFocusBlockingService : AccessibilityService() {
             && root.findAccessibilityNodeInfosByViewId("com.facebook.katana:id/video_comment_button").any { it.isVisibleToUser }
             && root.findAccessibilityNodeInfosByViewId("com.facebook.katana:id/video_share_button").any { it.isVisibleToUser })
         if (hasReelsUi) return true
+
+        // ✅ FIX: view-id/text সব miss করলেও — Reels vertical swipe player
+        // পুরো স্ক্রিন জুড়ে video দেখায়, তাই বড় visible video-surface +
+        // watch_while_layout/tab-navigation না থাকা (মানে এটা normal Watch
+        // video না) মিলিয়ে ধরার চেষ্টা করব।
+        val fullscreenLikeVideo = hasLargeVisibleVideoSurface(root)
+            && root.findAccessibilityNodeInfosByViewId("com.facebook.katana:id/watch_tab").isEmpty()
+        if (fullscreenLikeVideo) return true
         return false
     }
 
