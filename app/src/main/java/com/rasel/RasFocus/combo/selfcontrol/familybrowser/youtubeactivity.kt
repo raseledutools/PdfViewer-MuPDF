@@ -482,6 +482,22 @@ class YoutubeActivity : ComponentActivity() {
                         return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
                     }
 
+                    val ytPlayerAdUrls = listOf(
+                        "youtube.com/youtubei/v1/player/ad_break",
+                        "youtube.com/api/stats/ads",
+                        "googlevideo.com/initplayback",
+                        "youtube.com/pcs/activeview",
+                        "youtube.com/api/stats/atr",
+                        "googlevideo.com/generate_204"
+                    )
+                    if (ytPlayerAdUrls.any { url.contains(it) }) {
+                        return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
+                    }
+                    if (url.contains("googlevideo.com") &&
+                        (url.contains("ctier=SA") || url.contains("ctier=SR") ||
+                         url.contains("initplayback") && url.contains("adformat"))) {
+                        return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
+                    }
                     return super.shouldInterceptRequest(view, request)
                 }
 

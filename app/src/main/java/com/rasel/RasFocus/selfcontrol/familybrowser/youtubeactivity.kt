@@ -483,6 +483,31 @@ class YoutubeActivity : ComponentActivity() {
                         return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
                     }
 
+                    // ── 1e. YouTube API response pruning (uBO-style) ─────────────────────
+                    // YouTube ad request টা block করলেও JSON response এ adPlacements,
+                    // playerAds, adSlots fields আসে — এগুলো WebView filter করতে পারে না।
+                    // তাই /youtubei/v1/player request টা intercept করে empty response দিচ্ছি না,
+                    // বরং request continue করতে দিচ্ছি কিন্তু URL pattern দিয়ে ad-heavy
+                    // requests বাদ দিচ্ছি যেগুলোতে শুধু ad data থাকে।
+                    val ytPlayerAdUrls = listOf(
+                        "youtube.com/youtubei/v1/player/ad_break",
+                        "youtube.com/api/stats/ads",
+                        "googlevideo.com/initplayback",
+                        "youtube.com/pcs/activeview",
+                        "youtube.com/api/stats/atr",
+                        "googlevideo.com/generate_204"
+                    )
+                    if (ytPlayerAdUrls.any { url.contains(it) }) {
+                        return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
+                    }
+
+                    // ── 1f. googlevideo ctier=SA/SR (from uBO + SysAdminDoc DNR list) ──
+                    if (url.contains("googlevideo.com") &&
+                        (url.contains("ctier=SA") || url.contains("ctier=SR") ||
+                         url.contains("initplayback") && url.contains("adformat"))) {
+                        return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
+                    }
+
                     return super.shouldInterceptRequest(view, request)
                 }
 
