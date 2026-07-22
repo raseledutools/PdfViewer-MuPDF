@@ -1,11 +1,13 @@
 package com.rasel.RasFocus.drivebackup
 
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.util.Log
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.Scope
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
+import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import com.google.api.client.http.FileContent
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
@@ -34,6 +36,31 @@ object DriveBackupManager {
         "app_settings", "blocking_settings", "user_prefs"
     )
 
+    // ✅ DIAGNOSTIC: UI-এ আগে শুধু "Upload failed" দেখানো হতো, আসল কারণ কখনো
+    // দেখানো হতো না (শুধু Log.e/Log.w তে যেত, যেটা user দেখতে পায় না)।
+    // এখন প্রতিটা ব্যর্থতার real reason এখানে জমা থাকে, UI সেটা toast এ দেখাতে পারে।
+    var lastError: String? = null
+        private set
+
+    // ✅ যদি failure এর কারণ হয় Drive scope/permission missing (সবচেয়ে common
+    // কারণ — বিশেষত যারা এই Drive feature আসার আগে sign-in করেছিল), তাহলে
+    // Android নিজেই একটা resolution Intent দেয় যেটা launch করলে user সরাসরি
+    // permission grant করতে পারে, sign-out/sign-in করা লাগে না।
+    var lastRecoveryIntent: Intent? = null
+        private set
+
+    private fun recordFailure(tag: String, e: Exception) {
+        if (e is UserRecoverableAuthIOException) {
+            lastError = "Drive permission দেওয়া হয়নি — নিচের 'Fix Drive Access' বাটনে ট্যাপ করুন।"
+            lastRecoveryIntent = e.intent
+            Log.w(TAG, "$tag: Drive permission not granted, recovery intent available", e)
+        } else {
+            lastError = e.message ?: e.javaClass.simpleName
+            lastRecoveryIntent = null
+            Log.e(TAG, "$tag failed: ${e.message}", e)
+        }
+    }
+
     // ── Public check ─────────────────────────────────────────────────────────
     // ✅ FIX: DRIVE_FILE scope না থাকলেও account আছে কিনা দেখো — Drive service
     //         build করার সময় scope automatically request হবে। শুধু account null
@@ -60,11 +87,13 @@ object DriveBackupManager {
         return try {
             val account = GoogleSignIn.getLastSignedInAccount(context)
             if (account == null) {
+                lastError = "কোনো Google account সাইন-ইন করা নেই।"
                 Log.w(TAG, "buildDriveService: no signed-in account")
                 return null
             }
             val androidAccount = account.account
             if (androidAccount == null) {
+                lastError = "Google account পাওয়া যায়নি — আবার sign-in করুন।"
                 Log.w(TAG, "buildDriveService: account.account is null")
                 return null
             }
@@ -78,7 +107,7 @@ object DriveBackupManager {
                 NetHttpTransport(), GsonFactory.getDefaultInstance(), credential
             ).setApplicationName("RasFocus+").build()
         } catch (e: Exception) {
-            Log.e(TAG, "buildDriveService failed: ${e.message}", e)
+            recordFailure("buildDriveService", e)
             null
         }
     }
@@ -87,8 +116,21 @@ object DriveBackupManager {
     private fun getOrCreateFolderId(context: Context, drive: Drive): String? = try {
         val prefs = context.getSharedPreferences(FOLDER_PREF_FILE, Context.MODE_PRIVATE)
         val cached = prefs.getString(FOLDER_PREF_KEY, null)
-        if (cached != null) {
-            cached
+        // ✅ FIX: cached folder ID আগে কখনো verify করা হতো না — folder delete হয়ে
+        // গেলে, account switch হলে, বা drive.file scope এর কারণে আর access না
+        // থাকলে, একই ভাঙা ID বারবার ব্যবহার হতো এবং নতুন folder কখনো তৈরি হতো
+        // না। এটাই সম্ভবত "যতবারই try করি একইভাবে fail করে" এর আসল কারণ।
+        val verifiedCached = cached?.let { id ->
+            try {
+                val f = drive.files().get(id).setFields("id,trashed").execute()
+                if (f.trashed == true) null else id
+            } catch (e: Exception) {
+                Log.w(TAG, "getOrCreateFolderId: cached folder $id no longer valid (${e.message}) — creating fresh one")
+                null
+            }
+        }
+        if (verifiedCached != null) {
+            verifiedCached
         } else {
             val query = "name='$APP_FOLDER_NAME' and mimeType='application/vnd.google-apps.folder' and trashed=false"
             val existing = drive.files().list().setQ(query).setSpaces("drive")
@@ -103,7 +145,7 @@ object DriveBackupManager {
             folderId?.also { prefs.edit().putString(FOLDER_PREF_KEY, it).apply() }
         }
     } catch (e: Exception) {
-        Log.e(TAG, "getOrCreateFolderId failed", e)
+        recordFailure("getOrCreateFolderId", e)
         null
     }
 
@@ -111,6 +153,8 @@ object DriveBackupManager {
     private suspend fun uploadNamedFile(
         context: Context, localFile: JFile, name: String, mime: String
     ): Boolean = withContext(Dispatchers.IO) {
+        lastError = null
+        lastRecoveryIntent = null
         try {
             val drive    = buildDriveService(context) ?: return@withContext false
             val folderId = getOrCreateFolderId(context, drive) ?: return@withContext false
@@ -129,7 +173,7 @@ object DriveBackupManager {
             }
             true
         } catch (e: Exception) {
-            Log.e(TAG, "uploadNamedFile($name) failed", e)
+            recordFailure("uploadNamedFile($name)", e)
             false
         }
     }
@@ -214,13 +258,15 @@ object DriveBackupManager {
             }
             true
         } catch (e: Exception) {
-            Log.e(TAG, "importSettings failed", e)
+            recordFailure("importSettings", e)
             false
         }
     }
 
     // ── Public: download diary JSON string from Drive ─────────────────────────
     suspend fun downloadDiaryJson(context: Context): String? = withContext(Dispatchers.IO) {
+        lastError = null
+        lastRecoveryIntent = null
         try {
             val drive    = buildDriveService(context) ?: return@withContext null
             val folderId = getOrCreateFolderId(context, drive) ?: return@withContext null
@@ -231,7 +277,7 @@ object DriveBackupManager {
             drive.files().get(found.id).executeMediaAsInputStream()
                 .bufferedReader().readText()
         } catch (e: Exception) {
-            Log.e(TAG, "downloadDiaryJson failed", e)
+            recordFailure("downloadDiaryJson", e)
             null
         }
     }

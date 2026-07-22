@@ -1190,6 +1190,15 @@ fun ProfessionalDiaryScreen(
 
                     if (driveAvailable) {
                         val scope = rememberCoroutineScope()
+                        var showFixDriveButton by remember { mutableStateOf(false) }
+                        val fixDriveLauncher = rememberLauncherForActivityResult(
+                            ActivityResultContracts.StartActivityForResult()
+                        ) {
+                            showFixDriveButton = false
+                            Toast.makeText(context,
+                                "Drive permission দেওয়া হয়েছে ✅ — এখন আবার Export/Import করুন",
+                                Toast.LENGTH_LONG).show()
+                        }
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             // Drive JSON export
                             Button(
@@ -1226,10 +1235,12 @@ fun ProfessionalDiaryScreen(
                                         val ok = DriveBackupManager.uploadDiaryJson(context, file)
                                         file.delete()
                                         busyMsg = ""
+                                        showFixDriveButton = DriveBackupManager.lastRecoveryIntent != null
                                         Toast.makeText(context,
-                                            if (ok) "âœ… JSON saved to Drive" else "âŒ Upload failed",
-                                            Toast.LENGTH_SHORT).show()
-                                        showExportMenu = false
+                                            if (ok) "✅ JSON saved to Drive"
+                                            else "❌ ${DriveBackupManager.lastError ?: "Upload failed"}",
+                                            Toast.LENGTH_LONG).show()
+                                        if (!showFixDriveButton) showExportMenu = false
                                     }
                                 },
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A90D9))
@@ -1248,10 +1259,12 @@ fun ProfessionalDiaryScreen(
                                             DriveBackupManager.uploadDiaryPdf(context, f)
                                         else false
                                         busyMsg = ""
+                                        showFixDriveButton = DriveBackupManager.lastRecoveryIntent != null
                                         Toast.makeText(context,
-                                            if (ok) "âœ… PDF saved to Drive" else "âŒ Upload failed",
-                                            Toast.LENGTH_SHORT).show()
-                                        showExportMenu = false
+                                            if (ok) "✅ PDF saved to Drive"
+                                            else "❌ ${DriveBackupManager.lastError ?: "Upload failed"}",
+                                            Toast.LENGTH_LONG).show()
+                                        if (!showFixDriveButton) showExportMenu = false
                                     }
                                 },
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A90D9))
@@ -1303,11 +1316,14 @@ fun ProfessionalDiaryScreen(
                                             }
                                         }
                                     } else {
-                                        Toast.makeText(context, "No backup found on Drive",
-                                            Toast.LENGTH_SHORT).show()
+                                        showFixDriveButton = DriveBackupManager.lastRecoveryIntent != null
+                                        val msg = DriveBackupManager.lastError
+                                            ?.let { "❌ $it" }
+                                            ?: "No backup found on Drive"
+                                        Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
                                     }
                                     busyMsg = ""
-                                    showExportMenu = false
+                                    if (!showFixDriveButton) showExportMenu = false
                                 }
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF34A853))
@@ -1315,6 +1331,18 @@ fun ProfessionalDiaryScreen(
                             Icon(Icons.Default.CloudDownload, null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(6.dp))
                             Text("Import from Drive")
+                        }
+
+                        if (showFixDriveButton) {
+                            Button(
+                                modifier = Modifier.fillMaxWidth(),
+                                onClick = {
+                                    DriveBackupManager.lastRecoveryIntent?.let {
+                                        fixDriveLauncher.launch(it)
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800))
+                            ) { Text("🔧 Fix Drive Access") }
                         }
 
                         // Backup Now (one-shot manual trigger)
