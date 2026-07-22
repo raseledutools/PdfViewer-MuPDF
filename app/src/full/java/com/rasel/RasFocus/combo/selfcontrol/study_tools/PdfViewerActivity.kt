@@ -1,4 +1,4 @@
-package com.rasel.RasFocus.selfcontrol.study_tools
+package com.rasel.RasFocus.combo.selfcontrol.study_tools
 
 import android.app.Activity
 import android.content.Context

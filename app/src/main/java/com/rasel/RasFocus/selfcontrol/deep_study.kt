@@ -54,12 +54,12 @@ import kotlin.math.*
 val DClrTeal     = Color(0xFF0EA5E9) // Sky Blue
 val DClrTealDark = Color(0xFF0284C7)
 val DClrWhite = Color(0xFFF8FAFC)
+val DClrPillBg = Color(0xFFFFFFFF).copy(alpha = 0.05f)   // subtle pill/track background
 val DClrDark = DClrPillBg  // was near-black text; now light — this IS the primary text color
 val DClrGray     = Color(0xFF94A3B8) // Slate 400 — brightened from Slate 500 for dark-bg legibility
 val DClrBg = Color(0xFF0B1220)
 val DClrSurface  = Color(0xFFFFFFFF).copy(alpha = 0.07f) // translucent glass card background
 val DClrGlassBorder = Color(0xFFFFFFFF).copy(alpha = 0.14f)
-val DClrPillBg = Color(0xFFFFFFFF).copy(alpha = 0.05f)   // subtle pill/track background
 val DClrPillSelectedBg = Color(0xFFFFFFFF).copy(alpha = 0.12f) // selected/pressed pill state
 val DClrBadgeTeal = DClrTeal.copy(alpha = 0.18f)         // icon-badge backgrounds (was 0xFFF0F9FF)
 val DClrBadgeGreen = Color(0xFF10B981).copy(alpha = 0.18f) // was 0xFFECFDF5
