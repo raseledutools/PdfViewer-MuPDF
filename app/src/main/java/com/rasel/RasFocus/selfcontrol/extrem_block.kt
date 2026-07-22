@@ -940,20 +940,35 @@ class RasFocusBlockingService : AccessibilityService() {
             }
             if (searchBarFocused) return false
 
-            // ── Search result page কিনা check ──
+            // ✅ FIX: আগে এখানে isSearchResultPage (results/search_results_container/
+            // channel_list_item view-id) দেখেই ধরে নেওয়া হতো এটা search page —
+            // কিন্তু channel_list_item এর মতো view-id Subscriptions tab, channel
+            // এর নিজের page, এমনকি home feed এর "channels for you" shelf-এও
+            // থাকতে পারে। তারপর resultTitleText নেওয়া হতো "title" view-id থেকে
+            // — এই view-id প্রায় সব video thumbnail এর title-এই ব্যবহার হয়
+            // (শুধু search result না, normal home feed video-তেও)। ফলে home
+            // feed এ কোনো video title এ কাকতালীয়ভাবে blocked keyword থাকলেই —
+            // user কিছুই search না করা সত্ত্বেও — ভুলভাবে "adult content in
+            // search" বলে block হয়ে যেত।
+            //
+            // "search result content" বলে কিছু তখনই থাকতে পারে যখন আসলেই কোনো
+            // query search bar-এ আছে — তাই সবার আগে সেটা verify করব; কোনো
+            // query না থাকলে কোনো title scan-ই করব না, কারণ তখন এটা search
+            // result page হতেই পারে না।
+            val searchQueryText = ytSearchBarIds.mapNotNull { id ->
+                root.findAccessibilityNodeInfosByViewId(id).firstOrNull()?.text?.toString()
+            }.firstOrNull()?.lowercase()?.trim() ?: ""
+
+            if (searchQueryText.isBlank()) return false
+
+            // ── Search result page কিনা check (corroborating signal) ──
             // YouTube search result URL: vnd.youtube://results?search_query=...
-            // Accessibility tree-তে search_results_container বা চলমান title দেখে বুঝব
             val isSearchResultPage =
                 root.findAccessibilityNodeInfosByViewId("com.google.android.youtube:id/results").isNotEmpty() ||
                 root.findAccessibilityNodeInfosByViewId("com.google.android.youtube:id/search_results_container").isNotEmpty() ||
                 root.findAccessibilityNodeInfosByViewId("com.google.android.youtube:id/channel_list_item").isNotEmpty()
 
             if (!isSearchResultPage) return false  // search result page নয় → home/feed → block করব না
-
-            // ── Search query text নিয়ে keyword check ──
-            val searchQueryText = ytSearchBarIds.mapNotNull { id ->
-                root.findAccessibilityNodeInfosByViewId(id).firstOrNull()?.text?.toString()
-            }.firstOrNull()?.lowercase()?.trim() ?: ""
 
             // Result page title থেকেও নিই (e.g. "porn - YouTube")
             val resultTitleText = (
