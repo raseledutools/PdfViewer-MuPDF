@@ -570,6 +570,21 @@
             android:value="RasFocus Button Phone Mode — focus-session app blocking overlay" />
     </service>
 
+    <!-- New: Deep Study's allow-list enforcement service. Same
+         foregroundServiceType pattern as BpBlockingService above —
+         "specialUse" (permission already declared elsewhere in this
+         manifest) rather than any type needing a permission that isn't
+         present, to avoid the same startForeground() SecurityException
+         crash that was already found and fixed for BpBlockingService. -->
+    <service
+        android:name=".selfcontrol.DeepStudyBlockerService"
+        android:exported="false"
+        android:foregroundServiceType="specialUse">
+        <property
+            android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+            android:value="RasFocus Deep Study — allow-list app blocking during focus sessions" />
+    </service>
+
     <!-- STREAMING_CHUNK:Finalizing receivers and child modules... -->
 
     <!-- ✅ Child Module: Firebase command listener service -->
