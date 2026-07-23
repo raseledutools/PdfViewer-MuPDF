@@ -286,21 +286,34 @@ fun NativePdfViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
                     isLoading   = false
                 }
 
-                // Render pages one by one
+                // Render pages one by one — bitmap is created here immediately so
+                // the viewer never shows an infinite spinner. onLoadBitmap is only
+                // used for the higher-resolution re-render on zoom.
                 for (i in 0 until count) {
-                    val page     = doc.openPage(i)
+                    val page      = doc.openPage(i)
                     val screenDpi = context.resources.displayMetrics.densityDpi
                     val origW = page.getPageWidth(screenDpi).coerceAtLeast(1)
                     val origH = page.getPageHeight(screenDpi).coerceAtLeast(1)
-                    val scale = screenW.toFloat() / origW
+                    val baseScale = screenW.toFloat() / origW
                     val bmpW  = screenW
-                    val bmpH  = (origH * scale).roundToInt().coerceAtLeast(1)
+                    val bmpH  = (origH * baseScale).roundToInt().coerceAtLeast(1)
                     val textPage: PdfTextPage? = try { page.openTextPage() } catch (_: Exception) { null }
+
+                    // Render bitmap synchronously on IO thread
+                    val bmp = try {
+                        val b = Bitmap.createBitmap(bmpW, bmpH, Bitmap.Config.ARGB_8888)
+                        b.eraseColor(AColor.WHITE)
+                        page.renderPageBitmap(b, 0, 0, bmpW, bmpH, true)
+                        b
+                    } catch (e: Exception) { null }
+
+                    page.close()
+
                     withContext(Dispatchers.Main) {
                         if (i < pages.size)
-                            pages[i] = PageData(textPage, i, bmpW, bmpH)
+                            pages[i] = PageData(textPage, i, bmpW, bmpH, renderedAtScale = 1f, bitmap = bmp)
+                        if (bmp != null) bitmapCache.put(i, bmp)
                     }
-                    page.close()
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
@@ -686,15 +699,11 @@ private fun PdfPageItem(
             }
     ) {
         // ── Render page bitmap ─────────────────────────────────────────────
+        // Bitmap is pre-rendered in the load loop; onLoadBitmap is only triggered
+        // by the zoom debounce for a higher-resolution re-render.
         androidx.compose.foundation.layout.Box(
             Modifier.fillMaxWidth().height(with(density) { imgHeightPx.toDp() }).background(Color.White)
         ) {
-            LaunchedEffect(pageData.pageIndex) {
-                if (pageData.bitmap == null) {
-                    onLoadBitmap(1f)
-                }
-            }
-
             if (pageData.bitmap != null) {
                 Image(
                     bitmap             = pageData.bitmap.asImageBitmap(),

@@ -1,115 +1,49 @@
 package com.rasel.RasFocus.combo.selfcontrol.study_tools
 
-import android.app.Activity
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.Typeface
-import android.graphics.Paint as APaint
-import android.graphics.Color as AColor
+import android.graphics.pdf.PdfDocument
 import android.net.Uri
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.*
-import androidx.compose.foundation.gestures.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.*
-import androidx.compose.ui.input.pointer.*
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
 import androidx.core.view.WindowCompat
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
+import java.io.File
 import java.io.InputStream
 import java.util.zip.ZipInputStream
-import kotlin.math.abs
 import kotlin.math.roundToInt
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DATA MODELS
-// ─────────────────────────────────────────────────────────────────────────────
-
-data class PptxSlide(
-    val index: Int,
-    val shapes: List<PptxShape>,
-    val bgColor: Int = android.graphics.Color.WHITE
-)
-
-sealed class PptxShape {
-    data class TextBox(
-        val text: String,
-        val bold: Boolean = false,
-        val italic: Boolean = false,
-        val fontSize: Float = 24f,
-        val color: Int = android.graphics.Color.BLACK,
-        val x: Float = 0f, val y: Float = 0f,
-        val w: Float = 1f, val h: Float = 1f,
-        val align: APaint.Align = APaint.Align.LEFT
-    ) : PptxShape()
-
-    data class Rect(
-        val x: Float, val y: Float, val w: Float, val h: Float,
-        val fillColor: Int = android.graphics.Color.TRANSPARENT,
-        val strokeColor: Int = android.graphics.Color.GRAY,
-        val strokeWidth: Float = 2f
-    ) : PptxShape()
-
-    data class EmbeddedImage(
-        val bitmap: Bitmap,
-        val x: Float, val y: Float, val w: Float, val h: Float
-    ) : PptxShape()
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ACTIVITY
+// PptxViewerActivity — converts .pptx → PDF (one page per slide) → PdfViewerActivity
+// Zero external dependencies: ZIP + XmlPullParser + android.graphics.pdf.PdfDocument
 // ─────────────────────────────────────────────────────────────────────────────
 
 class PptxViewerActivity : ComponentActivity() {
-
-    private val uriState   = mutableStateOf<Uri?>(null)
-    private val nameState  = mutableStateOf("Presentation")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        loadFromIntent(intent)
-        setContent {
-            MaterialTheme {
-                PptxViewer(
-                    uri      = uriState.value,
-                    fileName = nameState.value,
-                    onClose  = { finish() }
-                )
-            }
-        }
-    }
 
-    private fun loadFromIntent(intent: android.content.Intent?) {
         val uri: Uri? = when {
             intent?.action == android.content.Intent.ACTION_VIEW && intent.data != null ->
                 intent.data
@@ -117,6 +51,7 @@ class PptxViewerActivity : ComponentActivity() {
                 Uri.parse(intent.getStringExtra("pptx_uri"))
             else -> null
         }
+
         if (uri != null && uri.scheme == "content") {
             try {
                 contentResolver.takePersistableUriPermission(
@@ -124,8 +59,75 @@ class PptxViewerActivity : ComponentActivity() {
                 )
             } catch (_: SecurityException) {}
         }
-        uriState.value  = uri
-        nameState.value = uri?.let { getFileName(it) } ?: "Presentation"
+
+        val fileName = uri?.let { getFileName(it) } ?: "Presentation"
+
+        setContent {
+            val converting = remember { mutableStateOf(true) }
+            val error      = remember { mutableStateOf("") }
+
+            LaunchedEffect(uri) {
+                if (uri == null) {
+                    error.value = "ফাইল পাওয়া যায়নি"; converting.value = false; return@LaunchedEffect
+                }
+                withContext(Dispatchers.IO) {
+                    try {
+                        val slides  = parsePptx(uri)
+                        val pdfFile = renderToPdf(fileName, slides)
+                        val pdfUri  = FileProvider.getUriForFile(
+                            this@PptxViewerActivity,
+                            "${packageName}.fileprovider",
+                            pdfFile
+                        )
+                        withContext(Dispatchers.Main) {
+                            val intent = android.content.Intent(
+                                this@PptxViewerActivity,
+                                com.rasel.RasFocus.combo.selfcontrol.study_tools.PdfViewerActivity::class.java
+                            ).apply {
+                                action = android.content.Intent.ACTION_VIEW
+                                setDataAndType(pdfUri, "application/pdf")
+                                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                putExtra("source_name", fileName)
+                            }
+                            startActivity(intent)
+                            finish()
+                        }
+                    } catch (e: Exception) {
+                        withContext(Dispatchers.Main) {
+                            error.value    = "Convert ব্যর্থ: ${e.message}"
+                            converting.value = false
+                        }
+                    }
+                }
+            }
+
+            MaterialTheme {
+                Box(
+                    Modifier.fillMaxSize().background(ComposeColor(0xFF111111)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (converting.value) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            CircularProgressIndicator(color = ComposeColor(0xFF4FACFE))
+                            Spacer(Modifier.height(12.dp))
+                            Text("Presentation → PDF convert করছি…",
+                                color = ComposeColor(0xFFF5F5F5), fontSize = 14.sp)
+                            Text(fileName, color = ComposeColor(0xFF777777), fontSize = 11.sp,
+                                modifier = Modifier.padding(top = 4.dp))
+                        }
+                    } else if (error.value.isNotEmpty()) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(32.dp)) {
+                            Text("⚠️", fontSize = 36.sp)
+                            Spacer(Modifier.height(12.dp))
+                            Text(error.value, color = ComposeColor(0xFFFF5C5C), fontSize = 13.sp)
+                            Spacer(Modifier.height(20.dp))
+                            Button(onClick = { finish() }) { Text("← ফিরে যান") }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private fun getFileName(uri: Uri): String {
@@ -140,245 +142,144 @@ class PptxViewerActivity : ComponentActivity() {
         }
         return name ?: uri.lastPathSegment?.substringAfterLast('/') ?: "Presentation"
     }
-}
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PPTX PARSER  (ZIP + XmlPullParser — zero external deps)
-// ─────────────────────────────────────────────────────────────────────────────
+    // ── PPTX Parser ────────────────────────────────────────────────────────────
 
-object PptxParser {
+    private data class TextShape(
+        val text: String, val bold: Boolean, val italic: Boolean,
+        val fontSize: Float, val color: Int,
+        val x: Float, val y: Float, val w: Float, val h: Float
+    )
+    private data class Slide(
+        val shapes: List<TextShape>,
+        val bgColor: Int = Color.WHITE
+    )
 
-    fun parse(context: Context, uri: Uri): List<PptxSlide> {
-        val zipBytes = context.contentResolver.openInputStream(uri)?.readBytes()
-            ?: return emptyList()
-
-        // 1. Read all ZIP entries into memory once
-        val entries = mutableMapOf<String, ByteArray>()
+    private fun parsePptx(uri: Uri): List<Slide> {
+        val zipBytes = contentResolver.openInputStream(uri)?.readBytes() ?: return emptyList()
+        val entries  = mutableMapOf<String, ByteArray>()
         ZipInputStream(zipBytes.inputStream()).use { zip ->
             var entry = zip.nextEntry
             while (entry != null) {
                 if (!entry.isDirectory) entries[entry.name] = zip.readBytes()
-                zip.closeEntry()
-                entry = zip.nextEntry
+                zip.closeEntry(); entry = zip.nextEntry
             }
         }
+        // Collect slides by numbered name (slide1.xml, slide2.xml …)
+        val slideKeys = entries.keys
+            .filter { it.matches(Regex("ppt/slides/slide\\d+\\.xml")) }
+            .sortedWith(compareBy { it.removePrefix("ppt/slides/slide").removeSuffix(".xml").toIntOrNull() ?: 0 })
 
-        // 2. Find slide order from presentation.xml
-        val slideOrder = parseSlideOrder(entries["ppt/presentation.xml"] ?: return emptyList())
-
-        // 3. Parse each slide
-        return slideOrder.mapIndexedNotNull { idx, rId ->
-            val path = "ppt/slides/$rId"
-            val xml  = entries[path] ?: return@mapIndexedNotNull null
-            parseSlide(idx, xml, entries)
-        }
+        return slideKeys.map { parseSlide(entries[it]!!) }
     }
 
-    private fun parseSlideOrder(xml: ByteArray): List<String> {
-        val order = mutableListOf<String>()
-        val xpp   = newParser(xml.inputStream())
+    private fun parseSlide(xml: ByteArray): Slide {
+        val shapes = mutableListOf<TextShape>()
+        var bgColor = Color.WHITE
+        val xpp = newParser(xml.inputStream())
         var event = xpp.eventType
-        while (event != XmlPullParser.END_DOCUMENT) {
-            if (event == XmlPullParser.START_TAG && xpp.name == "p:sld") {
-                // r:id attr points to slide relationship
-                for (i in 0 until xpp.attributeCount) {
-                    if (xpp.getAttributeName(i).endsWith("id")) {
-                        // resolve via _rels
-                        break
-                    }
-                }
-            }
-            event = xpp.next()
-        }
-        // Fallback: look for slide filenames directly
-        return (1..100).mapNotNull { i ->
-            val name = "slide$i.xml"
-            if (true) name else null   // always include, parser skips missing
-        }.take(50)
-    }
-
-    private fun parseSlide(index: Int, xml: ByteArray, allEntries: Map<String, ByteArray>): PptxSlide {
-        val shapes  = mutableListOf<PptxShape>()
-        var bgColor = android.graphics.Color.WHITE
-
-        val xpp   = newParser(xml.inputStream())
-        var event = xpp.eventType
-
-        // State for current shape
-        var curText    = StringBuilder()
-        var curBold    = false
-        var curItalic  = false
-        var curSize    = 24f
-        var curColor   = android.graphics.Color.BLACK
-        var curX       = 0f; var curY = 0f
-        var curW       = 1f; var curH = 1f
-        var inTextBody = false
-        var inPara     = false
+        var curX = 0f; var curY = 0f; var curW = 1f; var curH = 1f
+        val curText = StringBuilder()
+        var bold = false; var italic = false; var size = 24f; var color = Color.BLACK
+        var inBody = false
 
         while (event != XmlPullParser.END_DOCUMENT) {
             when (event) {
                 XmlPullParser.START_TAG -> when (xpp.name) {
-                    // Slide background solid fill
-                    "p:bg"    -> {}
-                    "a:solidFill" -> {
-                        // read srgbClr child
-                    }
                     "a:srgbClr" -> {
                         val hex = xpp.getAttributeValue(null, "val") ?: ""
-                        if (hex.length == 6) {
-                            try {
-                                bgColor = android.graphics.Color.parseColor("#$hex")
-                            } catch (_: Exception) {}
-                        }
+                        if (hex.length == 6) try { bgColor = Color.parseColor("#$hex") } catch (_: Exception) {}
                     }
-
-                    // Shape position/size from xfrm
                     "a:off" -> {
-                        curX = (xpp.getAttributeValue(null, "x")?.toLongOrNull()
-                            ?: 0L).toFloat() / 9_144_000f   // EMU → fraction of slide
-                        curY = (xpp.getAttributeValue(null, "y")?.toLongOrNull()
-                            ?: 0L).toFloat() / 6_858_000f
+                        curX = (xpp.getAttributeValue(null, "x")?.toLongOrNull() ?: 0L).toFloat() / 9_144_000f
+                        curY = (xpp.getAttributeValue(null, "y")?.toLongOrNull() ?: 0L).toFloat() / 6_858_000f
                     }
                     "a:ext" -> {
-                        curW = (xpp.getAttributeValue(null, "cx")?.toLongOrNull()
-                            ?: 9_144_000L).toFloat() / 9_144_000f
-                        curH = (xpp.getAttributeValue(null, "cy")?.toLongOrNull()
-                            ?: 6_858_000L).toFloat() / 6_858_000f
+                        curW = (xpp.getAttributeValue(null, "cx")?.toLongOrNull() ?: 9_144_000L).toFloat() / 9_144_000f
+                        curH = (xpp.getAttributeValue(null, "cy")?.toLongOrNull() ?: 6_858_000L).toFloat() / 6_858_000f
                     }
-
-                    // Text
-                    "p:txBody", "a:txBody" -> { inTextBody = true; curText = StringBuilder() }
-                    "a:p"  -> { inPara = true }
+                    "p:txBody", "a:txBody" -> { inBody = true; curText.clear() }
                     "a:rPr" -> {
-                        curBold   = xpp.getAttributeValue(null, "b") == "1"
-                        curItalic = xpp.getAttributeValue(null, "i") == "1"
-                        val sz    = xpp.getAttributeValue(null, "sz")?.toIntOrNull()
-                        if (sz != null) curSize = sz / 100f
+                        bold   = xpp.getAttributeValue(null, "b") == "1"
+                        italic = xpp.getAttributeValue(null, "i") == "1"
+                        val sz = xpp.getAttributeValue(null, "sz")?.toIntOrNull()
+                        if (sz != null) size = sz / 100f
                     }
-                    "a:t"  -> {
-                        // text content read in TEXT event
-                    }
+                    "a:p" -> if (inBody) curText.append("")
                 }
-
-                XmlPullParser.TEXT -> {
-                    if (inTextBody) curText.append(xpp.text ?: "")
-                }
-
+                XmlPullParser.TEXT -> if (inBody) curText.append(xpp.text ?: "")
                 XmlPullParser.END_TAG -> when (xpp.name) {
-                    "a:p" -> {
-                        if (inPara) curText.append("\n")
-                        inPara = false
-                    }
+                    "a:p"  -> if (inBody) curText.append("\n")
                     "p:sp" -> {
                         val txt = curText.toString().trim()
                         if (txt.isNotEmpty()) {
-                            shapes.add(PptxShape.TextBox(
-                                text = txt, bold = curBold, italic = curItalic,
-                                fontSize = curSize.coerceIn(8f, 96f),
-                                color    = curColor,
-                                x = curX, y = curY, w = curW, h = curH
-                            ))
+                            shapes.add(TextShape(txt, bold, italic, size.coerceIn(8f, 96f),
+                                color, curX, curY, curW, curH))
                         }
-                        // Reset shape state
-                        curText   = StringBuilder(); curBold  = false
-                        curItalic = false; curSize = 24f; curColor = android.graphics.Color.BLACK
-                        inTextBody = false
+                        curText.clear(); inBody = false; size = 24f; bold = false; italic = false; color = Color.BLACK
                     }
                 }
             }
             event = xpp.next()
         }
-
-        return PptxSlide(index, shapes, bgColor)
+        return Slide(shapes, bgColor)
     }
 
-    private fun newParser(stream: InputStream): XmlPullParser {
-        val factory = XmlPullParserFactory.newInstance().apply { isNamespaceAware = true }
-        return factory.newPullParser().apply { setInput(stream, "UTF-8") }
-    }
-}
+    // ── PDF Renderer ───────────────────────────────────────────────────────────
+    // Each slide → one PDF page (landscape 842×595 = A4 landscape)
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SLIDE RENDERER  →  Bitmap
-// ─────────────────────────────────────────────────────────────────────────────
+    private fun renderToPdf(name: String, slides: List<Slide>): File {
+        val pageW = 842; val pageH = 595   // A4 landscape
+        val pdf   = PdfDocument()
 
-object SlideRenderer {
+        slides.forEachIndexed { i, slide ->
+            val info   = PdfDocument.PageInfo.Builder(pageW, pageH, i + 1).create()
+            val page   = pdf.startPage(info)
+            val canvas = page.canvas
 
-    fun render(slide: PptxSlide, width: Int): Bitmap {
-        val height  = (width * 9f / 16f).roundToInt()   // 16:9 default
-        val bmp     = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-        val canvas  = android.graphics.Canvas(bmp)
+            // Background
+            canvas.drawColor(slide.bgColor)
 
-        // Background
-        canvas.drawColor(slide.bgColor)
+            slide.shapes.forEach { shape ->
+                val px = shape.x * pageW
+                val py = shape.y * pageH
+                val pw = shape.w * pageW
+                val ph = shape.h * pageH
 
-        // Shapes
-        slide.shapes.forEach { shape ->
-            when (shape) {
-                is PptxShape.TextBox -> {
-                    val px = shape.x * width
-                    val py = shape.y * height
-                    val pw = shape.w * width
-                    val ph = shape.h * height
-
-                    val paint = APaint(APaint.ANTI_ALIAS_FLAG).apply {
-                        color     = shape.color
-                        textSize  = shape.fontSize * (width / 960f)
-                        typeface  = Typeface.create(
-                            Typeface.DEFAULT,
-                            when {
-                                shape.bold && shape.italic -> Typeface.BOLD_ITALIC
-                                shape.bold   -> Typeface.BOLD
-                                shape.italic -> Typeface.ITALIC
-                                else         -> Typeface.NORMAL
-                            }
-                        )
-                        textAlign = shape.align
-                    }
-
-                    // Word-wrap
-                    val lines = wrapText(shape.text, paint, pw)
-                    val lineH = paint.textSize * 1.3f
-                    lines.forEachIndexed { i, line ->
-                        val lx = when (shape.align) {
-                            APaint.Align.CENTER -> px + pw / 2
-                            APaint.Align.RIGHT  -> px + pw
-                            else               -> px + 8f
-                        }
-                        val ly = py + 8f + (i + 1) * lineH
-                        if (ly < py + ph) canvas.drawText(line, lx, ly, paint)
-                    }
+                val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    textSize  = shape.fontSize * (pageW / 960f)
+                    color     = shape.color
+                    typeface  = Typeface.create(Typeface.DEFAULT,
+                        when {
+                            shape.bold && shape.italic -> Typeface.BOLD_ITALIC
+                            shape.bold   -> Typeface.BOLD
+                            shape.italic -> Typeface.ITALIC
+                            else         -> Typeface.NORMAL
+                        })
                 }
 
-                is PptxShape.Rect -> {
-                    val rect = RectF(
-                        shape.x * width, shape.y * height,
-                        (shape.x + shape.w) * width, (shape.y + shape.h) * height
-                    )
-                    if (shape.fillColor != android.graphics.Color.TRANSPARENT) {
-                        canvas.drawRect(rect, APaint().apply { color = shape.fillColor })
-                    }
-                    canvas.drawRect(rect, APaint().apply {
-                        color     = shape.strokeColor
-                        strokeWidth = shape.strokeWidth
-                        style     = APaint.Style.STROKE
-                    })
-                }
-
-                is PptxShape.EmbeddedImage -> {
-                    val dst = RectF(
-                        shape.x * width, shape.y * height,
-                        (shape.x + shape.w) * width, (shape.y + shape.h) * height
-                    )
-                    canvas.drawBitmap(shape.bitmap, null, dst, null)
+                val lines = wrapText(shape.text, paint, pw)
+                val lineH = paint.textSize * 1.3f
+                lines.forEachIndexed { li, line ->
+                    val lx = px + 6f
+                    val ly = py + 6f + (li + 1) * lineH
+                    if (ly < py + ph) canvas.drawText(line, lx, ly, paint)
                 }
             }
+
+            pdf.finishPage(page)
         }
 
-        return bmp
+        val cacheDir = File(cacheDir, "converted_pdfs")
+        cacheDir.mkdirs()
+        val safe = name.replace(Regex("[^a-zA-Z0-9._-]"), "_").removeSuffix(".pptx")
+        val file = File(cacheDir, "${safe}.pdf")
+        file.outputStream().use { pdf.writeTo(it) }
+        pdf.close()
+        return file
     }
 
-    private fun wrapText(text: String, paint: APaint, maxWidth: Float): List<String> {
+    private fun wrapText(text: String, paint: Paint, maxWidth: Float): List<String> {
         val result = mutableListOf<String>()
         text.split("\n").forEach { paragraph ->
             val words = paragraph.split(" ")
@@ -396,201 +297,9 @@ object SlideRenderer {
         }
         return result
     }
-}
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MAIN COMPOSABLE
-// ─────────────────────────────────────────────────────────────────────────────
-
-@Composable
-fun PptxViewer(uri: Uri?, fileName: String, onClose: () -> Unit) {
-    val context   = LocalContext.current
-    val scope     = rememberCoroutineScope()
-    val density   = LocalDensity.current
-
-    var slides        by remember { mutableStateOf<List<PptxSlide>>(emptyList()) }
-    var bitmaps       by remember { mutableStateOf<Map<Int, Bitmap>>(emptyMap()) }
-    var isLoading     by remember { mutableStateOf(true) }
-    var errorMsg      by remember { mutableStateOf("") }
-    var currentSlide  by remember { mutableStateOf(1) }
-    var controlsVisible by remember { mutableStateOf(true) }
-
-    // Zoom/pan state
-    var scale   by remember { mutableFloatStateOf(1f) }
-    var offsetX by remember { mutableFloatStateOf(0f) }
-
-    val screenW = context.resources.displayMetrics.widthPixels
-    val listState = rememberLazyListState()
-
-    // Load
-    LaunchedEffect(uri) {
-        if (uri == null) { isLoading = false; errorMsg = "ফাইল পাওয়া যায়নি"; return@LaunchedEffect }
-        isLoading = true
-        withContext(Dispatchers.IO) {
-            try {
-                val parsed = PptxParser.parse(context, uri)
-                withContext(Dispatchers.Main) {
-                    slides    = parsed
-                    isLoading = false
-                }
-                // Render slide bitmaps progressively
-                parsed.forEachIndexed { idx, slide ->
-                    val bmp = SlideRenderer.render(slide, screenW)
-                    withContext(Dispatchers.Main) {
-                        bitmaps = bitmaps + (idx to bmp)
-                    }
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    isLoading = false
-                    errorMsg  = "খুলতে পারিনি: ${e.message}"
-                }
-            }
-        }
-    }
-
-    // Track current slide
-    LaunchedEffect(listState.firstVisibleItemIndex) {
-        currentSlide = listState.firstVisibleItemIndex + 1
-    }
-
-    val VA_BG    = Color(0xFF111111)
-    val VA_WHITE = Color(0xFFF5F5F5)
-
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(VA_BG)
-            .systemBarsPadding()
-    ) {
-        when {
-            isLoading -> {
-                Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
-                    CircularProgressIndicator(color = Color(0xFF4FACFE))
-                    Spacer(Modifier.height(12.dp))
-                    Text("Presentation খুলছি…", color = VA_WHITE, fontSize = 14.sp)
-                }
-            }
-            errorMsg.isNotEmpty() -> {
-                Text(errorMsg, color = Color.Red, modifier = Modifier.align(Alignment.Center))
-            }
-            slides.isEmpty() -> {
-                Text("কোনো slide পাওয়া যায়নি", color = VA_WHITE, modifier = Modifier.align(Alignment.Center))
-            }
-            else -> {
-                // Slide list with zoom+pan
-                val transformState = rememberTransformableState { zoomChange, panChange, _ ->
-                    scale   = (scale * zoomChange).coerceIn(1f, 5f)
-                    val maxOff = (screenW * (scale - 1f)) / 2f
-                    offsetX = (offsetX + panChange.x).coerceIn(-maxOff, maxOff)
-                    if (scale == 1f) offsetX = 0f
-                }
-
-                LazyColumn(
-                    state  = listState,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .transformable(transformState)
-                        .graphicsLayer(
-                            scaleX       = scale,
-                            scaleY       = scale,
-                            translationX = offsetX
-                        )
-                        .pointerInput(Unit) {
-                            detectTapGestures(
-                                onTap = { controlsVisible = !controlsVisible },
-                                onDoubleTap = { offset ->
-                                    if (scale > 1f) {
-                                        scale = 1f; offsetX = 0f
-                                    } else {
-                                        scale = 2.5f
-                                        val sw = screenW.toFloat()
-                                        offsetX = ((sw / 2f) - offset.x) * (scale - 1f)
-                                        val maxOff = (sw * (scale - 1f)) / 2f
-                                        offsetX = offsetX.coerceIn(-maxOff, maxOff)
-                                    }
-                                }
-                            )
-                        },
-                    contentPadding  = PaddingValues(vertical = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    itemsIndexed(slides) { idx, _ ->
-                        val bmp = bitmaps[idx]
-                        Box(
-                            Modifier
-                                .fillMaxWidth()
-                                .aspectRatio(16f / 9f)
-                                .background(Color.White),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (bmp != null) {
-                                Image(
-                                    bitmap             = bmp.asImageBitmap(),
-                                    contentDescription = "Slide ${idx + 1}",
-                                    contentScale       = ContentScale.FillWidth,
-                                    modifier           = Modifier.fillMaxSize()
-                                )
-                            } else {
-                                CircularProgressIndicator(
-                                    modifier    = Modifier.size(28.dp),
-                                    color       = Color(0xFF4FACFE),
-                                    strokeWidth = 2.dp
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // Top bar
-                androidx.compose.animation.AnimatedVisibility(
-                    visible  = controlsVisible,
-                    enter    = fadeIn(),
-                    exit     = fadeOut(),
-                    modifier = Modifier.align(Alignment.TopCenter)
-                ) {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .background(VA_BG.copy(alpha = 0.93f))
-                            .padding(horizontal = 6.dp, vertical = 5.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(onClick = onClose, modifier = Modifier.size(42.dp)) {
-                            Icon(Icons.Default.ArrowBack, null, tint = VA_WHITE, modifier = Modifier.size(22.dp))
-                        }
-                        Text(
-                            fileName, color = VA_WHITE, fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold, maxLines = 1,
-                            overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-
-                // Bottom bar — slide indicator
-                androidx.compose.animation.AnimatedVisibility(
-                    visible  = controlsVisible,
-                    enter    = fadeIn(),
-                    exit     = fadeOut(),
-                    modifier = Modifier.align(Alignment.BottomCenter)
-                ) {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .background(VA_BG.copy(alpha = 0.93f))
-                            .padding(horizontal = 16.dp, vertical = 10.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment     = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "$currentSlide / ${slides.size}",
-                            color      = VA_WHITE,
-                            fontSize   = 13.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-            }
-        }
+    private fun newParser(stream: InputStream): XmlPullParser {
+        val f = XmlPullParserFactory.newInstance().apply { isNamespaceAware = true }
+        return f.newPullParser().apply { setInput(stream, "UTF-8") }
     }
 }
