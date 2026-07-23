@@ -86,6 +86,27 @@ class AdBlocker(private val context: Context) {
         private val ADULT_DOMAINS: Set<String>
             get() = FirebaseKeywordSync.getAdultDomains()
 
+        // ── Trusted domains — never blocked regardless of adult-block settings ──
+        // accounts.google.com (Google sign-in), mail.google.com (Gmail),
+        // googleapis.com (OAuth flows) — adult keyword/domain check এগুলোকে
+        // কখনো block করবে না।
+        private val TRUSTED_DOMAINS = setOf(
+            "accounts.google.com",
+            "mail.google.com",
+            "gmail.com",
+            "google.com",
+            "gstatic.com",
+            "googleapis.com",
+            "googleusercontent.com",
+            "youtube.com",
+            "bing.com",
+            "duckduckgo.com",
+            "wikipedia.org"
+        )
+
+        fun isTrustedDomain(host: String): Boolean =
+            TRUSTED_DOMAINS.any { host == it || host.endsWith(".$it") }
+
         fun buildBlockedPage(url: String, reason: BlockReason): String {
             val (icon, title, subtitle, color) = when (reason) {
                 BlockReason.ADULT    -> Quadruple("🔒", "Site Blocked",    "This site contains adult content and has been blocked for safe browsing.", "#E53E3E")
@@ -271,6 +292,11 @@ class AdBlocker(private val context: Context) {
      */
     fun injectContentScanner(view: WebView?) {
         if (view == null || !isAdultBlockEnabled) return
+        // ✅ FIX: Google auth / Gmail page এ DOM text scan করব না — এই pages এ
+        // কখনো adult keyword match করা উচিত না, scanner inject করলেও
+        // false-positive এ block হওয়ার risk থাকে।
+        val currentHost = android.net.Uri.parse(view.url ?: "").host?.lowercase() ?: ""
+        if (Companion.isTrustedDomain(currentHost)) return
 
         val jsKeywordsArray = ADULT_URL_KEYWORDS.joinToString("','", "['", "']")
 
@@ -436,6 +462,9 @@ class AdBlocker(private val context: Context) {
         if (!isAdultBlockEnabled) return null
         return try {
             val host = android.net.Uri.parse(url).host?.lowercase() ?: return null
+            // ✅ FIX: Gmail / Google sign-in block — trusted domains কখনো block হবে না
+            if (Companion.isTrustedDomain(host)) return null
+
             val lowerUrl = url.lowercase()
 
             if (isAdultHost(host) || isInRemoteBlocklist(host)) return buildBlockedPage(url, BlockReason.ADULT)
@@ -459,6 +488,10 @@ class AdBlocker(private val context: Context) {
         val host = request.url?.host?.lowercase() ?: return null
         val lowerUrl = url.lowercase()
         val isMainFrame = request.isForMainFrame
+
+        // ✅ FIX: Google auth / Gmail কখনো block করবে না — এই domains এ
+        // adult keyword / domain check bypass করা হবে
+        if (Companion.isTrustedDomain(host)) return null
 
         if (isKidsMode && isMainFrame) {
             val allowed = kidsWhitelist.any { host.endsWith(it) || host == it }

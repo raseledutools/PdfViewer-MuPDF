@@ -154,8 +154,8 @@ class FloatingWindowService : Service() {
         windows[windowId] = fw
 
         val dm = resources.displayMetrics
-        fw.winW = (dm.widthPixels  * 0.60f).toInt()
-        fw.winH = (dm.heightPixels * 0.50f).toInt()
+        fw.winW = (dm.widthPixels  * 0.96f).toInt()
+        fw.winH = (dm.heightPixels * 0.92f).toInt()
 
         // নতুন window গুলো একটু একটু করে cascade (সরিয়ে) বসাও, যাতে একে অপরকে পুরোপুরি না ঢাকে
         val cascadeOffset = (windows.size - 1) * dp(28)

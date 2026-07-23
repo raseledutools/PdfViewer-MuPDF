@@ -1142,7 +1142,7 @@ fun TopBrowserBar(vm: BrowserViewModel) {
                 Surface(
                     modifier = Modifier
                         .weight(1f)
-                        .height(40.dp),
+                        .height(56.dp),
                     shape           = RoundedCornerShape(20.dp),
                     color           = barBg,
                     border          = if (vm.isAddressBarFocused)
