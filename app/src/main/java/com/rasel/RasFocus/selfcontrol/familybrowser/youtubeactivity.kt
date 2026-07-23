@@ -392,8 +392,18 @@ class YoutubeActivity : ComponentActivity() {
                     // JS-based skip এর মতো video render pipeline এ কোনো interference নেই।
 
                     // ── 1a. Known ad network domains (domain-level) ───────────────────────
+                    // ✅ FIX: a847253 এ url.contains(it) → host == it || host.endsWith(".$it")
+                    // এ বদলানো হয়েছিল "more precise" করতে, কিন্তু এটাই blocking ভেঙেছে।
+                    // YouTube এর real ad request গুলো সরাসরি "doubleclick.net" এ না গিয়ে
+                    // deep multi-level subdomain এ যায় (যেমন "r1---sn-abc.googlevideo-ads.
+                    // doubleclick.net") — host.endsWith(".doubleclick.net") এটা technically
+                    // ধরে, কিন্তু AD_SERVERS এ "googleads.g.doubleclick.net" entry আছে
+                    // যেটা ধরার কথা "googleads.g.doubleclick.net" কে, যেটা endsWith দিয়ে
+                    // match হয় না (কারণ "googleads.g.doubleclick.net" != "doubleclick.net"
+                    // এর suffix হিসেবে match করতে হলে শুধু ".doubleclick.net" দরকার)।
+                    // url.contains() সব case এ কাজ করে — এটাই original approach এ ছিল।
                     val host = request.url?.host?.lowercase() ?: ""
-                    if (AD_SERVERS.any { host == it || host.endsWith(".$it") }) {
+                    if (AD_SERVERS.any { url.contains(it) }) {
                         return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
                     }
 

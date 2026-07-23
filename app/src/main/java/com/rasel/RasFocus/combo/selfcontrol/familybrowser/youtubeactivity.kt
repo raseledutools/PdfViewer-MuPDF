@@ -391,8 +391,9 @@ class YoutubeActivity : ComponentActivity() {
                     // JS-based skip এর মতো video render pipeline এ কোনো interference নেই।
 
                     // ── 1a. Known ad network domains (domain-level) ───────────────────────
+                    // ✅ FIX: url.contains() restored — see main copy for full explanation.
                     val host = request.url?.host?.lowercase() ?: ""
-                    if (AD_SERVERS.any { host == it || host.endsWith(".$it") }) {
+                    if (AD_SERVERS.any { url.contains(it) }) {
                         return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
                     }
 
