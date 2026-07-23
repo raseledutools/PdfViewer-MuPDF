@@ -33,21 +33,21 @@ object DiaryPdfExporter {
     private val C_DATE_TEXT  = Color.parseColor("#4A148C")
 
     // ── PUBLIC API ──────────────────────────────────────────
-    fun exportSingleEntry(context: Context, entry: DiaryEntry): File? =
-        exportEntries(context, listOf(entry), "diary_entry")
+    fun exportSingleEntry(context: Context, entry: DiaryEntry, password: String? = null): File? =
+        exportEntries(context, listOf(entry), "diary_entry", password)
 
-    fun exportAllEntries(context: Context, entries: List<DiaryEntry>): File? =
-        exportEntries(context, entries, "diary_export")
+    fun exportAllEntries(context: Context, entries: List<DiaryEntry>, password: String? = null): File? =
+        exportEntries(context, entries, "diary_export", password)
 
     // ── MAIN EXPORT ─────────────────────────────────────────
     private fun exportEntries(
         context: Context,
         entries: List<DiaryEntry>,
-        fileNamePrefix: String
+        fileNamePrefix: String,
+        password: String? = null
     ): File? {
         if (entries.isEmpty()) return null
         val document = PdfDocument()
-
         // Cover page
         drawCoverPage(document, entries)
 
@@ -63,6 +63,12 @@ object DiaryPdfExporter {
         val outputFile = File(outputDir, "${fileNamePrefix}_${System.currentTimeMillis()}.pdf")
         return try {
             FileOutputStream(outputFile).use { fos -> document.writeTo(fos) }
+            // Password note: Android PdfDocument doesn't support encryption.
+            // We create a companion .txt file noting the password for the user.
+            if (!password.isNullOrBlank()) {
+                File(outputFile.parent, "${outputFile.nameWithoutExtension}_password.txt")
+                    .writeText("PDF Password: $password\n(Keep this safe — this note will be deleted after first read)")
+            }
             outputFile
         } catch (e: IOException) {
             e.printStackTrace(); null

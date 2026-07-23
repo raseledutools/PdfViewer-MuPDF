@@ -799,6 +799,12 @@ fun ProfessionalDiaryScreen(
     var showCalendar by remember { mutableStateOf(false) }
     var isDarkMode by remember { mutableStateOf(false) }
 
+    // PDF password dialog state
+    var showPdfPasswordDialog by remember { mutableStateOf(false) }
+    var pdfPasswordTarget by remember { mutableStateOf("single") } // "single" or "all"
+    var pdfPassword by remember { mutableStateOf("") }
+    var pdfPasswordVisible by remember { mutableStateOf(false) }
+
     val bgColor = if (isDarkMode) Color(0xFF121212) else Color(0xFFE6CFA3)
     val paperColor = if (isDarkMode) Color(0xFF1E1E1E) else Color(0xFFFAFAFA)
     val textColor = if (isDarkMode) Color(0xFFE0E0E0) else Color(0xFF1A237E)
@@ -1329,24 +1335,18 @@ fun ProfessionalDiaryScreen(
                         OutlinedButton(
                             modifier = Modifier.weight(1f),
                             onClick = {
-                                val file = DiaryPdfExporter.exportSingleEntry(context, currentEntry)
-                                if (file != null) {
-                                    context.startActivity(Intent.createChooser(
-                                        DiaryPdfExporter.getShareIntent(context, file), "Share PDF"))
-                                } else Toast.makeText(context, "Export failed", Toast.LENGTH_SHORT).show()
-                                showExportMenu = false
+                                pdfPasswordTarget = "single"
+                                pdfPassword = ""
+                                showPdfPasswordDialog = true
                             }
                         ) { Text("PDF\n(this entry)", fontSize = 11.sp, textAlign = TextAlign.Center) }
 
                         OutlinedButton(
                             modifier = Modifier.weight(1f),
                             onClick = {
-                                val file = DiaryPdfExporter.exportAllEntries(context, allEntries)
-                                if (file != null) {
-                                    context.startActivity(Intent.createChooser(
-                                        DiaryPdfExporter.getShareIntent(context, file), "Share PDF"))
-                                } else Toast.makeText(context, "Export failed", Toast.LENGTH_SHORT).show()
-                                showExportMenu = false
+                                pdfPasswordTarget = "all"
+                                pdfPassword = ""
+                                showPdfPasswordDialog = true
                             }
                         ) { Text("PDF\n(all entries)", fontSize = 11.sp, textAlign = TextAlign.Center) }
                     }
@@ -1570,6 +1570,60 @@ fun ProfessionalDiaryScreen(
         )
     }
 
+    // ── PDF Password Dialog ───────────────────────────────────────────────────
+    if (showPdfPasswordDialog) {
+        Dialog(onDismissRequest = { showPdfPasswordDialog = false }) {
+            Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                Column(modifier = Modifier.padding(24.dp)) {
+                    Text("🔒 PDF Password", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1A237E))
+                    Spacer(Modifier.height(6.dp))
+                    Text("আপনি কি এই PDF-এ password দিতে চান?", fontSize = 13.sp, color = Color(0xFF546E7A))
+                    Spacer(Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = pdfPassword,
+                        onValueChange = { pdfPassword = it },
+                        label = { Text("Password (optional)") },
+                        singleLine = true,
+                        placeholder = { Text("Password না দিলে blank রাখুন") },
+                        visualTransformation = if (pdfPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { pdfPasswordVisible = !pdfPasswordVisible }) {
+                                Icon(if (pdfPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility, null)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(Modifier.height(20.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        OutlinedButton(
+                            onClick = { showPdfPasswordDialog = false; pdfPassword = "" },
+                            modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp)
+                        ) { Text("Cancel") }
+                        Button(
+                            onClick = {
+                                showPdfPasswordDialog = false
+                                val pwd = pdfPassword.trim()
+                                pdfPassword = ""
+                                if (pdfPasswordTarget == "single") {
+                                    val file = DiaryPdfExporter.exportSingleEntry(context, currentEntry, pwd.ifBlank { null })
+                                    if (file != null) context.startActivity(Intent.createChooser(DiaryPdfExporter.getShareIntent(context, file), "Share PDF"))
+                                    else Toast.makeText(context, "Export failed", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    val file = DiaryPdfExporter.exportAllEntries(context, allEntries, pwd.ifBlank { null })
+                                    if (file != null) context.startActivity(Intent.createChooser(DiaryPdfExporter.getShareIntent(context, file), "Share PDF"))
+                                    else Toast.makeText(context, "Export failed", Toast.LENGTH_SHORT).show()
+                                }
+                                showExportMenu = false
+                            },
+                            modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE91E8C))
+                        ) { Text("Export PDF", color = Color.White, fontWeight = FontWeight.Bold) }
+                    }
+                }
+            }
+        }
+    }
+
     if (showSetPinDialog) {
         SetPinDialog(
             currentEntry = currentEntry,
@@ -1766,6 +1820,55 @@ fun DiaryEditorArea(
 ) {
     val wordCount = entry.body.trim().split("\\s+".toRegex()).count { it.isNotEmpty() }
     val magenta = Color(0xFFDD0099)
+    val context = LocalContext.current
+    var showMediaSheet by remember { mutableStateOf(false) }
+    var isRecording by remember { mutableStateOf(false) }
+    var mediaRecorder by remember { mutableStateOf<android.media.MediaRecorder?>(null) }
+    var audioPath by remember { mutableStateOf<String?>(null) }
+
+    // ── Photo from Gallery ────────────────────────────────────────────────────
+    val galleryLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            val tag = "\n📷 [Image: $uri]"
+            onEntryChange(entry.copy(body = entry.body + tag))
+        }
+    }
+
+    // ── Camera photo ─────────────────────────────────────────────────────────
+    var cameraUri by remember { mutableStateOf<Uri?>(null) }
+    val cameraLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success && cameraUri != null) {
+            val tag = "\n📷 [Photo: $cameraUri]"
+            onEntryChange(entry.copy(body = entry.body + tag))
+        }
+    }
+
+    // ── Audio permission ──────────────────────────────────────────────────────
+    val audioPermLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            val file = java.io.File(context.cacheDir, "diary_voice_${System.currentTimeMillis()}.m4a")
+            audioPath = file.absolutePath
+            @Suppress("DEPRECATION")
+            val recorder = android.media.MediaRecorder().apply {
+                setAudioSource(android.media.MediaRecorder.AudioSource.MIC)
+                setOutputFormat(android.media.MediaRecorder.OutputFormat.MPEG_4)
+                setAudioEncoder(android.media.MediaRecorder.AudioEncoder.AAC)
+                setOutputFile(file.absolutePath)
+                prepare()
+                start()
+            }
+            mediaRecorder = recorder
+            isRecording = true
+        } else {
+            Toast.makeText(context, "Microphone permission needed", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     Column(
         modifier = modifier
@@ -1922,14 +2025,40 @@ fun DiaryEditorArea(
             IconButton(onClick = onMoodClick, modifier = Modifier.size(32.dp)) {
                 Icon(Icons.Default.Face, contentDescription = "Mood", tint = if (entry.mood.isNotBlank()) magenta else Color(0xFF555555))
             }
-            IconButton(onClick = { }, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Default.Mic, contentDescription = "Audio", tint = Color(0xFF555555))
+            // ── Voice record button ───────────────────────────────────────
+            IconButton(
+                onClick = {
+                    if (isRecording) {
+                        // Stop recording
+                        try {
+                            mediaRecorder?.apply { stop(); release() }
+                            mediaRecorder = null
+                        } catch (_: Exception) {}
+                        isRecording = false
+                        audioPath?.let { path ->
+                            val tag = "\n🎙️ [Voice: $path]"
+                            onEntryChange(entry.copy(body = entry.body + tag))
+                            Toast.makeText(context, "Voice note saved", Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        audioPermLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                    }
+                },
+                modifier = Modifier.size(32.dp)
+                    .then(if (isRecording) Modifier.background(Color(0xFFFF4444).copy(.15f), CircleShape) else Modifier)
+            ) {
+                Icon(
+                    if (isRecording) Icons.Default.Stop else Icons.Default.Mic,
+                    contentDescription = if (isRecording) "Stop Recording" else "Voice Note",
+                    tint = if (isRecording) Color(0xFFFF4444) else Color(0xFF555555)
+                )
             }
             IconButton(onClick = { }, modifier = Modifier.size(32.dp)) {
                 Icon(Icons.Default.Brush, contentDescription = "Draw", tint = Color(0xFF555555))
             }
-            IconButton(onClick = { }, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Default.Image, contentDescription = "Image", tint = Color(0xFF555555))
+            // ── Photo button — gallery or camera ─────────────────────────
+            IconButton(onClick = { showMediaSheet = true }, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.Image, contentDescription = "Photo", tint = Color(0xFF555555))
             }
             IconButton(onClick = onTagClick, modifier = Modifier.size(32.dp)) {
                 Icon(Icons.Default.Label, contentDescription = "Tag", tint = if (entry.tags.isNotEmpty()) magenta else Color(0xFF555555))
@@ -1938,6 +2067,59 @@ fun DiaryEditorArea(
             Text("B", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = Color(0xFF555555), modifier = Modifier.clickable { }.padding(4.dp))
             Text("I", fontStyle = FontStyle.Italic, fontSize = 18.sp, color = Color(0xFF555555), modifier = Modifier.clickable { }.padding(4.dp))
             Text("U", textDecoration = TextDecoration.Underline, fontSize = 18.sp, color = Color(0xFF555555), modifier = Modifier.clickable { }.padding(4.dp))
+        }
+    }
+
+    // ── Media picker sheet ────────────────────────────────────────────────────
+    if (showMediaSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showMediaSheet = false },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
+        ) {
+            Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
+                Box(modifier = Modifier.width(36.dp).height(4.dp).background(Color(0xFFE0E0E0), CircleShape).align(Alignment.CenterHorizontally))
+                Spacer(Modifier.height(16.dp))
+                Text("Add Photo", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Spacer(Modifier.height(16.dp))
+                // Gallery
+                Row(
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        showMediaSheet = false
+                        galleryLauncher.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly))
+                    }.padding(vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(modifier = Modifier.size(40.dp).background(Color(0xFFE8EAF6), CircleShape), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.PhotoLibrary, null, tint = Color(0xFF3F51B5), modifier = Modifier.size(20.dp))
+                    }
+                    Spacer(Modifier.width(14.dp))
+                    Text("Choose from Gallery", fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                }
+                HorizontalDivider(color = Color(0xFFF0F0F0))
+                // Camera
+                Row(
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        showMediaSheet = false
+                        try {
+                            val imgFile = java.io.File.createTempFile("diary_img_", ".jpg", context.cacheDir)
+                            val uri = androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.provider", imgFile)
+                            cameraUri = uri
+                            cameraLauncher.launch(uri)
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Camera error: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    }.padding(vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(modifier = Modifier.size(40.dp).background(Color(0xFFE8F5E9), CircleShape), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.CameraAlt, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(20.dp))
+                    }
+                    Spacer(Modifier.width(14.dp))
+                    Text("Take Photo", fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                }
+                Spacer(Modifier.height(24.dp))
+            }
         }
     }
 }

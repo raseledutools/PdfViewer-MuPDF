@@ -590,9 +590,9 @@ fun DiaryListScreen(
 ) {
     val context = LocalContext.current
     val magenta = Color(0xFFE91E8C)
-    val green   = Color(0xFF4CAF50)
+    val teal    = Color(0xFF009688)
+    val indigo  = Color(0xFF3F51B5)
 
-    // Group entries by date label
     val grouped = remember(entries) {
         entries.groupBy { it.date.ifBlank { "Unknown" } }
             .entries.sortedByDescending { grp ->
@@ -604,12 +604,10 @@ fun DiaryListScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        "RasDiary",
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 22.sp
-                    )
+                    Column {
+                        Text("RasDiary", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
+                        Text("${entries.size} entries", color = Color.White.copy(.65f), fontSize = 11.sp)
+                    }
                 },
                 navigationIcon = {
                     IconButton(onClick = onMenuClick) {
@@ -617,148 +615,149 @@ fun DiaryListScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* search */ }) {
+                    IconButton(onClick = { /* search TODO */ }) {
                         Icon(Icons.Default.Search, contentDescription = "Search", tint = Color.White)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF1A1A1A))
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = indigo)
             )
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onNewEntry,
+                onClick = onNewEntry,     // ← সরাসরি onNewEntry, sidebar নয়
                 containerColor = magenta,
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Icon(Icons.Default.Edit, contentDescription = "New Entry", tint = Color.White)
             }
         },
-        containerColor = Color(0xFFF5F5F5)
+        containerColor = Color(0xFFF0F4FF)
     ) { padding ->
         if (entries.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
+            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("ðŸ“”", fontSize = 56.sp)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        "No diary entries yet",
-                        fontSize = 18.sp,
-                        color = Color.Gray,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        "Tap + to write your first entry",
-                        fontSize = 14.sp,
-                        color = Color.LightGray
-                    )
+                    Text("📔", fontSize = 64.sp)
+                    Spacer(Modifier.height(16.dp))
+                    Text("No diary entries yet", fontSize = 18.sp, color = Color(0xFF37474F), fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(6.dp))
+                    Text("Tap ✏️ to write your first entry", fontSize = 14.sp, color = Color.Gray)
                 }
             }
         } else {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentPadding = PaddingValues(bottom = 80.dp)
+                modifier = Modifier.fillMaxSize().padding(padding),
+                contentPadding = PaddingValues(bottom = 90.dp, top = 8.dp)
             ) {
                 grouped.forEach { (date, dayEntries) ->
-                    // Date header â€” parse date into calendar badge
                     item {
                         val cal = runCatching {
                             val sdf = SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.ENGLISH)
                             Calendar.getInstance().also { c -> c.time = sdf.parse(date)!! }
                         }.getOrNull()
 
-                        val monthStr = cal?.let {
-                            SimpleDateFormat("MMM", Locale.ENGLISH).format(it.time).uppercase()
-                        } ?: "???"
-                        val dayNum = cal?.get(Calendar.DAY_OF_MONTH)?.toString() ?: "?"
-                        val yearStr = cal?.get(Calendar.YEAR)?.toString() ?: ""
+                        val monthStr = cal?.let { SimpleDateFormat("MMM", Locale.ENGLISH).format(it.time).uppercase() } ?: "???"
+                        val dayNum   = cal?.get(Calendar.DAY_OF_MONTH)?.toString() ?: "?"
+                        val yearStr  = cal?.get(Calendar.YEAR)?.toString() ?: ""
+                        val dayName  = cal?.let { SimpleDateFormat("EEE", Locale.ENGLISH).format(it.time).uppercase() } ?: ""
 
-                        dayEntries.forEachIndexed { idx, entry ->
-                            Row(
+                        // ── Date section header ────────────────────────────────
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Premium calendar badge
+                            Box(
+                                modifier = Modifier
+                                    .size(52.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(
+                                        Brush.verticalGradient(listOf(indigo, Color(0xFF7C4DFF)))
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(monthStr, color = Color.White.copy(.8f), fontSize = 9.sp, fontWeight = FontWeight.Bold, lineHeight = 10.sp)
+                                    Text(dayNum, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 22.sp)
+                                    Text(dayName, color = Color.White.copy(.7f), fontSize = 8.sp, fontWeight = FontWeight.Medium, lineHeight = 9.sp)
+                                }
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Column {
+                                Text(date.substringBefore(",").ifBlank { date }, color = Color(0xFF1A237E), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                Text(yearStr, color = Color(0xFF7986CB), fontSize = 12.sp)
+                            }
+                            Spacer(Modifier.weight(1f))
+                            Text("${dayEntries.size} entry${if (dayEntries.size > 1) "ies" else ""}", color = Color.Gray, fontSize = 11.sp)
+                        }
+
+                        dayEntries.forEach { entry ->
+                            Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(Color.White)
-                                    .clickable { onEntryClick(entry) }
-                                    .padding(vertical = 2.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                    .padding(horizontal = 12.dp, vertical = 3.dp)
+                                    .clickable { onEntryClick(entry) },
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                             ) {
-                                // Calendar badge â€” only show for first entry of the day
-                                if (idx == 0) {
-                                    Box(
-                                        modifier = Modifier
-                                            .padding(start = 12.dp, top = 6.dp, bottom = 6.dp)
-                                            .size(width = 56.dp, height = 64.dp)
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .background(green),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    // Mood indicator dot
+                                    val moodColor = when (entry.mood) {
+                                        "😊" -> Color(0xFF4CAF50)
+                                        "😢" -> Color(0xFF2196F3)
+                                        "😡" -> Color(0xFFF44336)
+                                        "😴" -> Color(0xFF9C27B0)
+                                        else -> magenta
+                                    }
+                                    Box(modifier = Modifier.size(8.dp).background(moodColor, CircleShape))
+                                    Spacer(Modifier.width(10.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            if (entry.isLocked) {
+                                                Icon(Icons.Default.Lock, null, tint = magenta, modifier = Modifier.size(13.dp))
+                                                Spacer(Modifier.width(4.dp))
+                                            }
                                             Text(
-                                                monthStr,
-                                                color = Color.White,
-                                                fontSize = 11.sp,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                            Text(
-                                                dayNum,
-                                                color = Color.White,
-                                                fontSize = 22.sp,
-                                                fontWeight = FontWeight.ExtraBold,
-                                                lineHeight = 24.sp
-                                            )
-                                            Text(
-                                                yearStr,
-                                                color = Color.White.copy(alpha = 0.85f),
-                                                fontSize = 10.sp
+                                                entry.title.ifBlank { "Untitled" },
+                                                color = Color(0xFF1A237E),
+                                                fontSize = 15.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                maxLines = 1,
+                                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                             )
                                         }
-                                    }
-                                } else {
-                                    Spacer(modifier = Modifier.width(68.dp))
-                                }
-
-                                Spacer(modifier = Modifier.width(14.dp))
-
-                                Column(modifier = Modifier.weight(1f).padding(vertical = 10.dp)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        if (entry.isLocked) {
-                                            Icon(
-                                                Icons.Default.Lock,
-                                                contentDescription = null,
-                                                tint = magenta,
-                                                modifier = Modifier.size(14.dp)
+                                        if (entry.body.isNotBlank()) {
+                                            Text(
+                                                entry.body.take(80).replace('\n', ' '),
+                                                color = Color(0xFF546E7A),
+                                                fontSize = 12.sp,
+                                                maxLines = 1,
+                                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                                modifier = Modifier.padding(top = 2.dp)
                                             )
-                                            Spacer(modifier = Modifier.width(4.dp))
                                         }
-                                        Text(
-                                            entry.title.ifBlank { "Untitled" },
-                                            color = magenta,
-                                            fontSize = 16.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            maxLines = 1
-                                        )
+                                        if (entry.tags.isNotEmpty()) {
+                                            Row(modifier = Modifier.padding(top = 4.dp)) {
+                                                entry.tags.take(2).forEach { tag ->
+                                                    Box(
+                                                        modifier = Modifier.padding(end = 4.dp)
+                                                            .background(indigo.copy(.1f), RoundedCornerShape(4.dp))
+                                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                                    ) { Text("#$tag", color = indigo, fontSize = 10.sp) }
+                                                }
+                                            }
+                                        }
                                     }
-                                    if (entry.body.isNotBlank()) {
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                        Text(
-                                            entry.body.take(60).replace('\n', ' '),
-                                            color = magenta.copy(alpha = 0.75f),
-                                            fontSize = 13.sp,
-                                            maxLines = 1
-                                        )
+                                    if (entry.mood.isNotBlank()) {
+                                        Text(entry.mood, fontSize = 20.sp, modifier = Modifier.padding(start = 8.dp))
                                     }
                                 }
-
-                                Spacer(modifier = Modifier.width(8.dp))
                             }
-
-                            HorizontalDivider(color = Color(0xFFEEEEEE), thickness = 0.5.dp)
                         }
+                        Spacer(Modifier.height(8.dp))
                     }
                 }
             }
@@ -798,6 +797,12 @@ fun ProfessionalDiaryScreen(
     var showReminderDialog by remember { mutableStateOf(false) }
     var showCalendar by remember { mutableStateOf(false) }
     var isDarkMode by remember { mutableStateOf(false) }
+
+    // PDF password dialog state
+    var showPdfPasswordDialog by remember { mutableStateOf(false) }
+    var pdfPasswordTarget by remember { mutableStateOf("single") } // "single" or "all"
+    var pdfPassword by remember { mutableStateOf("") }
+    var pdfPasswordVisible by remember { mutableStateOf(false) }
 
     val bgColor = if (isDarkMode) Color(0xFF121212) else Color(0xFFE6CFA3)
     val paperColor = if (isDarkMode) Color(0xFF1E1E1E) else Color(0xFFFAFAFA)
@@ -1565,6 +1570,55 @@ fun DiaryEditorArea(
 ) {
     val wordCount = entry.body.trim().split("\\s+".toRegex()).count { it.isNotEmpty() }
     val magenta = Color(0xFFDD0099)
+    val context = LocalContext.current
+    var showMediaSheet by remember { mutableStateOf(false) }
+    var isRecording by remember { mutableStateOf(false) }
+    var mediaRecorder by remember { mutableStateOf<android.media.MediaRecorder?>(null) }
+    var audioPath by remember { mutableStateOf<String?>(null) }
+
+    // ── Photo from Gallery ────────────────────────────────────────────────────
+    val galleryLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            val tag = "\n📷 [Image: $uri]"
+            onEntryChange(entry.copy(body = entry.body + tag))
+        }
+    }
+
+    // ── Camera photo ─────────────────────────────────────────────────────────
+    var cameraUri by remember { mutableStateOf<Uri?>(null) }
+    val cameraLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success && cameraUri != null) {
+            val tag = "\n📷 [Photo: $cameraUri]"
+            onEntryChange(entry.copy(body = entry.body + tag))
+        }
+    }
+
+    // ── Audio permission ──────────────────────────────────────────────────────
+    val audioPermLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            val file = java.io.File(context.cacheDir, "diary_voice_${System.currentTimeMillis()}.m4a")
+            audioPath = file.absolutePath
+            @Suppress("DEPRECATION")
+            val recorder = android.media.MediaRecorder().apply {
+                setAudioSource(android.media.MediaRecorder.AudioSource.MIC)
+                setOutputFormat(android.media.MediaRecorder.OutputFormat.MPEG_4)
+                setAudioEncoder(android.media.MediaRecorder.AudioEncoder.AAC)
+                setOutputFile(file.absolutePath)
+                prepare()
+                start()
+            }
+            mediaRecorder = recorder
+            isRecording = true
+        } else {
+            Toast.makeText(context, "Microphone permission needed", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     Column(
         modifier = modifier
@@ -1591,7 +1645,7 @@ fun DiaryEditorArea(
             }
         }
 
-        // â”€â”€ Date Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Date Card ──────────────────────────────────────────────────────
         val currentDate = if (entry.date.isNotBlank()) entry.date
             else SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.ENGLISH).format(Date())
         Row(
@@ -1611,7 +1665,7 @@ fun DiaryEditorArea(
             }
         }
 
-        // â”€â”€ Title Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Title Card ─────────────────────────────────────────────────────
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1637,8 +1691,8 @@ fun DiaryEditorArea(
             )
         }
 
-        // â”€â”€ Meta row: folder + word count (compact, screenshot-à¦ à¦¨à§‡à¦‡ à¦•à¦¿à¦¨à§à¦¤à§
-        //    feature à¦§à¦°à§‡ à¦°à¦¾à¦–à¦¾à¦° à¦œà¦¨à§à¦¯ à¦›à§‹à¦Ÿ à¦†à¦•à¦¾à¦°à§‡) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Meta row: folder + word count (compact, screenshot-এ নেই কিন্তু
+        //    feature ধরে রাখার জন্য ছোট আকারে) ─────────────────────────────
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -1679,7 +1733,7 @@ fun DiaryEditorArea(
             }
         }
 
-        // â”€â”€ Body Card â€” ruled/lined paper effect â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Body Card — ruled/lined paper effect ────────────────────────────
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1707,7 +1761,7 @@ fun DiaryEditorArea(
             )
         }
 
-        // â”€â”€ Toolbar â€” mood, tag, formatting (feature à¦§à¦°à§‡ à¦°à¦¾à¦–à¦¾à¦° à¦œà¦¨à§à¦¯) â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Toolbar — mood, tag, formatting (feature ধরে রাখার জন্য) ────────
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1721,14 +1775,40 @@ fun DiaryEditorArea(
             IconButton(onClick = onMoodClick, modifier = Modifier.size(32.dp)) {
                 Icon(Icons.Default.Face, contentDescription = "Mood", tint = if (entry.mood.isNotBlank()) magenta else Color(0xFF555555))
             }
-            IconButton(onClick = { }, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Default.Mic, contentDescription = "Audio", tint = Color(0xFF555555))
+            // ── Voice record button ───────────────────────────────────────
+            IconButton(
+                onClick = {
+                    if (isRecording) {
+                        // Stop recording
+                        try {
+                            mediaRecorder?.apply { stop(); release() }
+                            mediaRecorder = null
+                        } catch (_: Exception) {}
+                        isRecording = false
+                        audioPath?.let { path ->
+                            val tag = "\n🎙️ [Voice: $path]"
+                            onEntryChange(entry.copy(body = entry.body + tag))
+                            Toast.makeText(context, "Voice note saved", Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        audioPermLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                    }
+                },
+                modifier = Modifier.size(32.dp)
+                    .then(if (isRecording) Modifier.background(Color(0xFFFF4444).copy(.15f), CircleShape) else Modifier)
+            ) {
+                Icon(
+                    if (isRecording) Icons.Default.Stop else Icons.Default.Mic,
+                    contentDescription = if (isRecording) "Stop Recording" else "Voice Note",
+                    tint = if (isRecording) Color(0xFFFF4444) else Color(0xFF555555)
+                )
             }
             IconButton(onClick = { }, modifier = Modifier.size(32.dp)) {
                 Icon(Icons.Default.Brush, contentDescription = "Draw", tint = Color(0xFF555555))
             }
-            IconButton(onClick = { }, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Default.Image, contentDescription = "Image", tint = Color(0xFF555555))
+            // ── Photo button — gallery or camera ─────────────────────────
+            IconButton(onClick = { showMediaSheet = true }, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.Image, contentDescription = "Photo", tint = Color(0xFF555555))
             }
             IconButton(onClick = onTagClick, modifier = Modifier.size(32.dp)) {
                 Icon(Icons.Default.Label, contentDescription = "Tag", tint = if (entry.tags.isNotEmpty()) magenta else Color(0xFF555555))
@@ -1737,6 +1817,59 @@ fun DiaryEditorArea(
             Text("B", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = Color(0xFF555555), modifier = Modifier.clickable { }.padding(4.dp))
             Text("I", fontStyle = FontStyle.Italic, fontSize = 18.sp, color = Color(0xFF555555), modifier = Modifier.clickable { }.padding(4.dp))
             Text("U", textDecoration = TextDecoration.Underline, fontSize = 18.sp, color = Color(0xFF555555), modifier = Modifier.clickable { }.padding(4.dp))
+        }
+    }
+
+    // ── Media picker sheet ────────────────────────────────────────────────────
+    if (showMediaSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showMediaSheet = false },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
+        ) {
+            Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
+                Box(modifier = Modifier.width(36.dp).height(4.dp).background(Color(0xFFE0E0E0), CircleShape).align(Alignment.CenterHorizontally))
+                Spacer(Modifier.height(16.dp))
+                Text("Add Photo", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Spacer(Modifier.height(16.dp))
+                // Gallery
+                Row(
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        showMediaSheet = false
+                        galleryLauncher.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly))
+                    }.padding(vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(modifier = Modifier.size(40.dp).background(Color(0xFFE8EAF6), CircleShape), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.PhotoLibrary, null, tint = Color(0xFF3F51B5), modifier = Modifier.size(20.dp))
+                    }
+                    Spacer(Modifier.width(14.dp))
+                    Text("Choose from Gallery", fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                }
+                HorizontalDivider(color = Color(0xFFF0F0F0))
+                // Camera
+                Row(
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        showMediaSheet = false
+                        try {
+                            val imgFile = java.io.File.createTempFile("diary_img_", ".jpg", context.cacheDir)
+                            val uri = androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.provider", imgFile)
+                            cameraUri = uri
+                            cameraLauncher.launch(uri)
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Camera error: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    }.padding(vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(modifier = Modifier.size(40.dp).background(Color(0xFFE8F5E9), CircleShape), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.CameraAlt, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(20.dp))
+                    }
+                    Spacer(Modifier.width(14.dp))
+                    Text("Take Photo", fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                }
+                Spacer(Modifier.height(24.dp))
+            }
         }
     }
 }
