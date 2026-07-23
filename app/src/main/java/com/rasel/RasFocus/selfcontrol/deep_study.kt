@@ -36,6 +36,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.rasel.RasFocus.DataManager
+import android.content.pm.PackageManager
+import android.content.pm.ApplicationInfo
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.core.graphics.drawable.toBitmap
+import androidx.compose.foundation.Image
 import kotlinx.coroutines.*
 import kotlin.math.*
 
@@ -969,110 +974,317 @@ fun BlocklistPickerSheet(
     initialApps: List<String>,
     initialSites: List<String>
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-    var selectedTab by remember { mutableIntStateOf(1) }
-    val tempApps  = remember { mutableStateListOf<String>().apply { addAll(initialApps) } }
-    val tempSites = remember { mutableStateListOf<String>().apply { addAll(initialSites) } }
+    val context = LocalContext.current
+    val tempApps = remember { mutableStateListOf<String>().apply { addAll(initialApps) } }
 
-    Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
-        // Header
-        Row(Modifier.fillMaxWidth().padding(vertical = 16.dp), Arrangement.SpaceBetween, Alignment.CenterVertically) {
-            Text("Manage Allow List", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = DClrDark)
-            IconButton(onClick = onClose, modifier = Modifier.size(36.dp).clip(CircleShape).background(DClrPillBg)) {
-                Icon(Icons.Default.Close, null, tint = DClrDark, modifier = Modifier.size(18.dp))
+    // ── App loading — system + user apps, fast ───────────────────────────
+    data class AppInfo(val name: String, val pkg: String, val icon: android.graphics.drawable.Drawable)
+
+    var allApps by remember { mutableStateOf<List<AppInfo>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var searchQuery by remember { mutableStateOf("") }
+
+    // Popular system/google apps to always include
+    val PRIORITY_PKGS = setOf(
+        "com.android.chrome",
+        "com.google.android.youtube",
+        "com.google.android.gm",
+        "com.google.android.googlequicksearchbox",
+        "com.google.android.apps.maps",
+        "com.google.android.apps.photos",
+        "com.google.android.dialer",
+        "com.android.dialer",
+        "com.samsung.android.dialer",
+        "com.android.messaging",
+        "com.samsung.android.messaging",
+        "com.google.android.apps.messaging",
+        "com.android.settings",
+        "com.samsung.android.settings",
+        "com.facebook.katana",
+        "com.facebook.lite",
+        "com.instagram.android",
+        "com.whatsapp",
+        "com.twitter.android",
+        "org.telegram.messenger",
+        "com.snapchat.android",
+        "com.tiktok.musically",
+        "com.spotify.music",
+        "com.netflix.mediaclient",
+        "com.amazon.mShop.android.shopping",
+        "com.google.android.apps.youtube.music",
+        "com.microsoft.teams",
+        "com.slack",
+        "com.discord",
+        "com.zhiliaoapp.musically",
+        "com.ss.android.ugc.trill"
+    )
+
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) {
+            val pm = context.packageManager
+            val allInstalled = pm.getInstalledApplications(PackageManager.GET_META_DATA)
+
+            // Separate user apps + priority system apps
+            val userApps = allInstalled
+                .filter { (it.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) == 0 }
+
+            val systemApps = allInstalled
+                .filter { (it.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0
+                    && it.packageName in PRIORITY_PKGS }
+
+            val combined = (systemApps + userApps)
+                .distinctBy { it.packageName }
+                .mapNotNull { info ->
+                    try {
+                        AppInfo(
+                            name = pm.getApplicationLabel(info).toString(),
+                            pkg  = info.packageName,
+                            icon = pm.getApplicationIcon(info.packageName)
+                        )
+                    } catch (_: Exception) { null }
+                }
+                .sortedWith(compareBy(
+                    { it.packageName !in PRIORITY_PKGS }, // priority apps first
+                    { it.name.lowercase() }
+                ))
+
+            withContext(Dispatchers.Main) {
+                allApps = combined
+                isLoading = false
             }
         }
-        
-        if (selectedTab != 0) {
-            OutlinedTextField(
-                value = searchQuery, onValueChange = { searchQuery = it },
-                placeholder = { Text("Search or add new website…", color = DClrGray, fontSize = 14.sp) },
-                leadingIcon = { Icon(Icons.Default.Search, null, tint = DClrGray, modifier = Modifier.size(20.dp)) },
-                shape = RoundedCornerShape(16.dp), singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = DClrSurface, unfocusedContainerColor = DClrSurface,
-                    focusedBorderColor = DClrTeal, unfocusedBorderColor = DClrBorderMuted
-                ),
-                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
-            )
+    }
+
+    val filtered = remember(allApps, searchQuery) {
+        if (searchQuery.isEmpty()) allApps
+        else allApps.filter {
+            it.name.contains(searchQuery, ignoreCase = true) ||
+            it.pkg.contains(searchQuery, ignoreCase = true)
         }
-        
-        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(DClrPillBg).padding(4.dp)) {
-            listOf("Apps", "Sites", "Keywords").forEachIndexed { i, t ->
-                Box(
-                    Modifier.weight(1f).height(40.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(if (selectedTab == i) DClrSurface else Color.Transparent)
-                        .clickable { selectedTab = i },
-                    Alignment.Center
-                ) { Text(t, color = if (selectedTab == i) DClrDark else DClrGray, fontWeight = FontWeight.Bold, fontSize = 14.sp) }
-            }
-        }
-        Spacer(Modifier.height(12.dp))
-        
-        if (selectedTab == 0) {
-            Box(Modifier.weight(1f)) {
-                InstalledAppPicker(
-                    selectedPackages = tempApps.toList(),
-                    onSelectionChanged = { 
-                        tempApps.clear()
-                        tempApps.addAll(it)
-                    },
-                    profileType = "Allow"
+    }
+
+    Column(Modifier.fillMaxSize().background(DClrBg)) {
+
+        // ── Header ───────────────────────────────────────────────────────
+        Row(
+            Modifier.fillMaxWidth().background(DClrSurface).padding(horizontal = 20.dp, vertical = 14.dp),
+            Arrangement.SpaceBetween, Alignment.CenterVertically
+        ) {
+            Column {
+                Text("Allow List", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = DClrDark)
+                Text(
+                    "${tempApps.size} app${if (tempApps.size != 1) "s" else ""} selected",
+                    fontSize = 13.sp, color = DClrTeal
                 )
             }
-        } else {
-            LazyColumn(Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(DClrSurface).padding(8.dp)) {
-                if (selectedTab == 1 && searchQuery.isNotEmpty()) {
-                    if (!tempSites.any { it.contains(searchQuery, ignoreCase = true) }) {
-                        val url = if (searchQuery.contains(".")) searchQuery else "$searchQuery.com"
-                        item {
-                            Row(Modifier.fillMaxWidth().padding(vertical = 10.dp, horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Box(Modifier.size(42.dp).clip(CircleShape).background(DClrBadgeTeal), Alignment.Center) {
-                                    Text(url.first().uppercase(), fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = DClrTeal)
-                                }
-                                Spacer(Modifier.width(12.dp))
-                                Text(url, modifier = Modifier.weight(1f), color = DClrDark, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                                FilledTonalButton(
-                                    onClick = { tempSites.add(url); searchQuery = "" },
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = ButtonDefaults.filledTonalButtonColors(containerColor = DClrBadgeTeal, contentColor = DClrTeal),
-                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)
-                                ) { Text("Add", fontSize = 14.sp, fontWeight = FontWeight.Bold) }
-                            }
-                            HorizontalDivider(color = com.rasel.RasFocus.ui.theme.RasFocusTheme.colors.onBackground)
-                        }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (tempApps.isNotEmpty()) {
+                    TextButton(
+                        onClick = { tempApps.clear() },
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text("Clear", fontSize = 13.sp, color = DClrRed, fontWeight = FontWeight.Bold)
                     }
                 }
-                if (selectedTab == 1) {
-                    items(tempSites.size) { i ->
-                        val site = tempSites[i]
-                        Row(Modifier.fillMaxWidth().padding(vertical = 10.dp, horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            AsyncImage("https://www.google.com/s2/favicons?domain=$site&sz=128", null, Modifier.size(42.dp).clip(CircleShape))
-                            Spacer(Modifier.width(12.dp))
-                            Column(Modifier.weight(1f)) {
-                                Text(site, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = DClrDark)
-                                Text("Website allowed", color = DClrGray, fontSize = 12.sp)
+                IconButton(
+                    onClick = onClose,
+                    modifier = Modifier.size(36.dp).clip(CircleShape).background(DClrPillBg)
+                ) {
+                    Icon(Icons.Default.Close, null, tint = DClrDark, modifier = Modifier.size(18.dp))
+                }
+            }
+        }
+
+        // ── Search bar ───────────────────────────────────────────────────
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            placeholder = { Text("Search apps…", color = DClrGray, fontSize = 14.sp) },
+            leadingIcon = { Icon(Icons.Default.Search, null, tint = DClrGray, modifier = Modifier.size(20.dp)) },
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton(onClick = { searchQuery = "" }) {
+                        Icon(Icons.Default.Close, null, tint = DClrGray, modifier = Modifier.size(18.dp))
+                    }
+                }
+            },
+            shape = RoundedCornerShape(14.dp),
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = DClrDark,
+                unfocusedTextColor = DClrDark,
+                focusedContainerColor = DClrSurface,
+                unfocusedContainerColor = DClrSurface,
+                focusedBorderColor = DClrTeal,
+                unfocusedBorderColor = DClrBorderMuted
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+        )
+
+        // ── Launcher always-allowed banner ───────────────────────────────
+        val defaultLauncher = remember {
+            val intent = android.content.Intent(android.content.Intent.ACTION_MAIN)
+                .apply { addCategory(android.content.Intent.CATEGORY_HOME) }
+            context.packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
+                ?.activityInfo?.packageName ?: ""
+        }
+        if (defaultLauncher.isNotEmpty()) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(DClrTeal.copy(alpha = 0.1f))
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Default.Home, null, tint = DClrTeal, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    "Launcher সবসময় allow থাকবে",
+                    fontSize = 12.sp, color = DClrTeal, fontWeight = FontWeight.SemiBold
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+        }
+
+        // ── App list ──────────────────────────────────────────────────────
+        if (isLoading) {
+            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(color = DClrTeal, modifier = Modifier.size(36.dp))
+                    Spacer(Modifier.height(12.dp))
+                    Text("Loading apps…", color = DClrGray, fontSize = 14.sp)
+                }
+            }
+        } else {
+            LazyColumn(
+                Modifier.weight(1f),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                items(
+                    items = filtered,
+                    key = { it.pkg }
+                ) { app ->
+                    val isLauncher = app.pkg == defaultLauncher
+                    val isSelected = tempApps.contains(app.pkg) || isLauncher
+                    val isPriority = app.pkg in PRIORITY_PKGS
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(
+                                when {
+                                    isSelected -> DClrTeal.copy(alpha = 0.12f)
+                                    else       -> DClrSurface
+                                }
+                            )
+                            .border(
+                                width = if (isSelected) 1.5.dp else 0.dp,
+                                color = if (isSelected) DClrTeal.copy(alpha = 0.5f) else Color.Transparent,
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            .clickable(enabled = !isLauncher) {
+                                if (isSelected) tempApps.remove(app.pkg)
+                                else tempApps.add(app.pkg)
                             }
-                            IconButton(onClick = { tempSites.remove(site) }, modifier = Modifier.size(36.dp)) {
-                                Icon(Icons.Default.RemoveCircleOutline, null, tint = DClrRed, modifier = Modifier.size(20.dp))
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // App icon
+                        Image(
+                            bitmap = app.icon.toBitmap().asImageBitmap(),
+                            contentDescription = app.name,
+                            modifier = Modifier.size(40.dp).clip(RoundedCornerShape(10.dp))
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    app.name,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = DClrDark,
+                                    maxLines = 1
+                                )
+                                if (isLauncher) {
+                                    Spacer(Modifier.width(6.dp))
+                                    Box(
+                                        Modifier
+                                            .background(DClrTeal.copy(alpha = 0.18f), RoundedCornerShape(4.dp))
+                                            .padding(horizontal = 5.dp, vertical = 1.dp)
+                                    ) {
+                                        Text("Launcher", fontSize = 9.sp, color = DClrTeal, fontWeight = FontWeight.Bold)
+                                    }
+                                } else if (isPriority && (app.pkg.startsWith("com.android") || app.pkg.startsWith("com.google") || app.pkg.startsWith("com.samsung"))) {
+                                    Spacer(Modifier.width(6.dp))
+                                    Box(
+                                        Modifier
+                                            .background(DClrBadgePurple, RoundedCornerShape(4.dp))
+                                            .padding(horizontal = 5.dp, vertical = 1.dp)
+                                    ) {
+                                        Text("System", fontSize = 9.sp, color = Color(0xFF8B5CF6), fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                            Text(
+                                app.pkg,
+                                fontSize = 11.sp,
+                                color = DClrGray,
+                                maxLines = 1
+                            )
+                        }
+                        // Checkbox
+                        Box(
+                            Modifier
+                                .size(24.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(
+                                    if (isSelected) DClrTeal else DClrPillBg
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isSelected) {
+                                Icon(
+                                    Icons.Default.Check,
+                                    null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(14.dp)
+                                )
                             }
                         }
-                        HorizontalDivider(color = com.rasel.RasFocus.ui.theme.RasFocusTheme.colors.onBackground)
                     }
                 }
             }
         }
-        
+
+        // ── Save button ──────────────────────────────────────────────────
         Button(
-            onClick = { onSave(tempApps, tempSites) },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp).height(56.dp),
+            onClick = { onSave(tempApps.toList(), emptyList()) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp)
+                .height(54.dp),
             colors = ButtonDefaults.buttonColors(containerColor = DClrTeal),
             shape = RoundedCornerShape(16.dp),
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
-        ) { Text("Save Changes", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.5.sp) }
+        ) {
+            Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(
+                "Save  •  ${tempApps.size} apps",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color.White
+            )
+        }
     }
 }
+
 
 // ─────────────────────────────────────────
 // HELPER COMPOSABLES
