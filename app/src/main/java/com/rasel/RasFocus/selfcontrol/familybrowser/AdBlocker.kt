@@ -162,68 +162,6 @@ class AdBlocker(private val context: Context) {
             }
             return false
         }
-        // ── Trusted domains — never blocked regardless of adult-block settings ──
-        private val TRUSTED_DOMAINS = setOf(
-            "accounts.google.com", "mail.google.com", "gmail.com", "google.com",
-            "gstatic.com", "googleapis.com", "googleusercontent.com",
-            "youtube.com", "bing.com", "duckduckgo.com", "wikipedia.org"
-        )
-
-        fun isTrustedDomain(host: String): Boolean =
-            TRUSTED_DOMAINS.any { host == it || host.endsWith(".$it") }
-
-        // ── YouTube network-level ad block lists (shared with native YouTubeActivity) ──
-        val YT_AD_SERVERS = setOf(
-            "googleads.g.doubleclick.net", "pagead2.googlesyndication.com",
-            "pubads.g.doubleclick.net", "adservice.google.com",
-            "googleadservices.com", "googlesyndication.com",
-            "doubleclick.net", "ad.doubleclick.net", "static.doubleclick.net",
-            "imasdk.googleapis.com", "google-analytics.com", "ssl.google-analytics.com",
-            "googletagmanager.com", "googletagservices.com",
-            "amazon-adsystem.com", "adsystem.amazon.com", "moatads.com",
-            "scorecardresearch.com", "adsafeprotected.com", "2mdn.net",
-            "securepubads.g.doubleclick.net", "cm.g.doubleclick.net",
-            "tpc.googlesyndication.com"
-        )
-        val YT_AD_ENDPOINTS = listOf(
-            "/api/stats/ads", "/pagead/adview", "/ptracking", "/api/stats/qoe?",
-            "/pagead/paralleladload", "/pagead/viewthroughconversion",
-            "/pagead/interaction", "/pagead/adformat", "/annotations_auth",
-            "/get_midroll_info", "/api/stats/delayplay", "/api/stats/atr",
-            "youtubei/v1/player/ad_break", "youtubei/v1/ad_break",
-            "youtubei/v1/log_event", "imasdk.googleapis.com/js/sdkloader",
-            "imasdk.googleapis.com/admob"
-        )
-        val YT_AD_URL_PATTERNS = listOf(
-            "/pagead/", "/ads/", "/adview/", "adformat=",
-            "//ad.", "//ads.", "//adserver.", "//adservice.",
-            "tracking_pixel", "track/click", "ad_impression",
-            "affiliates/", "click.php?aff", "bannerfarm", "adrotate", "sponsored_links"
-        )
-
-        fun blockYtAdRequest(url: String, host: String): Boolean {
-            if (YT_AD_SERVERS.any { url.contains(it) }) return true
-            if (host.contains("youtube.com") || host.contains("imasdk.googleapis.com")) {
-                if (YT_AD_ENDPOINTS.any { url.contains(it) }) return true
-            }
-            if (url.contains("googlevideo.com/videoplayback")) {
-                if (url.contains("&oad=") || url.contains("ctier=A") ||
-                    url.contains("&adformat=") || url.contains("&ad_type=") ||
-                    url.contains("&source=ytads") || url.contains("&adsid=") ||
-                    (url.contains("&pot=") && url.contains("&c=WEB") && !url.contains("&id=")))
-                    return true
-            }
-            if (YT_AD_URL_PATTERNS.any { url.contains(it) } &&
-                !url.contains("youtube.com/watch") &&
-                !url.contains("googleapis.com/youtube") &&
-                !url.contains("youtube.com/results")) return true
-            if (host.contains("googlevideo.com")) {
-                if (url.contains("initplayback") || url.contains("generate_204") ||
-                    url.contains("/pcs/activeview") || url.contains("ctier=SA") ||
-                    url.contains("ctier=SR")) return true
-            }
-            return false
-        }
 
         fun buildBlockedPage(url: String, reason: BlockReason): String {
             val (icon, title, subtitle, color) = when (reason) {
