@@ -1,242 +1,6 @@
 === KOTLIN/KAPT ERRORS ===
-e: [ksp] /home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt: (336, 10): Function declaration must have a name
-e: Error occurred in KSP, check log for detail
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:165:17 Destructuring declarations are only allowed for local variables/values
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:171:13 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:171:20 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:171:23 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:172:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:172:44 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:173:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:173:28 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:173:29 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:173:37 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:173:38 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:173:47 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:173:48 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:173:117 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:173:118 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:173:119 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:174:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:174:24 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:175:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:175:68 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:176:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:176:79 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:177:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:177:86 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:178:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:178:99 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:179:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:179:83 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:180:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:180:74 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:181:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:181:69 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:182:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:182:64 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:183:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:183:93 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:184:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:184:92 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:185:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:185:78 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:186:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:186:100 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:187:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:187:61 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:187:62 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:187:67 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:187:81 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:188:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:188:100 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:189:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:189:76 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:190:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:190:85 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:191:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:191:87 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:192:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:192:38 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:193:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:193:28 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:193:29 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:193:33 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:193:34 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:193:35 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:194:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:194:30 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:194:31 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:194:35 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:194:36 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:194:37 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:194:38 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:194:42 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:194:48 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:195:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:195:23 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:195:24 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:195:29 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:195:34 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:196:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:196:22 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:196:23 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:196:31 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:196:35 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:197:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:197:30 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:197:31 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:197:34 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:197:35 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:197:36 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:197:37 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:197:40 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:197:46 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:198:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:198:31 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:198:32 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:198:37 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:198:38 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:198:71 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:199:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:199:27 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:199:28 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:199:53 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:199:54 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:199:61 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:199:62 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:199:70 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:199:71 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:199:85 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:200:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:200:37 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:201:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:201:13 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:201:16 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:201:17 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:201:27 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:201:28 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:336:5 Expecting a top level declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:336:10 Expecting a top level declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:663:1 Expecting a top level declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:165:17 Destructuring declarations are only allowed for local variables/values
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:171:13 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:171:20 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:171:23 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:172:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:172:44 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:173:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:173:28 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:173:29 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:173:37 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:173:38 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:173:47 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:173:48 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:173:117 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:173:118 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:173:119 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:174:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:174:24 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:175:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:175:68 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:176:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:176:79 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:177:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:177:86 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:178:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:178:99 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:179:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:179:83 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:180:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:180:74 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:181:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:181:69 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:182:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:182:64 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:183:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:183:93 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:184:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:184:92 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:185:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:185:78 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:186:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:186:100 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:187:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:187:61 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:187:62 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:187:67 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:187:81 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:188:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:188:100 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:189:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:189:76 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:190:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:190:85 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:191:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:191:87 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:192:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:192:38 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:193:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:193:28 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:193:29 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:193:33 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:193:34 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:193:35 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:194:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:194:30 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:194:31 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:194:35 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:194:36 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:194:37 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:194:38 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:194:42 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:194:48 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:195:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:195:23 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:195:24 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:195:29 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:195:34 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:196:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:196:22 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:196:23 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:196:31 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:196:35 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:197:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:197:30 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:197:31 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:197:34 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:197:35 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:197:36 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:197:37 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:197:40 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:197:46 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:198:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:198:31 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:198:32 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:198:37 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:198:38 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:198:71 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:199:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:199:27 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:199:28 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:199:53 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:199:54 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:199:61 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:199:62 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:199:70 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:199:71 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:199:85 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:200:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:200:37 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:201:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:201:13 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:201:16 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:201:17 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:201:27 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:201:28 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:336:5 Expecting a top level declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:336:10 Expecting a top level declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:663:1 Expecting a top level declaration
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:1088:1 Expecting a top level declaration
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:1088:1 Expecting a top level declaration
 
 === UNRESOLVED / TYPE ERRORS ===
 
@@ -249,36 +13,36 @@ e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/
 > Task :app:kspFullReleaseKotlin FAILED
 * What went wrong:
 Execution failed for task ':app:kspFullReleaseKotlin'.
-BUILD FAILED in 30s
+BUILD FAILED in 31s
 
 === LAST 50 LINES ===
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:198:31 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:198:32 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:198:37 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:198:38 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:198:71 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:199:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:199:27 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:199:28 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:199:53 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:199:54 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:199:61 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:199:62 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:199:70 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:199:71 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:199:85 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:200:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:200:37 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:201:1 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:201:13 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:201:16 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:201:17 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:201:27 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:201:28 Expecting member declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:336:5 Expecting a top level declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:336:10 Expecting a top level declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:663:1 Expecting a top level declaration
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784767994724.json
+> Task :app:checkFullReleaseDuplicateClasses
+> Task :app:compressFullReleaseAssets FROM-CACHE
+> Task :app:mergeFullReleaseNativeLibs
+> Task :app:collectFullReleaseDependencies
+
+> Task :app:stripFullReleaseDebugSymbols
+Unable to strip the following libraries, packaging them as they are: libbarhopper_v3.so, libimage_processing_util_jni.so, libpdfium.so, libpdfiumandroid.so.
+
+> Task :app:extractFullReleaseNativeSymbolTables FROM-CACHE
+> Task :app:mergeFullReleaseNativeDebugMetadata NO-SOURCE
+> Task :app:sdkFullReleaseDependencyData
+> Task :app:mergeFullReleaseResources FROM-CACHE
+> Task :app:processFullReleaseMainManifest
+> Task :app:processFullReleaseManifest
+> Task :app:processFullReleaseManifestForPackage
+note: generating mipmap/ic_launcher_round with config "anydpi-v33" for round icon compatibility.
+
+note: generating mipmap/ic_launcher_round with config "anydpi-v33" for round icon compatibility.
+
+> Task :app:processFullReleaseResources
+
+> Task :app:kspFullReleaseKotlin
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:1088:1 Expecting a top level declaration
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:1088:1 Expecting a top level declaration
+
+> Task :app:kspFullReleaseKotlin FAILED
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784787396978.json
 
 FAILURE: Build failed with an exception.
 
@@ -299,6 +63,6 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.9/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 30s
+BUILD FAILED in 31s
 31 actionable tasks: 21 executed, 10 from cache
 Configuration cache entry stored.
