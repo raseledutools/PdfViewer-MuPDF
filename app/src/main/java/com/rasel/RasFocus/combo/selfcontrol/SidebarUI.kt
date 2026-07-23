@@ -77,9 +77,9 @@ fun DrawerContent(
                     )
                 }
             }
-            
+
             HorizontalDivider(color = SoftWhite.copy(alpha = 0.1f))
-            
+
             // Menu Items
             Spacer(modifier = Modifier.height(16.dp))
             DrawerMenuItem(Icons.Default.Home, "Home") {
@@ -94,14 +94,40 @@ fun DrawerContent(
                 onNavigate("extreme_block")
                 closeDrawer()
             }
+            DrawerMenuItem(Icons.Default.MobileOff, "Block Apps") {
+                onNavigate("single_apps")
+                closeDrawer()
+            }
+            DrawerMenuItem(Icons.Default.DesktopWindows, "Block Websites") {
+                onNavigate("single_website")
+                closeDrawer()
+            }
+            DrawerMenuItem(Icons.Default.PlaylistAddCheck, "Blocking Plan") {
+                onNavigate("blocking_plan")
+                closeDrawer()
+            }
+            DrawerMenuItem(Icons.Default.Shield, "Adult Block") {
+                onNavigate("adult_block")
+                closeDrawer()
+            }
+            DrawerMenuItem(Icons.Default.MenuBook, "Deep Study") {
+                onNavigate("deep_study")
+                closeDrawer()
+            }
             DrawerMenuItem(Icons.Default.Settings, "Settings") {
                 onNavigate("settings")
                 closeDrawer()
             }
 
+            // Master Password — Professional lock system
+            DrawerMenuItem(Icons.Default.Lock, "Master Password", tint = AccentTeal) {
+                onNavigate("master_password")
+                closeDrawer()
+            }
+
             var showUpdateDialog by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
             val context = androidx.compose.ui.platform.LocalContext.current
-            
+
             DrawerMenuItem(Icons.Default.SystemUpdateAlt, "Check for Updates") {
                 showUpdateDialog = true
             }
@@ -118,9 +144,9 @@ fun DrawerContent(
                     }
                 )
             }
-            
+
             Spacer(modifier = Modifier.weight(1f))
-            
+
             // Footer
             HorizontalDivider(color = SoftWhite.copy(alpha = 0.1f))
             DrawerMenuItem(Icons.Default.Logout, "Logout", AccentTeal) {
