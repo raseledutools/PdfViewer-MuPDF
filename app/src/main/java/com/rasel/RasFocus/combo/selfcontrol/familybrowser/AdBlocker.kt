@@ -1084,5 +1084,4 @@ object YouTubeAdPruner {
 })();
 """.trimIndent()
 }
-
 }
