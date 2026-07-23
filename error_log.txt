@@ -16,10 +16,10 @@ Execution failed for task ':app:kspFullReleaseKotlin'.
 BUILD FAILED in 37s
 
 === LAST 50 LINES ===
-> Task :app:checkFullReleaseAarMetadata
 > Task :app:writeFullReleaseSigningConfigVersions
-> Task :app:compressFullReleaseAssets FROM-CACHE
+> Task :app:checkFullReleaseAarMetadata
 > Task :app:checkFullReleaseDuplicateClasses
+> Task :app:compressFullReleaseAssets FROM-CACHE
 > Task :app:mergeFullReleaseNativeLibs
 > Task :app:collectFullReleaseDependencies
 
@@ -42,7 +42,7 @@ note: generating mipmap/ic_launcher_round with config "anydpi-v33" for round ico
 > Task :app:kspFullReleaseKotlin FAILED
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:1087:1 Expecting a top level declaration
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:1087:1 Expecting a top level declaration
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784787604105.json
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784788305099.json
 
 FAILURE: Build failed with an exception.
 
