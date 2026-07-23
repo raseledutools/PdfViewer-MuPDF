@@ -2207,6 +2207,7 @@ fun BrowserSettingsDialog(context: Context, appType: String, onDismiss: () -> Un
                                 }
                             }
                         }
+                        "RasBrowser" -> {
                             item {
                                 SettingToggleRow("Block Ads", rbBlockAds, onSettingsClick = { showLockConfigFor = "rb_block_ads" }) { newValue ->
                                     handleToggle("rb_block_ads", newValue) { rbBlockAds = it; prefs.edit().putBoolean("rb_block_ads", it).apply() }
