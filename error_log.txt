@@ -1,8 +1,216 @@
 === KOTLIN/KAPT ERRORS ===
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:1087:1 Expecting a top level declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:1087:1 Expecting a top level declaration
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/XlsxViewerActivity.kt:337:36 Type mismatch: inferred type is PdfDocument.PageInfo! but PdfDocument.Page! was expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/XlsxViewerActivity.kt:355:45 Type mismatch: inferred type is PdfDocument.PageInfo! but PdfDocument.Page! was expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/SelfControlModule.kt:1276:86 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/SelfControlModule.kt:1379:74 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/SelfControlModule.kt:2410:94 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1098:26 Unresolved reference: packageName
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1220:21 Cannot find a parameter with this name: items
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1221:21 No value passed for parameter 'count'
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1221:32 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1223:42 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1224:60 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1225:42 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1243:69 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1244:55 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1251:42 Unresolved reference: icon
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1252:54 Unresolved reference: name
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1259:41 Unresolved reference: name
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1274:63 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1274:100 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1274:136 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1286:37 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:93:21 Conflicting declarations: private final val TRUSTED_DOMAINS: Set<String>, private final val TRUSTED_DOMAINS: Set<String>
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:107:9 Conflicting overloads: public final fun isTrustedDomain(host: String): Boolean defined in com.rasel.RasFocus.combo.selfcontrol.familybrowser.AdBlocker.Companion, public final fun isTrustedDomain(host: String): Boolean defined in com.rasel.RasFocus.combo.selfcontrol.familybrowser.AdBlocker.Companion
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:108:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:108:43 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:108:66 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:113:13 Conflicting declarations: public final val YT_AD_SERVERS: Set<String>, public final val YT_AD_SERVERS: Set<String>
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:125:13 Conflicting declarations: public final val YT_AD_ENDPOINTS: List<String>, public final val YT_AD_ENDPOINTS: List<String>
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:134:13 Conflicting declarations: public final val YT_AD_URL_PATTERNS: List<String>, public final val YT_AD_URL_PATTERNS: List<String>
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:142:9 Conflicting overloads: public final fun blockYtAdRequest(url: String, host: String): Boolean defined in com.rasel.RasFocus.combo.selfcontrol.familybrowser.AdBlocker.Companion, public final fun blockYtAdRequest(url: String, host: String): Boolean defined in com.rasel.RasFocus.combo.selfcontrol.familybrowser.AdBlocker.Companion
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:143:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:143:50 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:145:21 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:145:56 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:154:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:154:55 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:166:21 Conflicting declarations: private final val TRUSTED_DOMAINS: Set<String>, private final val TRUSTED_DOMAINS: Set<String>
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:172:9 Conflicting overloads: public final fun isTrustedDomain(host: String): Boolean defined in com.rasel.RasFocus.combo.selfcontrol.familybrowser.AdBlocker.Companion, public final fun isTrustedDomain(host: String): Boolean defined in com.rasel.RasFocus.combo.selfcontrol.familybrowser.AdBlocker.Companion
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:173:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:173:43 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:173:66 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:176:13 Conflicting declarations: public final val YT_AD_SERVERS: Set<String>, public final val YT_AD_SERVERS: Set<String>
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:188:13 Conflicting declarations: public final val YT_AD_ENDPOINTS: List<String>, public final val YT_AD_ENDPOINTS: List<String>
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:197:13 Conflicting declarations: public final val YT_AD_URL_PATTERNS: List<String>, public final val YT_AD_URL_PATTERNS: List<String>
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:204:9 Conflicting overloads: public final fun blockYtAdRequest(url: String, host: String): Boolean defined in com.rasel.RasFocus.combo.selfcontrol.familybrowser.AdBlocker.Companion, public final fun blockYtAdRequest(url: String, host: String): Boolean defined in com.rasel.RasFocus.combo.selfcontrol.familybrowser.AdBlocker.Companion
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:205:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:205:50 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:207:21 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:207:56 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:216:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:216:55 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:417:23 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:584:27 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:612:23 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/service/YoutubeFloatingWindowService.kt:756:58 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/youtubeactivity.kt:28:7 Redeclaration: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/diary.kt:1794:50 Unresolved reference: Manifest
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/diary.kt:1839:48 Unresolved reference: PickVisualMediaRequest
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/diary.kt:1839:71 Unresolved reference: PickVisualMedia
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/SelfControlModule.kt:1569:74 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/SelfControlModule.kt:2471:94 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1098:26 Unresolved reference: packageName
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1220:21 Cannot find a parameter with this name: items
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1221:21 No value passed for parameter 'count'
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1221:32 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1223:42 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1224:60 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1225:42 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1243:69 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1244:55 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1251:42 Unresolved reference: icon
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1252:54 Unresolved reference: name
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1259:41 Unresolved reference: name
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1274:63 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1274:100 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1274:136 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1286:37 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:93:21 Conflicting declarations: private final val TRUSTED_DOMAINS: Set<String>, private final val TRUSTED_DOMAINS: Set<String>
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:107:9 Conflicting overloads: public final fun isTrustedDomain(host: String): Boolean defined in com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.Companion, public final fun isTrustedDomain(host: String): Boolean defined in com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.Companion
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:108:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:108:43 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:108:66 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:113:13 Conflicting declarations: public final val YT_AD_SERVERS: Set<String>, public final val YT_AD_SERVERS: Set<String>
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:125:13 Conflicting declarations: public final val YT_AD_ENDPOINTS: List<String>, public final val YT_AD_ENDPOINTS: List<String>
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:134:13 Conflicting declarations: public final val YT_AD_URL_PATTERNS: List<String>, public final val YT_AD_URL_PATTERNS: List<String>
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:142:9 Conflicting overloads: public final fun blockYtAdRequest(url: String, host: String): Boolean defined in com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.Companion, public final fun blockYtAdRequest(url: String, host: String): Boolean defined in com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.Companion
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:143:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:143:50 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:145:21 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:145:56 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:154:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:154:55 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:166:21 Conflicting declarations: private final val TRUSTED_DOMAINS: Set<String>, private final val TRUSTED_DOMAINS: Set<String>
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:172:9 Conflicting overloads: public final fun isTrustedDomain(host: String): Boolean defined in com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.Companion, public final fun isTrustedDomain(host: String): Boolean defined in com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.Companion
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:173:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:173:43 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:173:66 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:176:13 Conflicting declarations: public final val YT_AD_SERVERS: Set<String>, public final val YT_AD_SERVERS: Set<String>
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:188:13 Conflicting declarations: public final val YT_AD_ENDPOINTS: List<String>, public final val YT_AD_ENDPOINTS: List<String>
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:197:13 Conflicting declarations: public final val YT_AD_URL_PATTERNS: List<String>, public final val YT_AD_URL_PATTERNS: List<String>
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:204:9 Conflicting overloads: public final fun blockYtAdRequest(url: String, host: String): Boolean defined in com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.Companion, public final fun blockYtAdRequest(url: String, host: String): Boolean defined in com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.Companion
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:205:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:205:50 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:207:21 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:207:56 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:216:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:216:55 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:417:23 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:584:27 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:612:23 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/service/YoutubeFloatingWindowService.kt:800:58 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/service/YoutubeFloatingWindowService.kt:917:62 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/youtubeactivity.kt:28:7 Redeclaration: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/diary.kt:1575:9 Unresolved reference: Dialog
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/diary.kt:1576:13 @Composable invocations can only happen from the context of a @Composable function
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/diary.kt:1576:75 @Composable invocations can only happen from the context of a @Composable function
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/diary.kt:1588:72 Unresolved reference: VisualTransformation
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/diary.kt:2044:50 Unresolved reference: Manifest
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/diary.kt:2089:48 Unresolved reference: PickVisualMediaRequest
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/diary.kt:2089:71 Unresolved reference: PickVisualMedia
 
 === UNRESOLVED / TYPE ERRORS ===
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/XlsxViewerActivity.kt:337:36 Type mismatch: inferred type is PdfDocument.PageInfo! but PdfDocument.Page! was expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/full/java/com/rasel/RasFocus/selfcontrol/study_tools/XlsxViewerActivity.kt:355:45 Type mismatch: inferred type is PdfDocument.PageInfo! but PdfDocument.Page! was expected
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/SelfControlModule.kt:1276:86 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/SelfControlModule.kt:1379:74 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/SelfControlModule.kt:2410:94 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1098:26 Unresolved reference: packageName
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1220:21 Cannot find a parameter with this name: items
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1221:32 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1223:42 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1224:60 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1225:42 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1243:69 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1244:55 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1251:42 Unresolved reference: icon
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1252:54 Unresolved reference: name
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1259:41 Unresolved reference: name
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1274:63 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1274:100 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1274:136 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/deep_study.kt:1286:37 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:108:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:108:43 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:108:66 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:143:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:143:50 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:145:21 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:145:56 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:154:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:154:55 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:173:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:173:43 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:173:66 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:205:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:205:50 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:207:21 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:207:56 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:216:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:216:55 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:417:23 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:584:27 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:612:23 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/service/YoutubeFloatingWindowService.kt:756:58 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/diary.kt:1794:50 Unresolved reference: Manifest
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/diary.kt:1839:48 Unresolved reference: PickVisualMediaRequest
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/study_tools/diary.kt:1839:71 Unresolved reference: PickVisualMedia
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/SelfControlModule.kt:1569:74 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/SelfControlModule.kt:2471:94 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1098:26 Unresolved reference: packageName
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1220:21 Cannot find a parameter with this name: items
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1221:32 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1223:42 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1224:60 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1225:42 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1243:69 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1244:55 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1251:42 Unresolved reference: icon
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1252:54 Unresolved reference: name
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1259:41 Unresolved reference: name
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1274:63 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1274:100 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1274:136 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1286:37 Unresolved reference: pkg
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:108:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:108:43 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:108:66 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:143:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:143:50 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:145:21 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:145:56 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:154:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:154:55 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:173:13 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:173:43 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:173:66 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:205:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:205:50 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:207:21 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:207:56 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:216:17 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:216:55 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:417:23 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:584:27 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:612:23 Overload resolution ambiguity: 
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/service/YoutubeFloatingWindowService.kt:800:58 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/service/YoutubeFloatingWindowService.kt:917:62 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/diary.kt:1575:9 Unresolved reference: Dialog
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/diary.kt:1588:72 Unresolved reference: VisualTransformation
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/diary.kt:2044:50 Unresolved reference: Manifest
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/diary.kt:2089:48 Unresolved reference: PickVisualMediaRequest
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/diary.kt:2089:71 Unresolved reference: PickVisualMedia
 
 === KAPT / MODULE ERRORS ===
    > Compilation error. See log for more details
@@ -10,44 +218,44 @@ e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/
 === STACKTRACE ===
 
 === BUILD FAILURE ===
-> Task :app:kspFullReleaseKotlin FAILED
+> Task :app:compileFullReleaseKotlin FAILED
 * What went wrong:
-Execution failed for task ':app:kspFullReleaseKotlin'.
-BUILD FAILED in 34s
+Execution failed for task ':app:compileFullReleaseKotlin'.
+BUILD FAILED in 3m 13s
 
 === LAST 50 LINES ===
-> Task :app:writeFullReleaseSigningConfigVersions
-> Task :app:mergeFullReleaseNativeLibs
-> Task :app:checkFullReleaseAarMetadata
-> Task :app:collectFullReleaseDependencies
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:207:56 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:216:17 Overload resolution ambiguity: 
+public final val YT_AD_URL_PATTERNS: List<String> defined in com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.Companion
+public final val YT_AD_URL_PATTERNS: List<String> defined in com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.Companion
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:216:55 Unresolved reference: it
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:417:23 Overload resolution ambiguity: 
+public final fun isTrustedDomain(host: String): Boolean defined in com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.Companion
+public final fun isTrustedDomain(host: String): Boolean defined in com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.Companion
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:584:27 Overload resolution ambiguity: 
+public final fun isTrustedDomain(host: String): Boolean defined in com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.Companion
+public final fun isTrustedDomain(host: String): Boolean defined in com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.Companion
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:612:23 Overload resolution ambiguity: 
+public final fun isTrustedDomain(host: String): Boolean defined in com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.Companion
+public final fun isTrustedDomain(host: String): Boolean defined in com.rasel.RasFocus.selfcontrol.familybrowser.AdBlocker.Companion
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/service/YoutubeFloatingWindowService.kt:800:58 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/service/YoutubeFloatingWindowService.kt:917:62 Unresolved reference: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/youtubeactivity.kt:28:7 Redeclaration: YoutubeActivity
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/diary.kt:1575:9 Unresolved reference: Dialog
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/diary.kt:1576:13 @Composable invocations can only happen from the context of a @Composable function
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/diary.kt:1576:75 @Composable invocations can only happen from the context of a @Composable function
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/diary.kt:1588:72 Unresolved reference: VisualTransformation
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/diary.kt:2044:50 Unresolved reference: Manifest
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/diary.kt:2089:48 Unresolved reference: PickVisualMediaRequest
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/diary.kt:2089:71 Unresolved reference: PickVisualMedia
 
-> Task :app:stripFullReleaseDebugSymbols
-Unable to strip the following libraries, packaging them as they are: libbarhopper_v3.so, libimage_processing_util_jni.so, libpdfium.so, libpdfiumandroid.so.
-
-> Task :app:extractFullReleaseNativeSymbolTables FROM-CACHE
-> Task :app:mergeFullReleaseNativeDebugMetadata NO-SOURCE
-> Task :app:mergeFullReleaseAssets FROM-CACHE
-> Task :app:compressFullReleaseAssets FROM-CACHE
-> Task :app:sdkFullReleaseDependencyData
-> Task :app:mergeFullReleaseResources FROM-CACHE
-> Task :app:processFullReleaseMainManifest
-> Task :app:processFullReleaseManifest
-> Task :app:processFullReleaseManifestForPackage
-note: generating mipmap/ic_launcher_round with config "anydpi-v33" for round icon compatibility.
-
-note: generating mipmap/ic_launcher_round with config "anydpi-v33" for round icon compatibility.
-
-> Task :app:processFullReleaseResources
-
-> Task :app:kspFullReleaseKotlin FAILED
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:1087:1 Expecting a top level declaration
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:1087:1 Expecting a top level declaration
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784789024573.json
+> Task :app:compileFullReleaseKotlin FAILED
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784789537298.json
 
 FAILURE: Build failed with an exception.
 
 * What went wrong:
-Execution failed for task ':app:kspFullReleaseKotlin'.
+Execution failed for task ':app:compileFullReleaseKotlin'.
 > A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
    > Compilation error. See log for more details
 
@@ -63,6 +271,6 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.9/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 34s
-31 actionable tasks: 21 executed, 10 from cache
+BUILD FAILED in 3m 13s
+32 actionable tasks: 22 executed, 10 from cache
 Configuration cache entry stored.
