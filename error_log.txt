@@ -13,22 +13,22 @@ e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/
 > Task :app:kspFullReleaseKotlin FAILED
 * What went wrong:
 Execution failed for task ':app:kspFullReleaseKotlin'.
-BUILD FAILED in 37s
+BUILD FAILED in 34s
 
 === LAST 50 LINES ===
-> Task :app:writeFullReleaseAppMetadata
 > Task :app:writeFullReleaseSigningConfigVersions
-> Task :app:compressFullReleaseAssets FROM-CACHE
-> Task :app:checkFullReleaseDuplicateClasses
-> Task :app:collectFullReleaseDependencies
 > Task :app:mergeFullReleaseNativeLibs
-> Task :app:sdkFullReleaseDependencyData
+> Task :app:checkFullReleaseAarMetadata
+> Task :app:collectFullReleaseDependencies
 
 > Task :app:stripFullReleaseDebugSymbols
 Unable to strip the following libraries, packaging them as they are: libbarhopper_v3.so, libimage_processing_util_jni.so, libpdfium.so, libpdfiumandroid.so.
 
 > Task :app:extractFullReleaseNativeSymbolTables FROM-CACHE
 > Task :app:mergeFullReleaseNativeDebugMetadata NO-SOURCE
+> Task :app:mergeFullReleaseAssets FROM-CACHE
+> Task :app:compressFullReleaseAssets FROM-CACHE
+> Task :app:sdkFullReleaseDependencyData
 > Task :app:mergeFullReleaseResources FROM-CACHE
 > Task :app:processFullReleaseMainManifest
 > Task :app:processFullReleaseManifest
@@ -42,7 +42,7 @@ note: generating mipmap/ic_launcher_round with config "anydpi-v33" for round ico
 > Task :app:kspFullReleaseKotlin FAILED
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/combo/selfcontrol/familybrowser/AdBlocker.kt:1087:1 Expecting a top level declaration
 e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/AdBlocker.kt:1087:1 Expecting a top level declaration
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784788483992.json
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784789024573.json
 
 FAILURE: Build failed with an exception.
 
@@ -63,6 +63,6 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.9/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 37s
+BUILD FAILED in 34s
 31 actionable tasks: 21 executed, 10 from cache
 Configuration cache entry stored.
