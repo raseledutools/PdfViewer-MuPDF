@@ -1755,6 +1755,53 @@ fun BrowserWebView(
                             view.evaluateJavascript(
                                 YouTubeAdPruner.getJsInjectScript(), null
                             )
+
+                            // ── CSS/JS fallback — network block miss করলে এটা ধরবে ──
+                            // Native YouTubeActivity-তে শুধু network level (user নির্দেশ অনুযায়ী)।
+                            // Browser YouTube WebView-এ network fail হলে CSS hide + skip-click
+                            // fallback — video render pipeline এ হাত দেওয়া হচ্ছে না।
+                            view.evaluateJavascript("""
+                                (function() {
+                                    if (window.__rasBrowserYtAdCss__) return;
+                                    window.__rasBrowserYtAdCss__ = true;
+
+                                    // CSS inject — ad elements hide করো
+                                    var style = document.createElement('style');
+                                    style.id = 'ras-yt-ad-css';
+                                    style.textContent = `
+                                        .ytp-ad-overlay-container,
+                                        .ytp-ad-text-overlay,
+                                        .ytp-ad-image-overlay,
+                                        .ytp-ad-overlay-slot,
+                                        ytm-promoted-video-renderer,
+                                        ytm-in-read-ad-renderer,
+                                        ytm-companion-ad-renderer,
+                                        ytm-ads-renderer,
+                                        .ytm-promoted-sparkles-web-renderer,
+                                        [class*="ad-div"],
+                                        [id*="ad_slot"] { display: none !important; }
+                                    `;
+                                    if (!document.getElementById('ras-yt-ad-css')) {
+                                        document.head && document.head.appendChild(style);
+                                    }
+
+                                    // Skip button click fallback
+                                    function trySkip() {
+                                        var skipSel = [
+                                            '.ytp-ad-skip-button',
+                                            '.ytp-ad-skip-button-modern',
+                                            '.ytp-skip-ad-button',
+                                            '[class*="skip-ad"]',
+                                            'button.ytp-ad-skip-button-container'
+                                        ];
+                                        for (var i = 0; i < skipSel.length; i++) {
+                                            var btn = document.querySelector(skipSel[i]);
+                                            if (btn && btn.offsetParent !== null) { btn.click(); return; }
+                                        }
+                                    }
+                                    setInterval(trySkip, 250);
+                                })();
+                            """.trimIndent(), null)
                         }
 
                         // ── YouTube search box adult block (SPA navigation safe) ──

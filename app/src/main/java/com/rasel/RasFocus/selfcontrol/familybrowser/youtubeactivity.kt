@@ -181,43 +181,11 @@ class YoutubeActivity : ComponentActivity() {
             "AppleWebKit/537.36 (KHTML, like Gecko) " +
             "Chrome/124.0.6367.82 Mobile Safari/537.36"
 
-        // FIX: ?? list ??? ?????? hardcoded ???, ??? ???? keyword ??? ???? ???
-        // app update ?????? ??? ??? FirebaseKeywordSync (Firebase Realtime DB ??
-        // keyword_data/adult_keywords node) ???? ??? � main browser ?? AdBlocker
-        // ??? FacebookActivity ?? ????? ??? ??? central list ?????? ???, ??? ?????
-        // ????? ???????? sync ????? ?????? ???? Firebase console ? keyword ???/???
-        // ????? � ???? app update ?????? � YouTube search bar ? ???? ???? reflect ????
+        // Adult keywords Firebase থেকে আসে — AdBlocker / FirebaseKeywordSync shared
         private val ADULT_SEARCH_KEYWORDS: Set<String>
             get() = com.rasel.RasFocus.selfcontrol.FirebaseKeywordSync.getAdultKeywords()
 
-        private val AD_SERVERS = setOf(
-            // Google ad network domains (pure domain-level block)
-            "googleads.g.doubleclick.net",
-            "pagead2.googlesyndication.com",
-            "pubads.g.doubleclick.net",
-            "adservice.google.com",
-            "googleadservices.com",
-            "googlesyndication.com",
-            "doubleclick.net",
-            "ad.doubleclick.net",
-            "static.doubleclick.net",
-            "imasdk.googleapis.com",
-            // Analytics/tracker domains
-            "google-analytics.com",
-            "ssl.google-analytics.com",
-            "googletagmanager.com",
-            "googletagservices.com",
-            // Third-party ad/tracker domains
-            "amazon-adsystem.com",
-            "adsystem.amazon.com",
-            "moatads.com",
-            "scorecardresearch.com",
-            "adsafeprotected.com",
-            "2mdn.net",
-            "securepubads.g.doubleclick.net",
-            "cm.g.doubleclick.net",
-            "tpc.googlesyndication.com"
-        )
+        // AD_SERVERS + YT_AD_ENDPOINTS + patterns → AdBlocker.YT_AD_SERVERS etc. এ move হয়েছে
 
         fun launch(activity: Activity) {
             val intent = Intent(activity, YoutubeActivity::class.java)
@@ -386,97 +354,17 @@ class YoutubeActivity : ComponentActivity() {
                     request: WebResourceRequest
                 ): WebResourceResponse? {
                     val url = request.url.toString()
-
-                    // ── LAYER 1: Network-level block ─────────────────────────────────────
-                    // এটাই প্রধান ad block — request যাওয়ার আগেই শূন্য response দেওয়া হয়।
-                    // JS-based skip এর মতো video render pipeline এ কোনো interference নেই।
-
-                    // ── 1a. Known ad network domains (domain-level) ───────────────────────
-                    // ✅ FIX: a847253 এ url.contains(it) → host == it || host.endsWith(".$it")
-                    // এ বদলানো হয়েছিল "more precise" করতে, কিন্তু এটাই blocking ভেঙেছে।
-                    // YouTube এর real ad request গুলো সরাসরি "doubleclick.net" এ না গিয়ে
-                    // deep multi-level subdomain এ যায় (যেমন "r1---sn-abc.googlevideo-ads.
-                    // doubleclick.net") — host.endsWith(".doubleclick.net") এটা technically
-                    // ধরে, কিন্তু AD_SERVERS এ "googleads.g.doubleclick.net" entry আছে
-                    // যেটা ধরার কথা "googleads.g.doubleclick.net" কে, যেটা endsWith দিয়ে
-                    // match হয় না (কারণ "googleads.g.doubleclick.net" != "doubleclick.net"
-                    // এর suffix হিসেবে match করতে হলে শুধু ".doubleclick.net" দরকার)।
-                    // url.contains() সব case এ কাজ করে — এটাই original approach এ ছিল।
                     val host = request.url?.host?.lowercase() ?: ""
-                    if (AD_SERVERS.any { url.contains(it) }) {
+
+                    // ── Network-level ad block ────────────────────────────────────────
+                    // AdBlocker.blockYtAdRequest() — AD_SERVERS, endpoint, googlevideo,
+                    // pattern সব একই list AdBlocker companion থেকে আসে। Browser YouTube
+                    // WebView-ও একই list ব্যবহার করে — একটা জায়গায় update করলেই হয়।
+                    if (AdBlocker.blockYtAdRequest(url, host)) {
                         return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
                     }
 
-                    // ── 1b. YouTube ad-specific API endpoints (path-level) ────────────────
-                    // ⚠️ "watchtime" এখানে নেই — এটা normal video API, block করলে video play ভাঙে
-                    val ytAdEndpoints = listOf(
-                        // Ad impression / tracking
-                        "/api/stats/ads",
-                        "/pagead/adview",
-                        "/ptracking",
-                        "/api/stats/qoe?",          // query string সহ — plain qoe block করলে কিছু navigation ভাঙে
-                        "/pagead/paralleladload",
-                        "/pagead/viewthroughconversion",
-                        "/pagead/interaction",
-                        "/pagead/adformat",
-                        "/annotations_auth",
-                        "/get_midroll_info",
-                        "/api/stats/delayplay",
-                        "/api/stats/atr",
-                        // YouTube internal ad API
-                        "youtubei/v1/player/ad_break",
-                        "youtubei/v1/ad_break",
-                        "youtubei/v1/log_event",
-                        // IMA SDK (ad video SDK)
-                        "imasdk.googleapis.com/js/sdkloader",
-                        "imasdk.googleapis.com/admob"
-                    )
-                    if (host.contains("youtube.com") || host.contains("imasdk.googleapis.com")) {
-                        if (ytAdEndpoints.any { url.contains(it) }) {
-                            return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
-                        }
-                    }
-
-                    // ── 1c. Ad video stream detection (googlevideo.com) ───────────────────
-                    // YouTube ad video এর videoplayback URL এ নির্দিষ্ট params থাকে।
-                    // ⚠️ এখানে শুধু empty response দিচ্ছি — video.currentTime
-                    // বা DOM touch করছি না, তাই render pipeline safe থাকে।
-                    if (url.contains("googlevideo.com/videoplayback")) {
-                        val isAdStream =
-                            url.contains("&oad=")         ||  // old ad token
-                            url.contains("ctier=A")       ||  // ad tier marker
-                            url.contains("&adformat=")    ||  // ad format param
-                            url.contains("&ad_type=")     ||  // ad type
-                            url.contains("&source=ytads") ||  // source = ytads
-                            url.contains("&adsid=")       ||  // ad session id
-                            // FIX: &&-precedence bug — parentheses দিয়ে group করা হয়েছে
-                            (url.contains("&pot=") && url.contains("&c=WEB") && !url.contains("&id="))
-                        if (isAdStream) {
-                            return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
-                        }
-                    }
-
-                    // ── 1d. Generic ad/tracker URL pattern matching ───────────────────────
-                    val adUrlPatterns = listOf(
-                        "/pagead/", "/ads/", "/adview/", "adformat=",
-                        "//ad.", "//ads.", "//adserver.", "//adservice.",
-                        "tracking_pixel", "track/click", "ad_impression",
-                        "affiliates/", "click.php?aff", "bannerfarm",
-                        "adrotate", "sponsored_links"
-                    )
-                    if (adUrlPatterns.any { url.contains(it) } &&
-                        !url.contains("youtube.com/watch") &&
-                        !url.contains("googleapis.com/youtube") &&
-                        !url.contains("youtube.com/results")) {
-                        return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
-                    }
-                    // ── END LAYER 1 ──────────────────────────────────────────────────────
-
-                    // YouTube-?? ?????? search box ???? search ???? page navigate ??? ?? �
-                    // internally ???? XHR/fetch request ??????, ???? shouldOverrideUrlLoading
-                    // ? ???? ??????? ?? (???? ???? full page navigation ? ???)? ????? ??? ??
-                    // ????? address bar ? ?????? URL ???? ???? block ???, ?????? app ??
-                    // ????? search icon ????? search ???? ???????? bypass ???? ????
+                    // ── Adult search keyword block ────────────────────────────────────
                     val adultBlockHtml = checkAdultSearchKeyword(url)
                     if (adultBlockHtml != null) {
                         adultBlockAlreadyShownForThisLoad = true
@@ -486,21 +374,6 @@ class YoutubeActivity : ComponentActivity() {
                             )
                         }
                         return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
-                    }
-
-                    // ── 1e. googlevideo ad-specific URLs (initplayback, generate_204, ctier=SA/SR) ──
-                    // এগুলো googlevideo.com এর ad-specific endpoints — normal video এ নেই
-                    if (host.contains("googlevideo.com")) {
-                        val isGvAdUrl =
-                            url.contains("initplayback") ||
-                            url.contains("generate_204") ||
-                            url.contains("/pcs/activeview") ||
-                            url.contains("ctier=SA") ||
-                            url.contains("ctier=SR") ||
-                            (url.contains("initplayback") && url.contains("adformat"))
-                        if (isGvAdUrl) {
-                            return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
-                        }
                     }
 
                     return super.shouldInterceptRequest(view, request)
