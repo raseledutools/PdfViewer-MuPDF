@@ -40,33 +40,28 @@ import kotlinx.coroutines.*
 import kotlin.math.*
 
 // ─────────────────────────────────────────
-// PREMIUM COLORS — dark glassmorphism redesign
+// DEEP STUDY — Color System (Dark Theme)
+// Background: Deep Navy  |  Text: Crisp White
 // ─────────────────────────────────────────
-// FIX (redesign): previous palette was light-theme (white cards, dark text).
-// Kept the SAME constant names to avoid a risky rename across 30+ call
-// sites, but repurposed the roles: DClrDark now means "primary text color"
-// (light, since the background is now dark) rather than literally dark —
-// same for DClrGray (brightened for legibility against a dark backdrop).
-// Added new *Glass*/*Badge* constants for translucent card/pill/icon-badge
-// backgrounds, replacing scattered hardcoded light hex literals
-// (0xFFF1F5F9, 0xFFF0F9FF, 0xFFECFDF5, 0xFFE2E8F0) that were previously
-// tuned for a white background and would look broken on a dark one.
-val DClrTeal     = Color(0xFF0EA5E9) // Sky Blue
-val DClrTealDark = Color(0xFF0284C7)
-val DClrWhite = Color(0xFFF8FAFC)
-val DClrPillBg = Color(0xFFFFFFFF).copy(alpha = 0.05f)   // subtle pill/track background
-val DClrDark = DClrPillBg  // was near-black text; now light — this IS the primary text color
-val DClrGray     = Color(0xFF94A3B8) // Slate 400 — brightened from Slate 500 for dark-bg legibility
-val DClrBg = Color(0xFF0B1220)
-val DClrSurface  = Color(0xFFFFFFFF).copy(alpha = 0.07f) // translucent glass card background
-val DClrGlassBorder = Color(0xFFFFFFFF).copy(alpha = 0.14f)
-val DClrPillSelectedBg = Color(0xFFFFFFFF).copy(alpha = 0.12f) // selected/pressed pill state
-val DClrBadgeTeal = DClrTeal.copy(alpha = 0.18f)         // icon-badge backgrounds (was 0xFFF0F9FF)
-val DClrBadgeGreen = Color(0xFF10B981).copy(alpha = 0.18f) // was 0xFFECFDF5
-val DClrBorderMuted = Color(0xFFFFFFFF).copy(alpha = 0.12f) // was 0xFFE2E8F0
-val DClrRed      = Color(0xFFEF4444)
-val DClrGreen = Color(0xFF10B981) // Emerald — brightened slightly for dark-bg contrast
-val DClrAmber    = Color(0xFFF59E0B)
+val DClrBg           = Color(0xFF0B1220)                    // Deep navy background
+val DClrSurface      = Color(0xFF141E30)                    // Card surface — distinct from bg
+val DClrSurface2     = Color(0xFF1C2840)                    // Slightly lighter card variant
+val DClrTeal         = Color(0xFF00C6B2)                    // Primary accent — vibrant teal
+val DClrTealDark     = Color(0xFF009E8C)                    // Pressed / darker teal
+val DClrWhite        = Color(0xFFFFFFFF)                    // Pure white for timer digits
+val DClrDark         = Color(0xFFF0F4FF)                    // Primary text — bright near-white
+val DClrGray         = Color(0xFF8090A8)                    // Secondary / hint text
+val DClrBorderMuted  = Color(0xFF2A3A52)                    // Card borders
+val DClrPillBg       = Color(0xFF1C2840)                    // Pill / toggle track bg
+val DClrPillSelectedBg = Color(0xFF253350)                  // Selected pill state
+val DClrGlassBorder  = Color(0xFF2E4060)                    // Glass card border
+val DClrBadgeTeal    = Color(0xFF00C6B2).copy(alpha = 0.18f) // Teal icon badge bg
+val DClrBadgeGreen   = Color(0xFF22C55E).copy(alpha = 0.18f) // Green icon badge bg
+val DClrBadgePurple  = Color(0xFF8B5CF6).copy(alpha = 0.18f) // Purple icon badge bg
+val DClrBadgeAmber   = Color(0xFFF59E0B).copy(alpha = 0.18f) // Amber icon badge bg
+val DClrRed          = Color(0xFFFF4E4E)                    // Error / stop
+val DClrGreen        = Color(0xFF22C55E)                    // Success / break
+val DClrAmber        = Color(0xFFF59E0B)                    // Warning / strict
 
 data class BlockItem(val name: String)
 
@@ -767,18 +762,18 @@ private fun TimerHeroCard(
 @Composable
 private fun StartStopButton(isActive: Boolean, onClick: () -> Unit) {
     val bg = when {
-        isActive     -> DClrDark
-        else         -> DClrTeal
+        isActive -> DClrRed
+        else     -> DClrTeal
     }
     val label = when {
-        isActive     -> "STOP POMODORO"
-        else         -> "START POMODORO"
+        isActive -> "STOP POMODORO"
+        else     -> "START POMODORO"
     }
     val icon = when {
-        isActive     -> Icons.Default.Stop
-        else         -> Icons.Default.PlayArrow
+        isActive -> Icons.Default.Stop
+        else     -> Icons.Default.PlayArrow
     }
-    
+
     Button(
         onClick = onClick,
         colors = ButtonDefaults.buttonColors(containerColor = bg),
