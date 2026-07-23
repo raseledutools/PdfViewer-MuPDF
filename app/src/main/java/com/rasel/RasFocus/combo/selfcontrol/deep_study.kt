@@ -40,18 +40,28 @@ import kotlinx.coroutines.*
 import kotlin.math.*
 
 // ─────────────────────────────────────────
-// PREMIUM COLORS
+// DEEP STUDY — Color System (Dark Theme)
+// Background: Deep Navy  |  Text: Crisp White
 // ─────────────────────────────────────────
-val DClrTeal     = Color(0xFF0EA5E9) // Sky Blue
-val DClrTealDark = Color(0xFF0284C7)
-val DClrWhite = Color(0xFFF8FAFC)
-val DClrDark = Color(0xFF1E293B) // Slate 900
-val DClrGray     = Color(0xFF64748B) // Slate 500
-val DClrBg = Color(0xFFF8FAFC) // Slate 50
-val DClrSurface  = Color(0xFFFFFFFF)
-val DClrRed      = Color(0xFFEF4444)
-val DClrGreen = Color(0xFF0096B4) // Emerald
-val DClrAmber    = Color(0xFFF59E0B)
+val DClrBg           = Color(0xFF0B1220)                    // Deep navy background
+val DClrSurface      = Color(0xFF141E30)                    // Card surface — distinct from bg
+val DClrSurface2     = Color(0xFF1C2840)                    // Slightly lighter card variant
+val DClrTeal         = Color(0xFF00C6B2)                    // Primary accent — vibrant teal
+val DClrTealDark     = Color(0xFF009E8C)                    // Pressed / darker teal
+val DClrWhite        = Color(0xFFFFFFFF)                    // Pure white for timer digits
+val DClrDark         = Color(0xFFF0F4FF)                    // Primary text — bright near-white
+val DClrGray         = Color(0xFF8090A8)                    // Secondary / hint text
+val DClrBorderMuted  = Color(0xFF2A3A52)                    // Card borders
+val DClrPillBg       = Color(0xFF1C2840)                    // Pill / toggle track bg
+val DClrPillSelectedBg = Color(0xFF253350)                  // Selected pill state
+val DClrGlassBorder  = Color(0xFF2E4060)                    // Glass card border
+val DClrBadgeTeal    = Color(0xFF00C6B2).copy(alpha = 0.18f) // Teal icon badge bg
+val DClrBadgeGreen   = Color(0xFF22C55E).copy(alpha = 0.18f) // Green icon badge bg
+val DClrBadgePurple  = Color(0xFF8B5CF6).copy(alpha = 0.18f) // Purple icon badge bg
+val DClrBadgeAmber   = Color(0xFFF59E0B).copy(alpha = 0.18f) // Amber icon badge bg
+val DClrRed          = Color(0xFFFF4E4E)                    // Error / stop
+val DClrGreen        = Color(0xFF22C55E)                    // Success / break
+val DClrAmber        = Color(0xFFF59E0B)                    // Warning / strict
 
 data class BlockItem(val name: String)
 
@@ -70,10 +80,192 @@ fun hasOverlayPermission(context: Context): Boolean =
 // ─────────────────────────────────────────
 // ALLOW-LIST BLOCKER (USAGE STATS)
 // ─────────────────────────────────────────
+// FIX: this section header existed with NO implementation under it at all —
+// isFocusMode only ran a countdown timer, nothing ever actually enforced the
+// allow-list against other apps. That's the reported bug ("everything
+// except the allow list is supposed to auto-block, but it doesn't") — there
+// was simply nothing here to do the blocking. Implemented below: a
+// foreground Service that polls UsageStatsManager for the current
+// foreground app while a focus session is active, and shows a full-screen
+// overlay (WindowManager, same general mechanism as FloatingStopwatch
+// above, but full-screen and touch-capturing rather than a small draggable
+// widget) whenever that app isn't RasFocus itself, the device launcher, the
+// default dialer (emergency calls must never be blockable), or in
+// DataManager.dsAllowAppList.
+class DeepStudyBlockerService : android.app.Service() {
 
+    companion object {
+        private const val CHANNEL_ID = "deep_study_blocker"
+        private const val NOTIF_ID = 8891
+        @Volatile private var running = false
 
+        fun start(context: Context) {
+            if (running) return
+            val intent = Intent(context, DeepStudyBlockerService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) context.startForegroundService(intent)
+            else context.startService(intent)
+        }
 
-// ─────────────────────────────────────────
+        fun stop(context: Context) {
+            context.stopService(Intent(context, DeepStudyBlockerService::class.java))
+        }
+    }
+
+    private var pollJob: Job? = null
+    private var wm: WindowManager? = null
+    private var overlayView: android.view.View? = null
+    private var lastBlockedPkg: String? = null
+
+    override fun onBind(intent: Intent?): android.os.IBinder? = null
+
+    override fun onCreate() {
+        super.onCreate()
+        running = true
+        val mgr = getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            mgr.createNotificationChannel(
+                android.app.NotificationChannel(CHANNEL_ID, "Deep Study Blocker", android.app.NotificationManager.IMPORTANCE_MIN)
+            )
+        }
+        val notif = androidx.core.app.NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("Deep Study focus session active")
+            .setSmallIcon(android.R.drawable.ic_lock_idle_lock)
+            .setPriority(androidx.core.app.NotificationCompat.PRIORITY_MIN)
+            .setOngoing(true)
+            .build()
+        startForeground(NOTIF_ID, notif)
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (pollJob == null) {
+            pollJob = CoroutineScope(Dispatchers.Default).launch {
+                while (isActive) {
+                    checkForegroundApp()
+                    delay(1500)
+                }
+            }
+        }
+        return android.app.Service.START_STICKY
+    }
+
+    private fun homePackage(): String? {
+        val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+        return packageManager.resolveActivity(homeIntent, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY)
+            ?.activityInfo?.packageName
+    }
+
+    private fun dialerPackage(): String? = try {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            (getSystemService(Context.TELECOM_SERVICE) as? android.telecom.TelecomManager)?.defaultDialerPackage
+        } else null
+    } catch (_: Exception) { null }
+
+    private fun currentForegroundPackage(): String? {
+        if (!hasUsageStatsPermission(this)) return null
+        val usm = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+        val end = System.currentTimeMillis()
+        val events = usm.queryEvents(end - 10_000, end)
+        val event = android.app.usage.UsageEvents.Event()
+        var lastPkg: String? = null
+        while (events.hasNextEvent()) {
+            events.getNextEvent(event)
+            if (event.eventType == android.app.usage.UsageEvents.Event.MOVE_TO_FOREGROUND) lastPkg = event.packageName
+        }
+        return lastPkg
+    }
+
+    private suspend fun checkForegroundApp() {
+        val fg = currentForegroundPackage() ?: return
+        val allowed = DataManager.dsAllowAppList.toSet()
+        // Always-exempt: this app itself, the launcher, the dialer (emergency
+        // calls), and core system UI — never trap the user with no way out.
+        val exempt = setOfNotNull(packageName, homePackage(), dialerPackage(), "com.android.systemui", "android")
+        val isOk = fg in allowed || fg in exempt
+        withContext(Dispatchers.Main) {
+            if (!isOk) showOverlay(fg) else hideOverlay()
+        }
+    }
+
+    private fun showOverlay(blockedPkg: String) {
+        if (overlayView != null && lastBlockedPkg == blockedPkg) return // already showing for this app
+        hideOverlay()
+        lastBlockedPkg = blockedPkg
+        if (!hasOverlayPermission(this)) return // can't show without permission, silently skip rather than crash
+
+        val mgr = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        wm = mgr
+
+        val label = try {
+            packageManager.getApplicationLabel(packageManager.getApplicationInfo(blockedPkg, 0)).toString()
+        } catch (_: Exception) { blockedPkg }
+
+        val root = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setBackgroundColor(android.graphics.Color.parseColor("#F00B1220"))
+            isClickable = true; isFocusable = true
+        }
+        val icon = android.widget.TextView(this).apply {
+            text = "🔒"; textSize = 56f; gravity = Gravity.CENTER
+        }
+        val title = android.widget.TextView(this).apply {
+            text = "Deep Study চলছে"
+            textSize = 22f; setTextColor(android.graphics.Color.WHITE)
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            gravity = Gravity.CENTER; setPadding(0, 32, 0, 8)
+        }
+        val subtitle = android.widget.TextView(this).apply {
+            text = "$label allow-list এ নেই — focus session চলাকালীন ব্লক করা আছে"
+            textSize = 15f; setTextColor(android.graphics.Color.parseColor("#94A3B8"))
+            gravity = Gravity.CENTER; setPadding(64, 0, 64, 32)
+        }
+        val backBtn = android.widget.TextView(this).apply {
+            text = "  ← Deep Study তে ফিরে যান  "
+            textSize = 15f; setTextColor(android.graphics.Color.WHITE)
+            setBackgroundColor(android.graphics.Color.parseColor("#0EA5E9"))
+            setPadding(32, 20, 32, 20)
+            setOnClickListener {
+                val i = packageManager.getLaunchIntentForPackage(packageName)
+                i?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                i?.let { startActivity(it) }
+            }
+        }
+        root.addView(icon); root.addView(title); root.addView(subtitle); root.addView(backBtn)
+
+        val params = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+            else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE,
+            // Deliberately NOT FLAG_NOT_FOCUSABLE — this must capture touches
+            // and fully block interaction with whatever's underneath, unlike
+            // FloatingStopwatch's small pass-through widget above.
+            // 0 = no flags: focusable and touch-modal, so this actually
+            // captures input instead of passing touches through underneath
+            // (unlike FloatingStopwatch's FLAG_NOT_FOCUSABLE widget above).
+            0,
+            PixelFormat.TRANSLUCENT
+        )
+        try {
+            mgr.addView(root, params)
+            overlayView = root
+        } catch (_: Exception) { overlayView = null }
+    }
+
+    private fun hideOverlay() {
+        overlayView?.let { try { wm?.removeView(it) } catch (_: Exception) {} }
+        overlayView = null
+        lastBlockedPkg = null
+    }
+
+    override fun onDestroy() {
+        pollJob?.cancel(); pollJob = null
+        hideOverlay()
+        running = false
+        super.onDestroy()
+    }
+}// ─────────────────────────────────────────
 // FLOATING STOPWATCH
 // ─────────────────────────────────────────
 
@@ -264,7 +456,6 @@ object AmbientSoundEngine {
 fun Deep_study() {
     val context = LocalContext.current
 
-    var activeSubTab      by remember { mutableIntStateOf(0) }
     var isFocusMode       by remember { mutableStateOf(false) }
     var isBreak           by remember { mutableStateOf(false) }
     var focusMin          by remember { mutableIntStateOf(25) }
@@ -326,6 +517,14 @@ fun Deep_study() {
         }
     }
 
+    // Start/stop allow-list enforcement with the focus session itself —
+    // this is the actual fix: previously nothing here ever started any
+    // blocking mechanism, so the allow-list was purely cosmetic.
+    LaunchedEffect(isFocusMode) {
+        if (isFocusMode) DeepStudyBlockerService.start(context)
+        else DeepStudyBlockerService.stop(context)
+    }
+
     // Sync floating stopwatch
     LaunchedEffect(chkFloat, isFocusMode) {
         when {
@@ -342,7 +541,7 @@ fun Deep_study() {
     }
 
     DisposableEffect(Unit) {
-        onDispose { AmbientSoundEngine.stop(); FloatingStopwatch.dismiss() }
+        onDispose { AmbientSoundEngine.stop(); FloatingStopwatch.dismiss(); DeepStudyBlockerService.stop(context) }
     }
 
     val scrollState = rememberScrollState()
@@ -350,14 +549,9 @@ fun Deep_study() {
     Column(
         Modifier
             .fillMaxSize()
-            .background(DClrBg)
+            .background(Brush.verticalGradient(listOf(Color(0xFF0B1220), Color(0xFF0F1B33))))
             .windowInsetsPadding(WindowInsets.statusBars)
     ) {
-        // Tab Bar
-        TabBar(activeSubTab) { activeSubTab = it }
-
-        com.rasel.RasFocus.ui.theme.AnimatedSwapContainer(targetState = activeSubTab) { tabIndex ->
-        if (tabIndex == 0) {
             Column(
                 Modifier
                     .fillMaxSize()
@@ -434,7 +628,7 @@ fun Deep_study() {
                 // Show basic requirement warning if missing Usage Stats
                 if (!hasUsageStatsPermission(context)) {
                     PermBanner(
-                        color = Color(0xFFEFF6FF), tint = DClrTeal,
+                        color = DClrBadgeTeal, tint = DClrTeal,
                         text = "Allow-list blocking requires Usage Stats permission.",
                         btnText = "Enable", onClick = { context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) }
                     )
@@ -446,19 +640,13 @@ fun Deep_study() {
                 )
                 Spacer(Modifier.height(40.dp))
             }
-        } else {
-            androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxSize(), androidx.compose.ui.Alignment.Center) {
-                androidx.compose.material3.Text("Coming soon...", color = DClrGray, fontSize = 16.sp, fontWeight = FontWeight.Medium)
-            }
-        }
-        } // close AnimatedSwapContainer
     }
 
     if (showBottomSheet) {
         ModalBottomSheet(
             onDismissRequest = { showBottomSheet = false },
             modifier = Modifier.fillMaxHeight(0.9f),
-            containerColor = DClrBg,
+            containerColor = Color(0xFF0F1B33),
             shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
         ) {
             BlocklistPickerSheet(
@@ -479,41 +667,6 @@ fun Deep_study() {
 // ─────────────────────────────────────────
 // SUB-COMPOSABLES
 // ─────────────────────────────────────────
-
-@Composable
-private fun TabBar(active: Int, onSelect: (Int) -> Unit) {
-    Surface(
-        color = Color(0xFFF1F5F9), // Slight inset look
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
-    ) {
-        Row(
-            Modifier.fillMaxWidth().padding(4.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            listOf("Pomodoro", "Active Recall", "Spaced Rep.").forEachIndexed { i, title ->
-                val selected = active == i
-                Box(
-                    Modifier
-                        .weight(1f)
-                        .height(42.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(if (selected) DClrSurface else Color.Transparent)
-                        .clickable { onSelect(i) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        title,
-                        fontSize = 13.sp,
-                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                        color = if (selected) DClrDark else DClrGray,
-                        maxLines = 1
-                    )
-                }
-            }
-        }
-    }
-}
 
 @Composable
 private fun TimerHeroCard(
@@ -609,18 +762,18 @@ private fun TimerHeroCard(
 @Composable
 private fun StartStopButton(isActive: Boolean, onClick: () -> Unit) {
     val bg = when {
-        isActive     -> DClrDark
-        else         -> DClrTeal
+        isActive -> DClrRed
+        else     -> DClrTeal
     }
     val label = when {
-        isActive     -> "STOP POMODORO"
-        else         -> "START POMODORO"
+        isActive -> "STOP POMODORO"
+        else     -> "START POMODORO"
     }
     val icon = when {
-        isActive     -> Icons.Default.Stop
-        else         -> Icons.Default.PlayArrow
+        isActive -> Icons.Default.Stop
+        else     -> Icons.Default.PlayArrow
     }
-    
+
     Button(
         onClick = onClick,
         colors = ButtonDefaults.buttonColors(containerColor = bg),
@@ -646,7 +799,7 @@ private fun SectionCard(title: String, icon: ImageVector, content: @Composable C
         Column(Modifier.padding(20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 16.dp)) {
                 Box(
-                    modifier = Modifier.size(38.dp).clip(CircleShape).background(Color(0xFFF0F9FF)),
+                    modifier = Modifier.size(38.dp).clip(CircleShape).background(DClrBadgeTeal),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(icon, null, tint = DClrTeal, modifier = Modifier.size(20.dp))
@@ -699,7 +852,7 @@ private fun SoundRow(
             ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { if (enabled) expanded = it }) {
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = Color(0xFFF1F5F9),
+                    color = DClrPillBg,
                     modifier = Modifier.menuAnchor()
                 ) {
                     Row(
@@ -789,7 +942,7 @@ private fun AllowListCard(appCount: Int, siteCount: Int, enabled: Boolean, onCli
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                modifier = Modifier.size(44.dp).clip(CircleShape).background(Color(0xFFECFDF5)),
+                modifier = Modifier.size(44.dp).clip(CircleShape).background(DClrBadgeGreen),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(Icons.Default.CheckCircle, null, tint = DClrGreen, modifier = Modifier.size(24.dp))
@@ -825,7 +978,7 @@ fun BlocklistPickerSheet(
         // Header
         Row(Modifier.fillMaxWidth().padding(vertical = 16.dp), Arrangement.SpaceBetween, Alignment.CenterVertically) {
             Text("Manage Allow List", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = DClrDark)
-            IconButton(onClick = onClose, modifier = Modifier.size(36.dp).clip(CircleShape).background(Color(0xFFF1F5F9))) {
+            IconButton(onClick = onClose, modifier = Modifier.size(36.dp).clip(CircleShape).background(DClrPillBg)) {
                 Icon(Icons.Default.Close, null, tint = DClrDark, modifier = Modifier.size(18.dp))
             }
         }
@@ -838,13 +991,13 @@ fun BlocklistPickerSheet(
                 shape = RoundedCornerShape(16.dp), singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedContainerColor = DClrSurface, unfocusedContainerColor = DClrSurface,
-                    focusedBorderColor = DClrTeal, unfocusedBorderColor = Color(0xFFE2E8F0)
+                    focusedBorderColor = DClrTeal, unfocusedBorderColor = DClrBorderMuted
                 ),
                 modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
             )
         }
         
-        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Color(0xFFF1F5F9)).padding(4.dp)) {
+        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(DClrPillBg).padding(4.dp)) {
             listOf("Apps", "Sites", "Keywords").forEachIndexed { i, t ->
                 Box(
                     Modifier.weight(1f).height(40.dp)
@@ -875,7 +1028,7 @@ fun BlocklistPickerSheet(
                         val url = if (searchQuery.contains(".")) searchQuery else "$searchQuery.com"
                         item {
                             Row(Modifier.fillMaxWidth().padding(vertical = 10.dp, horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Box(Modifier.size(42.dp).clip(CircleShape).background(Color(0xFFF0F9FF)), Alignment.Center) {
+                                Box(Modifier.size(42.dp).clip(CircleShape).background(DClrBadgeTeal), Alignment.Center) {
                                     Text(url.first().uppercase(), fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = DClrTeal)
                                 }
                                 Spacer(Modifier.width(12.dp))
@@ -883,7 +1036,7 @@ fun BlocklistPickerSheet(
                                 FilledTonalButton(
                                     onClick = { tempSites.add(url); searchQuery = "" },
                                     shape = RoundedCornerShape(12.dp),
-                                    colors = ButtonDefaults.filledTonalButtonColors(containerColor = Color(0xFFF0F9FF), contentColor = DClrTeal),
+                                    colors = ButtonDefaults.filledTonalButtonColors(containerColor = DClrBadgeTeal, contentColor = DClrTeal),
                                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)
                                 ) { Text("Add", fontSize = 14.sp, fontWeight = FontWeight.Bold) }
                             }
@@ -931,7 +1084,7 @@ fun TimerSetupRow(label: String, value: Int, minVal: Int, maxVal: Int, step: Int
         Text(label, fontSize = 15.sp, color = if (enabled) DClrDark else DClrGray, modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium)
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xFFF1F5F9)).padding(2.dp)
+            modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(DClrPillBg).padding(2.dp)
         ) {
             IconButton(
                 onClick = { if (enabled && value > minVal) onValueChange(value - step) },
