@@ -324,9 +324,10 @@ class YoutubeActivity : ComponentActivity() {
                     injectVisibilitySpoof(view)
                     injectYoutubeHacks(view)
                     injectRemoveOpenInAppButton(view)
-                    injectAdBlocker(view)
+                    val prefs = getSharedPreferences("browser_settings", Context.MODE_PRIVATE)
+                    if (prefs.getBoolean("yt_ad_layer2", true)) { injectAdBlocker(view) }
                     injectSettingsRemover(view)
-                    adBlocker.injectContentScanner(view)
+                    if (prefs.getBoolean("yt_ad_layer3", true)) { adBlocker.injectContentScanner(view) }
 
                     // FIX: এই navigation এ shouldOverrideUrlLoading/shouldInterceptRequest
                     // এ URL-level check করে ইতিমধ্যে একবার block page দেখানো হয়ে থাকলে,
@@ -359,9 +360,11 @@ class YoutubeActivity : ComponentActivity() {
                     request: WebResourceRequest
                 ): WebResourceResponse? {
                     val url = request.url.toString()
-
-                    if (AD_SERVERS.any { url.contains(it) }) {
-                        return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
+                    val prefs = getSharedPreferences("browser_settings", Context.MODE_PRIVATE)
+                    if (prefs.getBoolean("yt_ad_layer1", true)) {
+                        if (AD_SERVERS.any { url.contains(it) }) {
+                            return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
+                        }
                     }
 
                     // YouTube-এর নিজস্ব search box থেকে search করলে page navigate করে না —

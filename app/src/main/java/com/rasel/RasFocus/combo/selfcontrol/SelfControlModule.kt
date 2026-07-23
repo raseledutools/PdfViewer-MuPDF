@@ -2050,6 +2050,9 @@ fun BrowserSettingsDialog(context: Context, appType: String, onDismiss: () -> Un
     var ytHideShorts by remember { mutableStateOf(prefs.getBoolean("yt_hide_shorts", false)) }
     var ytHideComments by remember { mutableStateOf(prefs.getBoolean("yt_hide_comments", false)) }
     var ytGrayscale by remember { mutableStateOf(prefs.getBoolean("yt_grayscale", false)) }
+    var ytAdLayer1 by remember { mutableStateOf(prefs.getBoolean("yt_ad_layer1", true)) }
+    var ytAdLayer2 by remember { mutableStateOf(prefs.getBoolean("yt_ad_layer2", true)) }
+    var ytAdLayer3 by remember { mutableStateOf(prefs.getBoolean("yt_ad_layer3", true)) }
 
     // RasBrowser
     var rbBlockAds by remember { mutableStateOf(prefs.getBoolean("rb_block_ads", true)) }
@@ -2188,8 +2191,22 @@ fun BrowserSettingsDialog(context: Context, appType: String, onDismiss: () -> Un
                                     handleToggle("yt_grayscale", newValue) { ytGrayscale = it; prefs.edit().putBoolean("yt_grayscale", it).apply() }
                                 }
                             }
+                            item {
+                                SettingToggleRow("Ad Block L1 — Network (AD_SERVERS)", ytAdLayer1, onSettingsClick = { showLockConfigFor = "yt_ad_layer1" }) { newValue ->
+                                    handleToggle("yt_ad_layer1", newValue) { ytAdLayer1 = it; prefs.edit().putBoolean("yt_ad_layer1", it).apply() }
+                                }
+                            }
+                            item {
+                                SettingToggleRow("Ad Block L2 — JS Skip Button", ytAdLayer2, onSettingsClick = { showLockConfigFor = "yt_ad_layer2" }) { newValue ->
+                                    handleToggle("yt_ad_layer2", newValue) { ytAdLayer2 = it; prefs.edit().putBoolean("yt_ad_layer2", it).apply() }
+                                }
+                            }
+                            item {
+                                SettingToggleRow("Ad Block L3 — Content Scan (black screen risk)", ytAdLayer3, onSettingsClick = { showLockConfigFor = "yt_ad_layer3" }) { newValue ->
+                                    handleToggle("yt_ad_layer3", newValue) { ytAdLayer3 = it; prefs.edit().putBoolean("yt_ad_layer3", it).apply() }
+                                }
+                            }
                         }
-                        "RasBrowser" -> {
                             item {
                                 SettingToggleRow("Block Ads", rbBlockAds, onSettingsClick = { showLockConfigFor = "rb_block_ads" }) { newValue ->
                                     handleToggle("rb_block_ads", newValue) { rbBlockAds = it; prefs.edit().putBoolean("rb_block_ads", it).apply() }

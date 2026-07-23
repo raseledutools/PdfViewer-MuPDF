@@ -2265,6 +2265,11 @@ fun BrowserSettingsDialog(context: Context, appType: String, onDismiss: () -> Un
     var ytHideComments by remember { mutableStateOf(prefs.getBoolean("yt_hide_comments", false)) }
     var ytGrayscale by remember { mutableStateOf(prefs.getBoolean("yt_grayscale", false)) }
 
+    // YouTube Ad Block Layers
+    var ytAdLayer1 by remember { mutableStateOf(prefs.getBoolean("yt_ad_layer1", true)) }
+    var ytAdLayer2 by remember { mutableStateOf(prefs.getBoolean("yt_ad_layer2", true)) }
+    var ytAdLayer3 by remember { mutableStateOf(prefs.getBoolean("yt_ad_layer3", true)) }
+
     // RasBrowser
     var rbBlockAds by remember { mutableStateOf(prefs.getBoolean("rb_block_ads", true)) }
     var rbStrictBlacklist by remember { mutableStateOf(prefs.getBoolean("rb_strict_blacklist", false)) }
@@ -2400,6 +2405,33 @@ fun BrowserSettingsDialog(context: Context, appType: String, onDismiss: () -> Un
                             item {
                                 SettingToggleRow("Grayscale Mode", ytGrayscale, onSettingsClick = { showLockConfigFor = "yt_grayscale" }) { newValue ->
                                     handleToggle("yt_grayscale", newValue) { ytGrayscale = it; prefs.edit().putBoolean("yt_grayscale", it).apply() }
+                                }
+                            }
+                            item {
+                                SettingToggleRow(
+                                    label = "Ad Block L1 — Network (AD_SERVERS)",
+                                    checked = ytAdLayer1,
+                                    onSettingsClick = { showLockConfigFor = "yt_ad_layer1" }
+                                ) { newValue ->
+                                    handleToggle("yt_ad_layer1", newValue) { ytAdLayer1 = it; prefs.edit().putBoolean("yt_ad_layer1", it).apply() }
+                                }
+                            }
+                            item {
+                                SettingToggleRow(
+                                    label = "Ad Block L2 — JS Skip Button",
+                                    checked = ytAdLayer2,
+                                    onSettingsClick = { showLockConfigFor = "yt_ad_layer2" }
+                                ) { newValue ->
+                                    handleToggle("yt_ad_layer2", newValue) { ytAdLayer2 = it; prefs.edit().putBoolean("yt_ad_layer2", it).apply() }
+                                }
+                            }
+                            item {
+                                SettingToggleRow(
+                                    label = "Ad Block L3 — Content Scan (black screen risk)",
+                                    checked = ytAdLayer3,
+                                    onSettingsClick = { showLockConfigFor = "yt_ad_layer3" }
+                                ) { newValue ->
+                                    handleToggle("yt_ad_layer3", newValue) { ytAdLayer3 = it; prefs.edit().putBoolean("yt_ad_layer3", it).apply() }
                                 }
                             }
                         }
