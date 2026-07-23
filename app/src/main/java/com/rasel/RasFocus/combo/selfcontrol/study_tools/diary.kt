@@ -1,38 +1,24 @@
-﻿package com.rasel.RasFocus.combo.selfcontrol.study_tools
+﻿package com.rasel.RasFocus.combo.selfcontrol
 
-import android.app.DatePickerDialog
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import com.rasel.RasFocus.drivebackup.DiaryAutoBackupWorker
-import com.rasel.RasFocus.drivebackup.DriveBackupManager
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.json.JSONArray
-import org.json.JSONObject
-import android.app.TimePickerDialog
+import android.app.AppOpsManager
+import android.app.usage.UsageStatsManager
+import android.content.Context
 import android.content.Intent
+import android.graphics.PixelFormat
+import android.media.AudioAttributes
+import android.media.AudioFormat
+import android.media.AudioTrack
 import android.os.Build
-import android.widget.Toast
-import androidx.biometric.BiometricManager
-import androidx.biometric.BiometricPrompt
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.verticalScroll
+import android.provider.Settings
+import android.view.Gravity
+import android.view.WindowManager
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -40,432 +26,789 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
-import androidx.fragment.app.FragmentActivity
-import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.*
+import coil.compose.AsyncImage
+import com.rasel.RasFocus.DataManager
+import android.content.pm.PackageManager
+import android.content.pm.ApplicationInfo
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.core.graphics.drawable.toBitmap
+import androidx.compose.foundation.Image
+import kotlinx.coroutines.*
+import kotlin.math.*
 
-// ============================================================
-// BIOMETRIC HELPER
-// ============================================================
-fun launchBiometric(
-    activity: FragmentActivity,
-    onSuccess: () -> Unit,
-    onError: (String) -> Unit
-) {
-    val bm = BiometricManager.from(activity)
-    val canAuth = bm.canAuthenticate(
-        BiometricManager.Authenticators.BIOMETRIC_STRONG or
-        BiometricManager.Authenticators.DEVICE_CREDENTIAL
-    )
-    if (canAuth != BiometricManager.BIOMETRIC_SUCCESS) {
-        onError("Biometric not available")
-        return
+// ─────────────────────────────────────────
+// DEEP STUDY — Color System (Dark Theme)
+// Background: Deep Navy  |  Text: Crisp White
+// ─────────────────────────────────────────
+val DClrBg           = Color(0xFF0B1220)                    // Deep navy background
+val DClrSurface      = Color(0xFF141E30)                    // Card surface — distinct from bg
+val DClrSurface2     = Color(0xFF1C2840)                    // Slightly lighter card variant
+val DClrTeal         = Color(0xFF00C6B2)                    // Primary accent — vibrant teal
+val DClrTealDark     = Color(0xFF009E8C)                    // Pressed / darker teal
+val DClrWhite        = Color(0xFFFFFFFF)                    // Pure white for timer digits
+val DClrDark         = Color(0xFFF0F4FF)                    // Primary text — bright near-white
+val DClrGray         = Color(0xFF8090A8)                    // Secondary / hint text
+val DClrBorderMuted  = Color(0xFF2A3A52)                    // Card borders
+val DClrPillBg       = Color(0xFF1C2840)                    // Pill / toggle track bg
+val DClrPillSelectedBg = Color(0xFF253350)                  // Selected pill state
+val DClrGlassBorder  = Color(0xFF2E4060)                    // Glass card border
+val DClrBadgeTeal    = Color(0xFF00C6B2).copy(alpha = 0.18f) // Teal icon badge bg
+val DClrBadgeGreen   = Color(0xFF22C55E).copy(alpha = 0.18f) // Green icon badge bg
+val DClrBadgePurple  = Color(0xFF8B5CF6).copy(alpha = 0.18f) // Purple icon badge bg
+val DClrBadgeAmber   = Color(0xFFF59E0B).copy(alpha = 0.18f) // Amber icon badge bg
+val DClrRed          = Color(0xFFFF4E4E)                    // Error / stop
+val DClrGreen        = Color(0xFF22C55E)                    // Success / break
+val DClrAmber        = Color(0xFFF59E0B)                    // Warning / strict
+
+data class BlockItem(val name: String)
+
+// ─────────────────────────────────────────
+// PERMISSION HELPERS
+// ─────────────────────────────────────────
+
+private fun hasUsageStatsPermission(context: Context): Boolean {
+    val ops = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+    return ops.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), context.packageName) == AppOpsManager.MODE_ALLOWED
+}
+
+fun hasOverlayPermission(context: Context): Boolean =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) Settings.canDrawOverlays(context) else true
+
+// ─────────────────────────────────────────
+// ALLOW-LIST BLOCKER (USAGE STATS)
+// ─────────────────────────────────────────
+// FIX: this section header existed with NO implementation under it at all —
+// isFocusMode only ran a countdown timer, nothing ever actually enforced the
+// allow-list against other apps. That's the reported bug ("everything
+// except the allow list is supposed to auto-block, but it doesn't") — there
+// was simply nothing here to do the blocking. Implemented below: a
+// foreground Service that polls UsageStatsManager for the current
+// foreground app while a focus session is active, and shows a full-screen
+// overlay (WindowManager, same general mechanism as FloatingStopwatch
+// above, but full-screen and touch-capturing rather than a small draggable
+// widget) whenever that app isn't RasFocus itself, the device launcher, the
+// default dialer (emergency calls must never be blockable), or in
+// DataManager.dsAllowAppList.
+class DeepStudyBlockerService : android.app.Service() {
+
+    companion object {
+        private const val CHANNEL_ID = "deep_study_blocker"
+        private const val NOTIF_ID = 8891
+        @Volatile private var running = false
+
+        fun start(context: Context) {
+            if (running) return
+            val intent = Intent(context, DeepStudyBlockerService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) context.startForegroundService(intent)
+            else context.startService(intent)
+        }
+
+        fun stop(context: Context) {
+            context.stopService(Intent(context, DeepStudyBlockerService::class.java))
+        }
     }
-    val executor = ContextCompat.getMainExecutor(activity)
-    val prompt = BiometricPrompt(activity, executor,
-        object : BiometricPrompt.AuthenticationCallback() {
-            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                super.onAuthenticationSucceeded(result)
-                onSuccess()
-            }
-            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-                super.onAuthenticationError(errorCode, errString)
-                onError(errString.toString())
+
+    private var pollJob: Job? = null
+    private var wm: WindowManager? = null
+    private var overlayView: android.view.View? = null
+    private var lastBlockedPkg: String? = null
+
+    override fun onBind(intent: Intent?): android.os.IBinder? = null
+
+    override fun onCreate() {
+        super.onCreate()
+        running = true
+        val mgr = getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            mgr.createNotificationChannel(
+                android.app.NotificationChannel(CHANNEL_ID, "Deep Study Blocker", android.app.NotificationManager.IMPORTANCE_MIN)
+            )
+        }
+        val notif = androidx.core.app.NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("Deep Study focus session active")
+            .setSmallIcon(android.R.drawable.ic_lock_idle_lock)
+            .setPriority(androidx.core.app.NotificationCompat.PRIORITY_MIN)
+            .setOngoing(true)
+            .build()
+        startForeground(NOTIF_ID, notif)
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (pollJob == null) {
+            pollJob = CoroutineScope(Dispatchers.Default).launch {
+                while (isActive) {
+                    checkForegroundApp()
+                    delay(1500)
+                }
             }
         }
-    )
-    val info = BiometricPrompt.PromptInfo.Builder()
-        .setTitle("Unlock Diary Entry")
-        .setSubtitle("Use fingerprint or device credential")
-        .setAllowedAuthenticators(
-            BiometricManager.Authenticators.BIOMETRIC_STRONG or
-            BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        return android.app.Service.START_STICKY
+    }
+
+    private fun homePackage(): String? {
+        val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+        return packageManager.resolveActivity(homeIntent, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY)
+            ?.activityInfo?.packageName
+    }
+
+    private fun dialerPackage(): String? = try {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            (getSystemService(Context.TELECOM_SERVICE) as? android.telecom.TelecomManager)?.defaultDialerPackage
+        } else null
+    } catch (_: Exception) { null }
+
+    private fun currentForegroundPackage(): String? {
+        if (!hasUsageStatsPermission(this)) return null
+        val usm = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+        val end = System.currentTimeMillis()
+        val events = usm.queryEvents(end - 10_000, end)
+        val event = android.app.usage.UsageEvents.Event()
+        var lastPkg: String? = null
+        while (events.hasNextEvent()) {
+            events.getNextEvent(event)
+            if (event.eventType == android.app.usage.UsageEvents.Event.MOVE_TO_FOREGROUND) lastPkg = event.packageName
+        }
+        return lastPkg
+    }
+
+    private suspend fun checkForegroundApp() {
+        val fg = currentForegroundPackage() ?: return
+        val allowed = DataManager.dsAllowAppList.toSet()
+        // Always-exempt: this app itself, the launcher, the dialer (emergency
+        // calls), and core system UI — never trap the user with no way out.
+        val exempt = setOfNotNull(packageName, homePackage(), dialerPackage(), "com.android.systemui", "android")
+        val isOk = fg in allowed || fg in exempt
+        withContext(Dispatchers.Main) {
+            if (!isOk) showOverlay(fg) else hideOverlay()
+        }
+    }
+
+    private fun showOverlay(blockedPkg: String) {
+        if (overlayView != null && lastBlockedPkg == blockedPkg) return // already showing for this app
+        hideOverlay()
+        lastBlockedPkg = blockedPkg
+        if (!hasOverlayPermission(this)) return // can't show without permission, silently skip rather than crash
+
+        val mgr = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        wm = mgr
+
+        val label = try {
+            packageManager.getApplicationLabel(packageManager.getApplicationInfo(blockedPkg, 0)).toString()
+        } catch (_: Exception) { blockedPkg }
+
+        val root = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setBackgroundColor(android.graphics.Color.parseColor("#F00B1220"))
+            isClickable = true; isFocusable = true
+        }
+        val icon = android.widget.TextView(this).apply {
+            text = "🔒"; textSize = 56f; gravity = Gravity.CENTER
+        }
+        val title = android.widget.TextView(this).apply {
+            text = "Deep Study চলছে"
+            textSize = 22f; setTextColor(android.graphics.Color.WHITE)
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            gravity = Gravity.CENTER; setPadding(0, 32, 0, 8)
+        }
+        val subtitle = android.widget.TextView(this).apply {
+            text = "$label allow-list এ নেই — focus session চলাকালীন ব্লক করা আছে"
+            textSize = 15f; setTextColor(android.graphics.Color.parseColor("#94A3B8"))
+            gravity = Gravity.CENTER; setPadding(64, 0, 64, 32)
+        }
+        val backBtn = android.widget.TextView(this).apply {
+            text = "  ← Deep Study তে ফিরে যান  "
+            textSize = 15f; setTextColor(android.graphics.Color.WHITE)
+            setBackgroundColor(android.graphics.Color.parseColor("#0EA5E9"))
+            setPadding(32, 20, 32, 20)
+            setOnClickListener {
+                val i = packageManager.getLaunchIntentForPackage(packageName)
+                i?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                i?.let { startActivity(it) }
+            }
+        }
+        root.addView(icon); root.addView(title); root.addView(subtitle); root.addView(backBtn)
+
+        val params = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+            else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE,
+            // Deliberately NOT FLAG_NOT_FOCUSABLE — this must capture touches
+            // and fully block interaction with whatever's underneath, unlike
+            // FloatingStopwatch's small pass-through widget above.
+            // 0 = no flags: focusable and touch-modal, so this actually
+            // captures input instead of passing touches through underneath
+            // (unlike FloatingStopwatch's FLAG_NOT_FOCUSABLE widget above).
+            0,
+            PixelFormat.TRANSLUCENT
         )
-        .build()
-    prompt.authenticate(info)
-}
+        try {
+            mgr.addView(root, params)
+            overlayView = root
+        } catch (_: Exception) { overlayView = null }
+    }
 
-// ============================================================
-// LOCK SCREEN
-// ============================================================
-@Composable
-fun DiaryLockScreen(
-    entry: DiaryEntry,
-    onUnlock: () -> Unit,
-    onCancel: () -> Unit
-) {
-    val context = LocalContext.current
-    var pinInput by remember { mutableStateOf("") }
-    var pinError by remember { mutableStateOf(false) }
-    val vm: DiaryViewModel = viewModel()
+    private fun hideOverlay() {
+        overlayView?.let { try { wm?.removeView(it) } catch (_: Exception) {} }
+        overlayView = null
+        lastBlockedPkg = null
+    }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFF1A1D24), Color(0xFF2D323E)))),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(32.dp)
-        ) {
-            Icon(
-                Icons.Default.Lock, contentDescription = null,
-                tint = Color(0xFF9B59B6), modifier = Modifier.size(64.dp)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                "ðŸ”’ Locked Entry",
-                color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold
-            )
-            Text(
-                entry.title.ifBlank { "Untitled" },
-                color = Color.Gray, fontSize = 14.sp
-            )
-            Spacer(modifier = Modifier.height(32.dp))
+    override fun onDestroy() {
+        pollJob?.cancel(); pollJob = null
+        hideOverlay()
+        running = false
+        super.onDestroy()
+    }
+}// ─────────────────────────────────────────
+// FLOATING STOPWATCH
+// ─────────────────────────────────────────
 
-            // PIN input
-            OutlinedTextField(
-                value = pinInput,
-                onValueChange = { if (it.length <= 6) pinInput = it; pinError = false },
-                label = { Text("Enter PIN", color = Color.Gray) },
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                singleLine = true,
-                isError = pinError,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF9B59B6),
-                    unfocusedBorderColor = Color.Gray,
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    errorBorderColor = Color.Red
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
-            if (pinError) {
-                Text("Wrong PIN. Try again.", color = Color.Red, fontSize = 12.sp)
+object FloatingStopwatch {
+    private var wm: WindowManager? = null
+    private var rootView: android.view.View? = null
+    private var tickJob: Job? = null
+    var isShowing = false; private set
+
+    fun show(context: Context, onDismiss: () -> Unit) {
+        if (isShowing) return
+        val mgr = context.applicationContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        wm = mgr
+
+        val root = android.widget.LinearLayout(context).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(android.graphics.Color.parseColor("#E60F172A")) // Darker overlay
+                cornerRadius = 100f
             }
+            setPadding(32, 16, 24, 16)
+        }
 
-            Spacer(modifier = Modifier.height(16.dp))
+        val timerTv = android.widget.TextView(context).apply {
+            text = "00:00"
+            textSize = 18f
+            setTextColor(android.graphics.Color.WHITE)
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            letterSpacing = 0.05f
+        }
 
-            Button(
-                onClick = {
-                    if (vm.verifyPin(pinInput)) onUnlock()
-                    else pinError = true
-                },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9B59B6))
-            ) {
-                Text("Unlock with PIN")
-            }
+        val closeTv = android.widget.TextView(context).apply {
+            text = "  ✕"
+            textSize = 14f
+            setTextColor(android.graphics.Color.parseColor("#94A3B8")) // Slate 400
+            setPadding(12, 0, 0, 0)
+            setOnClickListener { dismiss(onDismiss) }
+        }
 
-            Spacer(modifier = Modifier.height(12.dp))
+        root.addView(timerTv); root.addView(closeTv)
 
-            // Biometric button
-            OutlinedButton(
-                onClick = {
-                    (context as? FragmentActivity)?.let { activity ->
-                        launchBiometric(
-                            activity,
-                            onSuccess = { vm.unlockWithBiometric(); onUnlock() },
-                            onError = { msg -> Toast.makeText(context, msg, Toast.LENGTH_SHORT).show() }
-                        )
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF9B59B6))
-            ) {
-                Icon(Icons.Default.Fingerprint, contentDescription = null, tint = Color(0xFF9B59B6))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Use Biometric", color = Color(0xFF9B59B6))
-            }
+        val params = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+            else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            PixelFormat.TRANSLUCENT
+        ).apply { gravity = Gravity.TOP or Gravity.END; x = 32; y = 200 }
 
-            Spacer(modifier = Modifier.height(24.dp))
-            TextButton(onClick = onCancel) {
-                Text("Cancel", color = Color.Gray)
+        var lx = 0; var ly = 0
+        root.setOnTouchListener { _, e ->
+            when (e.action) {
+                android.view.MotionEvent.ACTION_DOWN -> { lx = e.rawX.toInt(); ly = e.rawY.toInt() }
+                android.view.MotionEvent.ACTION_MOVE -> {
+                    params.x += lx - e.rawX.toInt(); params.y += e.rawY.toInt() - ly
+                    lx = e.rawX.toInt(); ly = e.rawY.toInt()
+                    mgr.updateViewLayout(root, params)
+                }
+            }; false
+        }
+
+        mgr.addView(root, params); rootView = root; isShowing = true
+        var sec = 0
+        val startTime = System.currentTimeMillis()
+        tickJob = CoroutineScope(Dispatchers.Main).launch {
+            while (isActive) {
+                delay(30)
+                val elapsed = System.currentTimeMillis() - startTime
+                val m = elapsed / 60000
+                val s = (elapsed / 1000) % 60
+                val ms = elapsed % 1000
+                timerTv.text = "%02d:%02d.%03d".format(m, s, ms)
             }
         }
     }
+
+    fun dismiss(onDismiss: (() -> Unit)? = null) {
+        tickJob?.cancel(); tickJob = null
+        rootView?.let { try { wm?.removeView(it) } catch (_: Exception) {} }
+        rootView = null; wm = null; isShowing = false
+        onDismiss?.invoke()
+    }
 }
 
-// ============================================================
-// SET PIN DIALOG
-// ============================================================
-@Composable
-fun SetPinDialog(
-    currentEntry: DiaryEntry,
-    onDismiss: () -> Unit,
-    onPinSet: (String) -> Unit,
-    onRemovePin: () -> Unit
-) {
-    var pin by remember { mutableStateOf("") }
-    var confirmPin by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf("") }
+// ─────────────────────────────────────────
+// SOUND ENGINE
+// ─────────────────────────────────────────
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(if (currentEntry.isLocked) "Change / Remove PIN" else "Set PIN Lock") },
-        text = {
-            Column {
-                if (currentEntry.isLocked) {
-                    Text("Entry is currently locked.", color = Color.Gray, fontSize = 13.sp)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedButton(
-                        onClick = onRemovePin,
-                        modifier = Modifier.fillMaxWidth(),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color.Red)
-                    ) {
-                        Icon(Icons.Default.LockOpen, contentDescription = null, tint = Color.Red)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Remove PIN Lock", color = Color.Red)
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text("Or set a new PIN:", fontSize = 13.sp)
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-                OutlinedTextField(
-                    value = pin,
-                    onValueChange = { if (it.length <= 6) pin = it; error = "" },
-                    label = { Text("New PIN (4-6 digits)") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                    singleLine = true, modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = confirmPin,
-                    onValueChange = { if (it.length <= 6) confirmPin = it; error = "" },
-                    label = { Text("Confirm PIN") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                    singleLine = true, modifier = Modifier.fillMaxWidth()
-                )
-                if (error.isNotBlank()) {
-                    Text(error, color = Color.Red, fontSize = 12.sp)
-                }
+enum class SoundType(val label: String, val emoji: String, val downloadUrl: String? = null) {
+    WHITE_NOISE("White Noise", "💨"), CLASSIC_BROWN("Classic Brown", "🟤"),
+    DEEP_BROWN("Deep Brown", "🐻"), WARM_BROWN("Warm Brown", "🪵"),
+    HEAVY_RAIN("Heavy Rain", "🌧️"), WATERFALL("Waterfall", "🌊"),
+    WIND("Wind", "🌬️"), DEEP_FOCUS("Deep Focus", "🎯"),
+    SPACE_DRONE("Space Drone", "🛸"), COSMIC_BROWN("Cosmic Brown", "🌌"),
+    ALPHA_NOISE_MP3("Alpha Noise", "🧠", "https://bigsoundbank.com/UPLOAD/mp3/1112.mp3"),
+    BROWN_NOISE_MP3("Brown Noise (HQ)", "🎧", "https://bigsoundbank.com/UPLOAD/mp3/1111.mp3")
+}
+
+object AmbientSoundEngine {
+    private var track: AudioTrack? = null
+    private var genJob: Job? = null
+    private var mediaPlayer: android.media.MediaPlayer? = null
+    private const val SR = 44100
+    private const val BUF = 4096
+
+    fun play(context: android.content.Context, type: SoundType) {
+        stop()
+        if (type.downloadUrl != null) {
+            val file = java.io.File(context.filesDir, type.name + ".mp3")
+            if (file.exists()) {
+                mediaPlayer = android.media.MediaPlayer.create(context, android.net.Uri.fromFile(file))
+                mediaPlayer?.isLooping = true
+                mediaPlayer?.start()
             }
-        },
-        confirmButton = {
-            Button(onClick = {
-                when {
-                    pin.length < 4 -> error = "PIN must be at least 4 digits"
-                    pin != confirmPin -> error = "PINs do not match"
-                    else -> onPinSet(pin)
-                }
-            }) { Text("Set PIN") }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            return
         }
-    )
+        track = AudioTrack.Builder()
+            .setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build())
+            .setAudioFormat(AudioFormat.Builder().setSampleRate(SR).setEncoding(AudioFormat.ENCODING_PCM_FLOAT).setChannelMask(AudioFormat.CHANNEL_OUT_STEREO).build())
+            .setBufferSizeInBytes(BUF * 4).setTransferMode(AudioTrack.MODE_STREAM).build()
+        track?.play()
+
+        genJob = CoroutineScope(Dispatchers.IO).launch {
+            val buf = FloatArray(BUF)
+            var bL = 0f; var bR = 0f; var sampleIdx = 0L
+
+            while (isActive) {
+                for (i in 0 until BUF / 2) {
+                    val w1 = (Math.random() * 2 - 1).toFloat()
+                    val w2 = (Math.random() * 2 - 1).toFloat()
+                    val t = sampleIdx.toDouble() / SR
+                    sampleIdx++
+
+                    val (sL, sR) = when (type) {
+                        SoundType.WHITE_NOISE -> Pair(w1 * 0.3f, w2 * 0.3f)
+                        SoundType.CLASSIC_BROWN -> { bL = (bL + w1 * 0.02f).coerceIn(-1f,1f); bR = (bR + w2 * 0.02f).coerceIn(-1f,1f); Pair(bL * 3.5f, bR * 3.5f) }
+                        SoundType.DEEP_BROWN -> { bL = (bL * 0.998f + w1 * 0.012f).coerceIn(-1f,1f); bR = (bR * 0.998f + w2 * 0.012f).coerceIn(-1f,1f); Pair(bL * 4f, bR * 4f) }
+                        SoundType.WARM_BROWN -> { bL = (bL * 0.99f + w1 * 0.025f).coerceIn(-1f,1f); bR = (bR * 0.99f + w2 * 0.025f).coerceIn(-1f,1f); Pair(bL * 3f, bR * 3f) }
+                        SoundType.HEAVY_RAIN -> { val drop = if (Math.random() < 0.008) w1 * 0.5f else 0f; bL = (bL + w1 * 0.018f).coerceIn(-1f,1f); Pair(bL * 2f + drop, bL * 2f + w2 * 0.15f) }
+                        SoundType.WATERFALL -> { val m = w1 * 0.5f + w2 * 0.3f; Pair(m * 0.55f, (w2 * 0.5f + w1 * 0.3f) * 0.55f) }
+                        SoundType.WIND -> { bL = (bL + w1 * 0.022f).coerceIn(-1f,1f); bR = (bR + w2 * 0.022f).coerceIn(-1f,1f); val mod = (0.5f + 0.5f * sin(t * 0.3)).toFloat(); Pair(bL * mod * 3f, bR * mod * 3f) }
+                        SoundType.DEEP_FOCUS -> { val drone = sin(2 * PI * 40.0 * t).toFloat() * 0.22f; bL = (bL + w1 * 0.015f).coerceIn(-1f,1f); Pair(bL * 1.8f + drone, bL * 1.8f + drone) }
+                        SoundType.SPACE_DRONE -> { val d1 = sin(2 * PI * 60.0 * t).toFloat() * 0.18f; val d2 = sin(2 * PI * 90.0 * t).toFloat() * 0.09f; bL = (bL + w1 * 0.008f).coerceIn(-1f,1f); bR = (bR + w2 * 0.008f).coerceIn(-1f,1f); Pair(bL * 0.8f + d1 + d2, bR * 0.8f + d1 - d2) }
+                        SoundType.COSMIC_BROWN -> { val sub = sin(2 * PI * 30.0 * t).toFloat() * 0.12f; bL = (bL * 0.9995f + w1 * 0.008f).coerceIn(-1f,1f); bR = (bR * 0.9995f + w2 * 0.008f).coerceIn(-1f,1f); Pair(bL * 4f + sub, bR * 4f + sub) }
+                        else -> Pair(0f, 0f)
+                    }
+                    buf[i * 2] = sL.coerceIn(-1f, 1f); buf[i * 2 + 1] = sR.coerceIn(-1f, 1f)
+                }
+                track?.write(buf, 0, BUF, AudioTrack.WRITE_BLOCKING)
+            }
+        }
+    }
+
+    fun downloadSound(context: android.content.Context, type: SoundType, onComplete: () -> Unit, onError: () -> Unit) {
+        if (type.downloadUrl == null) return
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val url = java.net.URL(type.downloadUrl)
+                val file = java.io.File(context.filesDir, type.name + ".mp3")
+                url.openStream().use { input ->
+                    java.io.FileOutputStream(file).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                withContext(Dispatchers.Main) { onComplete() }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) { onError() }
+            }
+        }
+    }
+
+    fun stop() { 
+        genJob?.cancel(); genJob = null
+        track?.stop(); track?.release(); track = null 
+        mediaPlayer?.stop(); mediaPlayer?.release(); mediaPlayer = null
+    }
 }
 
-// ============================================================
-// CALENDAR SCREEN
-// ============================================================
+// ─────────────────────────────────────────
+// MAIN SCREEN
+// ─────────────────────────────────────────
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DiaryCalendarScreen(
-    entries: List<DiaryEntry>,
-    onEntryClick: (DiaryEntry) -> Unit,
-    onBack: () -> Unit
-) {
-    val today = Calendar.getInstance()
-    var displayedMonth by remember { mutableStateOf(today.get(Calendar.MONTH)) }
-    var displayedYear by remember { mutableStateOf(today.get(Calendar.YEAR)) }
+fun Deep_study() {
+    val context = LocalContext.current
 
-    // Build set of days that have entries this month
-    val entryDays = remember(entries, displayedMonth, displayedYear) {
-        entries.mapNotNull { entry ->
-            runCatching {
-                val sdf = SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.ENGLISH)
-                val cal = Calendar.getInstance()
-                cal.time = sdf.parse(entry.date) ?: return@mapNotNull null
-                if (cal.get(Calendar.MONTH) == displayedMonth &&
-                    cal.get(Calendar.YEAR) == displayedYear
-                ) cal.get(Calendar.DAY_OF_MONTH)
-                else null
-            }.getOrNull()
-        }.toSet()
+    // ── Session state ────────────────────────────────────────────────────
+    var isFocusMode    by remember { mutableStateOf(false) }
+    var isBreak        by remember { mutableStateOf(false) }
+    var focusMin       by remember { mutableIntStateOf(25) }
+    var restMin        by remember { mutableIntStateOf(5) }
+    var totalSessions  by remember { mutableIntStateOf(4) }
+    var currentSession by remember { mutableIntStateOf(1) }
+    var timeLeftMillis by remember { mutableLongStateOf(25 * 60 * 1000L) }
+    var isStrict       by remember { mutableStateOf(com.rasel.RasFocus.DataManager.isDeepStudyStrict) }
+    var sessionDone    by remember { mutableStateOf(false) }  // all sessions complete flag
+
+    var chkSound  by remember { mutableStateOf(false) }
+    var chkFloat  by remember { mutableStateOf(false) }
+    var soundType by remember { mutableStateOf(SoundType.WHITE_NOISE) }
+
+    val allowWebs = remember { mutableStateListOf<BlockItem>().apply { addAll(DataManager.dsAllowWebList.map { BlockItem(it) }) } }
+    val allowApps = remember { mutableStateListOf<BlockItem>().apply { addAll(DataManager.dsAllowAppList.map { BlockItem(it) }) } }
+
+    var showBottomSheet by remember { mutableStateOf(false) }
+
+    // ── Helpers ──────────────────────────────────────────────────────────
+    fun stopEverything() {
+        AmbientSoundEngine.stop()
+        FloatingStopwatch.dismiss()
+        DeepStudyBlockerService.stop(context)
     }
 
-    var selectedDay by remember { mutableStateOf(today.get(Calendar.DAY_OF_MONTH)) }
-    val selectedEntries = remember(entries, selectedDay, displayedMonth, displayedYear) {
-        entries.filter { entry ->
-            runCatching {
-                val sdf = SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.ENGLISH)
-                val cal = Calendar.getInstance()
-                cal.time = sdf.parse(entry.date) ?: return@filter false
-                cal.get(Calendar.DAY_OF_MONTH) == selectedDay &&
-                cal.get(Calendar.MONTH) == displayedMonth &&
-                cal.get(Calendar.YEAR) == displayedYear
-            }.getOrElse { false }
+    // Reset timer when focusMin changes (only when idle)
+    LaunchedEffect(focusMin) {
+        if (!isFocusMode && !isBreak) {
+            timeLeftMillis = focusMin * 60 * 1000L
         }
     }
 
-    val monthName = SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(
-        Calendar.getInstance().also { it.set(displayedYear, displayedMonth, 1) }.time
-    )
-
-    // Days in month
-    val daysInMonth = Calendar.getInstance().also {
-        it.set(displayedYear, displayedMonth, 1)
-    }.getActualMaximum(Calendar.DAY_OF_MONTH)
-
-    val firstDayOfWeek = Calendar.getInstance().also {
-        it.set(displayedYear, displayedMonth, 1)
-    }.get(Calendar.DAY_OF_WEEK) - 1  // 0=Sun
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Calendar", color = Color.White, fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFD32F2F))
-            )
-        }
-    ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            // Month navigation
-            Row(
-                modifier = Modifier.fillMaxWidth().background(Color(0xFF2D323E)).padding(12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = {
-                    if (displayedMonth == 0) { displayedMonth = 11; displayedYear-- }
-                    else displayedMonth--
-                }) {
-                    Icon(Icons.Default.ChevronLeft, contentDescription = null, tint = Color.White)
-                }
-                Text(monthName, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                IconButton(onClick = {
-                    if (displayedMonth == 11) { displayedMonth = 0; displayedYear++ }
-                    else displayedMonth++
-                }) {
-                    Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White)
-                }
+    // ── Master timer coroutine — single loop, no LaunchedEffect races ────
+    // Runs once. Reads mutable state via snapshot reads inside the loop.
+    // Avoids the bug where LaunchedEffect(isFocusMode, isBreak) restarts
+    // after setting isBreak=true while timeLeftMillis is already 0, causing
+    // the break timer to skip immediately.
+    LaunchedEffect(Unit) {
+        while (true) {
+            // Wait until a session or break starts
+            if (!isFocusMode && !isBreak) {
+                delay(100)
+                continue
             }
 
-            // Day headers
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
+            val isCurrentlyBreak = isBreak
+            val durationMillis   = if (isCurrentlyBreak) restMin * 60 * 1000L else focusMin * 60 * 1000L
+            val targetTime       = System.currentTimeMillis() + timeLeftMillis
+
+            // Tick until time runs out OR session is manually stopped
+            while (true) {
+                delay(16) // ~60fps tick
+                val remaining = targetTime - System.currentTimeMillis()
+                if (remaining <= 0) {
+                    timeLeftMillis = 0L
+                    break
+                }
+                // Manual stop check
+                if (!isFocusMode && !isBreak) {
+                    timeLeftMillis = focusMin * 60 * 1000L
+                    break
+                }
+                timeLeftMillis = remaining
+            }
+
+            // Only process auto-advance if session wasn't manually stopped
+            val stillActive = if (isCurrentlyBreak) isBreak else isFocusMode
+            if (!stillActive) continue  // manual stop — loop back to wait
+
+            if (isCurrentlyBreak) {
+                // Break finished → next focus session
+                isBreak = false
+                isFocusMode = true
+                currentSession++
+                timeLeftMillis = focusMin * 60 * 1000L
+            } else {
+                // Focus session finished
+                com.rasel.RasFocus.DataManager.totalFocusTimeMillis += (focusMin * 60 * 1000L)
+                com.rasel.RasFocus.DataManager.totalSessions++
+
+                if (currentSession < totalSessions) {
+                    // More sessions → start break
+                    isFocusMode = false
+                    isBreak = true
+                    timeLeftMillis = restMin * 60 * 1000L
+                } else {
+                    // ALL SESSIONS DONE — auto stop everything
+                    isFocusMode = false
+                    isBreak = false
+                    timeLeftMillis = focusMin * 60 * 1000L
+                    currentSession = 1
+                    sessionDone = true
+                    stopEverything()
+                    android.widget.Toast.makeText(
+                        context,
+                        "🎉 All sessions complete! Great work!",
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        }
+    }
+
+    // ── Side effects — start/stop services when session state changes ────
+    LaunchedEffect(isFocusMode, isBreak) {
+        when {
+            isFocusMode -> DeepStudyBlockerService.start(context)
+            !isFocusMode && !isBreak -> DeepStudyBlockerService.stop(context)
+        }
+        when {
+            chkSound && (isFocusMode || isBreak) -> AmbientSoundEngine.play(context, soundType)
+            !isFocusMode && !isBreak -> AmbientSoundEngine.stop()
+        }
+        when {
+            chkFloat && (isFocusMode || isBreak) && hasOverlayPermission(context) ->
+                FloatingStopwatch.show(context) { chkFloat = false }
+            !isFocusMode && !isBreak -> FloatingStopwatch.dismiss()
+        }
+    }
+
+    // Restart sound if user changes type mid-session
+    LaunchedEffect(soundType) {
+        if (chkSound && (isFocusMode || isBreak)) {
+            AmbientSoundEngine.play(context, soundType)
+        }
+    }
+
+    // Session complete celebration toast already shown above;
+    // reset the flag so it doesn't re-trigger on recompose
+    LaunchedEffect(sessionDone) {
+        if (sessionDone) sessionDone = false
+    }
+
+    DisposableEffect(Unit) {
+        onDispose { stopEverything() }
+    }
+
+    val scrollState = rememberScrollState()
+
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(Brush.verticalGradient(listOf(Color(0xFF0B1220), Color(0xFF0F1B33))))
+            .windowInsetsPadding(WindowInsets.statusBars)
+    ) {
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                listOf("Sun","Mon","Tue","Wed","Thu","Fri","Sat").forEach { day ->
-                    Text(
-                        day, fontSize = 12.sp, color = Color.Gray,
-                        modifier = Modifier.weight(1f), textAlign = TextAlign.Center
+                // Hero Section
+                TimerHeroCard(
+                    isFocusMode = isFocusMode,
+                    isBreak = isBreak,
+                    timeLeftMillis = timeLeftMillis,
+                    currentSession = currentSession,
+                    totalSessions = totalSessions
+                )
+
+                // Start / Stop button
+                StartStopButton(
+                    isActive = isFocusMode || isBreak,
+                    onClick = {
+                        if (isFocusMode || isBreak) {
+                            if (isStrict) {
+                                android.widget.Toast.makeText(context, "Strict Mode active! Cannot stop early.", android.widget.Toast.LENGTH_SHORT).show()
+                            } else {
+                                isFocusMode = false
+                                isBreak = false
+                                timeLeftMillis = focusMin * 60 * 1000L
+                                currentSession = 1
+                            }
+                        } else {
+                            if (!hasUsageStatsPermission(context)) {
+                                context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+                            } else {
+                                isFocusMode = true
+                            }
+                        }
+                    }
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                SectionCard(title = "Session Setup", icon = Icons.Default.Timer) {
+                    TimerSetupRow("Focus Time", focusMin, 5, 120, 5, !isFocusMode && !isBreak) { focusMin = it }
+                    TimerSetupRow("Rest Time", restMin, 1, 30, 1, !isFocusMode && !isBreak) { restMin = it }
+                    TimerSetupRow("Total Sessions", totalSessions, 1, 10, 1, !isFocusMode && !isBreak) { totalSessions = it }
+                }
+
+                SectionCard(title = "Focus Aids", icon = Icons.Default.Headphones) {
+                    SoundRow(
+                        checked = chkSound, enabled = true, soundType = soundType, context = context,
+                        onCheckedChange = { chkSound = it }, onSoundTypeChange = { soundType = it }
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    FloatRow(
+                        checked = chkFloat, enabled = true, context = context,
+                        onCheckedChange = { newVal ->
+                            if (newVal && !hasOverlayPermission(context)) {
+                                context.startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION))
+                            } else {
+                                chkFloat = newVal; if (!newVal) FloatingStopwatch.dismiss()
+                            }
+                        }
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    StrictRow(
+                        checked = isStrict, enabled = !isFocusMode && !isBreak,
+                        onCheckedChange = { 
+                            isStrict = it
+                            com.rasel.RasFocus.DataManager.isDeepStudyStrict = it 
+                        }
                     )
                 }
-            }
 
-            // Calendar grid
-            val totalCells = firstDayOfWeek + daysInMonth
-            val rows = (totalCells + 6) / 7
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(7),
-                modifier = Modifier.fillMaxWidth().height((rows * 48).dp).padding(horizontal = 8.dp)
-            ) {
-                items(rows * 7) { index ->
-                    val day = index - firstDayOfWeek + 1
-                    if (day < 1 || day > daysInMonth) {
-                        Box(modifier = Modifier.size(40.dp))
-                    } else {
-                        val isToday = day == today.get(Calendar.DAY_OF_MONTH) &&
-                            displayedMonth == today.get(Calendar.MONTH) &&
-                            displayedYear == today.get(Calendar.YEAR)
-                        val hasEntry = day in entryDays
-                        val isSelected = day == selectedDay
-
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .padding(2.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    when {
-                                        isSelected -> Color(0xFFD32F2F)
-                                        isToday -> Color(0xFF9B59B6).copy(alpha = 0.4f)
-                                        else -> Color.Transparent
-                                    }
-                                )
-                                .clickable { selectedDay = day },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(
-                                    "$day", fontSize = 14.sp,
-                                    color = if (isSelected) Color.White else Color(0xFF1A237E),
-                                    fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal
-                                )
-                                if (hasEntry) {
-                                    Box(modifier = Modifier.size(4.dp).clip(CircleShape).background(
-                                        if (isSelected) Color.White else Color(0xFF2389D7)
-                                    ))
-                                }
-                            }
-                        }
-                    }
+                // Show basic requirement warning if missing Usage Stats
+                if (!hasUsageStatsPermission(context)) {
+                    PermBanner(
+                        color = DClrBadgeTeal, tint = DClrTeal,
+                        text = "Allow-list blocking requires Usage Stats permission.",
+                        btnText = "Enable", onClick = { context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) }
+                    )
                 }
+
+                AllowListCard(
+                    appCount = allowApps.size, siteCount = allowWebs.size,
+                    enabled = !isFocusMode && !isBreak, onClick = { showBottomSheet = true }
+                )
+                Spacer(Modifier.height(40.dp))
             }
+    }
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+    if (showBottomSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBottomSheet = false },
+            modifier = Modifier.fillMaxHeight(0.9f),
+            containerColor = Color(0xFF0F1B33),
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        ) {
+            BlocklistPickerSheet(
+                onClose = { showBottomSheet = false },
+                onSave = { selectedApps, selectedSites ->
+                    allowApps.clear(); allowApps.addAll(selectedApps.map { BlockItem(it) })
+                    DataManager.dsAllowAppList = selectedApps
+                    allowWebs.clear(); allowWebs.addAll(selectedSites.map { BlockItem(it) })
+                    DataManager.dsAllowWebList = selectedSites
+                    showBottomSheet = false
+                },
+                initialApps  = allowApps.map { it.name }, initialSites = allowWebs.map { it.name }
+            )
+        }
+    }
+}
 
-            // Entries for selected day
-            val selDate = SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault()).format(
-                Calendar.getInstance().also { it.set(displayedYear, displayedMonth, selectedDay) }.time
-            )
-            Text(
-                selDate, fontSize = 14.sp, color = Color.Gray,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
-            if (selectedEntries.isEmpty()) {
-                Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                    Text("No entries on this day", color = Color.Gray)
+// ─────────────────────────────────────────
+// SUB-COMPOSABLES
+// ─────────────────────────────────────────
+
+@Composable
+private fun TimerHeroCard(
+    isFocusMode: Boolean, isBreak: Boolean,
+    timeLeftMillis: Long, currentSession: Int, totalSessions: Int
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val pulse by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = if (isFocusMode) 1.05f else 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1500, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ), label = "pulse_anim"
+    )
+
+    Box(
+        Modifier.fillMaxWidth().padding(vertical = 24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        // Outer glowing pulse
+        Box(
+            Modifier
+                .size(260.dp)
+                .scale(pulse)
+                .clip(CircleShape)
+                .background(
+                    if (isBreak) Color(0xFF22C55E).copy(alpha = 0.15f)
+                    else DClrTeal.copy(alpha = 0.15f)
+                )
+        )
+        
+        // Inner Circular Timer
+        Box(
+            Modifier
+                .size(220.dp)
+                .clip(CircleShape)
+                .background(
+                    Brush.linearGradient(
+                        colors = if (isBreak) listOf(Color(0xFF22C55E), Color(0xFF16A34A))
+                                 else listOf(DClrTeal, DClrTealDark)
+                    )
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
+                    Text(
+                        text = "%02d:%02d".format(timeLeftMillis / 60000, (timeLeftMillis / 1000) % 60),
+                        fontSize = 64.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = DClrWhite,
+                        letterSpacing = 1.sp
+                    )
+                    Text(
+                        text = ".%02d".format((timeLeftMillis % 1000) / 10),
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = DClrWhite.copy(alpha = 0.8f),
+                        modifier = Modifier.padding(bottom = 12.dp, start = 4.dp)
+                    )
                 }
-            } else {
-                LazyColumn(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
-                    items(selectedEntries) { entry ->
-                        Card(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
-                                .clickable { onEntryClick(entry) },
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                if (entry.isLocked) {
-                                    Icon(Icons.Default.Lock, contentDescription = null,
-                                        tint = Color(0xFF9B59B6), modifier = Modifier.size(18.dp))
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                }
-                                Column {
-                                    Text(entry.title.ifBlank { "Untitled" }, fontWeight = FontWeight.Bold)
-                                    Text(entry.mood.ifBlank { entry.folder }, fontSize = 12.sp, color = Color.Gray)
-                                }
-                            }
-                        }
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = if (isBreak) "Break Time ☕" else "Session $currentSession of $totalSessions",
+                    fontSize = 15.sp,
+                    color = DClrWhite.copy(alpha = 0.9f),
+                    fontWeight = FontWeight.Medium
+                )
+                
+                if (isFocusMode) {
+                    Spacer(Modifier.height(16.dp))
+                    Row(
+                        Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(Color.Black.copy(alpha = 0.2f))
+                            .padding(horizontal = 14.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Box(Modifier.size(8.dp).clip(CircleShape).background(DClrAmber))
+                        Text(
+                            "Allow-List Mode",
+                            fontSize = 11.sp, color = DClrWhite, fontWeight = FontWeight.SemiBold
+                        )
                     }
                 }
             }
@@ -473,1442 +816,555 @@ fun DiaryCalendarScreen(
     }
 }
 
-// ============================================================
-// REMINDER DIALOG
-// ============================================================
 @Composable
-fun ReminderDialog(
-    currentEntry: DiaryEntry,
-    onDismiss: () -> Unit,
-    onSetReminder: (Long, String) -> Unit,
-    onClearReminder: () -> Unit
-) {
-    val context = LocalContext.current
-    var reminderLabel by remember { mutableStateOf(currentEntry.reminderLabel.ifBlank { "Write in your diary" }) }
-    var selectedDateTimeMs by remember { mutableStateOf(
-        if (currentEntry.reminderTimeMillis > 0) currentEntry.reminderTimeMillis
-        else System.currentTimeMillis() + 60 * 60 * 1000
-    )}
+private fun StartStopButton(isActive: Boolean, onClick: () -> Unit) {
+    val bg = when {
+        isActive -> DClrRed
+        else     -> DClrTeal
+    }
+    val label = when {
+        isActive -> "STOP POMODORO"
+        else     -> "START POMODORO"
+    }
+    val icon = when {
+        isActive -> Icons.Default.Stop
+        else     -> Icons.Default.PlayArrow
+    }
 
-    val cal = Calendar.getInstance().also { it.timeInMillis = selectedDateTimeMs }
-    val dateStr = SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(cal.time)
-    val timeStr = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(cal.time)
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("â° Set Reminder") },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = reminderLabel,
-                    onValueChange = { reminderLabel = it },
-                    label = { Text("Reminder message") },
-                    singleLine = true, modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Date picker
-                OutlinedButton(
-                    onClick = {
-                        DatePickerDialog(
-                            context,
-                            { _, y, m, d ->
-                                cal.set(y, m, d)
-                                selectedDateTimeMs = cal.timeInMillis
-                            },
-                            cal.get(Calendar.YEAR),
-                            cal.get(Calendar.MONTH),
-                            cal.get(Calendar.DAY_OF_MONTH)
-                        ).show()
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.DateRange, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Date: $dateStr")
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Time picker
-                OutlinedButton(
-                    onClick = {
-                        TimePickerDialog(
-                            context,
-                            { _, h, min ->
-                                cal.set(Calendar.HOUR_OF_DAY, h)
-                                cal.set(Calendar.MINUTE, min)
-                                selectedDateTimeMs = cal.timeInMillis
-                            },
-                            cal.get(Calendar.HOUR_OF_DAY),
-                            cal.get(Calendar.MINUTE),
-                            false
-                        ).show()
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.Schedule, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Time: $timeStr")
-                }
-
-                if (currentEntry.reminderTimeMillis > 0) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    TextButton(
-                        onClick = onClearReminder,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Default.NotificationsOff, contentDescription = null, tint = Color.Red)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Clear Reminder", color = Color.Red)
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Button(onClick = { onSetReminder(selectedDateTimeMs, reminderLabel) }) {
-                Text("Set Reminder")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+    Button(
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(containerColor = bg),
+        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier.fillMaxWidth().height(60.dp),
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp, pressedElevation = 2.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+            Icon(icon, contentDescription = null, tint = DClrWhite, modifier = Modifier.size(24.dp))
+            Spacer(Modifier.width(10.dp))
+            Text(label, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = DClrWhite, letterSpacing = 1.sp)
         }
-    )
+    }
 }
 
-// ============================================================
-// LIST SCREEN â€” WriteDiary-style entry list (first page)
-// ============================================================
+@Composable
+private fun SectionCard(title: String, icon: ImageVector, content: @Composable ColumnScope.() -> Unit) {
+    com.rasel.RasFocus.ui.theme.PremiumCard(
+        modifier = Modifier.fillMaxWidth(),
+        containerColor = DClrSurface,
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(Modifier.padding(20.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 16.dp)) {
+                Box(
+                    modifier = Modifier.size(38.dp).clip(CircleShape).background(DClrBadgeTeal),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(icon, null, tint = DClrTeal, modifier = Modifier.size(20.dp))
+                }
+                Spacer(Modifier.width(12.dp))
+                Text(title, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = DClrDark)
+            }
+            content()
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DiaryListScreen(
-    entries: List<DiaryEntry>,
-    onEntryClick: (DiaryEntry) -> Unit,
-    onNewEntry: () -> Unit,
-    onNavigateBack: () -> Unit,
-    onMenuClick: () -> Unit = {}
+private fun SoundRow(
+    checked: Boolean, enabled: Boolean, soundType: SoundType, context: android.content.Context,
+    onCheckedChange: (Boolean) -> Unit, onSoundTypeChange: (SoundType) -> Unit
 ) {
-    val context = LocalContext.current
-    val magenta = Color(0xFFE91E8C)
-    val teal    = Color(0xFF009688)
-    val indigo  = Color(0xFF3F51B5)
-
-    val grouped = remember(entries) {
-        entries.groupBy { it.date.ifBlank { "Unknown" } }
-            .entries.sortedByDescending { grp ->
-                entries.find { e -> e.date == grp.key }?.timestamp ?: 0L
-            }
+    var expanded by remember { mutableStateOf(false) }
+    var isDownloading by remember(soundType) { mutableStateOf(false) }
+    val isDownloaded = remember(soundType, isDownloading) { 
+        soundType.downloadUrl == null || java.io.File(context.filesDir, soundType.name + ".mp3").exists()
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text("RasDiary", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
-                        Text("${entries.size} entries", color = Color.White.copy(.65f), fontSize = 11.sp)
+    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Switch(
+            checked = checked, onCheckedChange = onCheckedChange, enabled = enabled,
+            colors = SwitchDefaults.colors(checkedThumbColor = DClrWhite, checkedTrackColor = DClrTeal)
+        )
+        Spacer(Modifier.width(12.dp))
+        Text("Ambient Sound", fontSize = 15.sp, color = if (enabled) DClrDark else DClrGray, modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium)
+        
+        if (checked) {
+            if (!isDownloaded) {
+                if (isDownloading) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = DClrTeal, strokeWidth = 2.dp)
+                } else {
+                    IconButton(onClick = {
+                        isDownloading = true
+                        AmbientSoundEngine.downloadSound(context, soundType, 
+                            onComplete = { isDownloading = false; if (checked) AmbientSoundEngine.play(context, soundType) },
+                            onError = { isDownloading = false; android.widget.Toast.makeText(context, "Download failed", android.widget.Toast.LENGTH_SHORT).show() }
+                        )
+                    }, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Default.Download, null, tint = DClrTeal)
                     }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onMenuClick) {
-                        Icon(Icons.Default.Menu, contentDescription = "Menu", tint = Color.White)
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { /* search TODO */ }) {
-                        Icon(Icons.Default.Search, contentDescription = "Search", tint = Color.White)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = indigo)
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onNewEntry,     // ← সরাসরি onNewEntry, sidebar নয়
-                containerColor = magenta,
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Icon(Icons.Default.Edit, contentDescription = "New Entry", tint = Color.White)
+                }
+                Spacer(Modifier.width(8.dp))
             }
-        },
-        containerColor = Color(0xFFF0F4FF)
-    ) { padding ->
-        if (entries.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+            ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { if (enabled) expanded = it }) {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = DClrPillBg,
+                    modifier = Modifier.menuAnchor()
+                ) {
+                    Row(
+                        Modifier.padding(horizontal = 12.dp, vertical = 8.dp).clickable { if (enabled) expanded = true },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(soundType.emoji, fontSize = 14.sp)
+                        Text(soundType.label, fontSize = 13.sp, color = DClrDark, fontWeight = FontWeight.Medium)
+                        Icon(Icons.Default.KeyboardArrowDown, null, tint = DClrGray, modifier = Modifier.size(18.dp))
+                    }
+                }
+                ExposedDropdownMenu(
+                    expanded = expanded, 
+                    onDismissRequest = { expanded = false },
+                    modifier = Modifier.background(DClrSurface)
+                ) {
+                    SoundType.values().forEach { s ->
+                        DropdownMenuItem(
+                            text = { Text("${s.emoji}  ${s.label}", fontSize = 14.sp, color = DClrDark) },
+                            onClick = { onSoundTypeChange(s); expanded = false }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FloatRow(checked: Boolean, enabled: Boolean, context: Context, onCheckedChange: (Boolean) -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Switch(
+            checked = checked, onCheckedChange = onCheckedChange, enabled = enabled,
+            colors = SwitchDefaults.colors(checkedThumbColor = DClrWhite, checkedTrackColor = DClrTeal)
+        )
+        Spacer(Modifier.width(12.dp))
+        Text("Floating Stopwatch", fontSize = 15.sp, color = if (enabled) DClrDark else DClrGray, modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium)
+        if (!hasOverlayPermission(context)) {
+            TextButton(onClick = { context.startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)) }) {
+                Text("Grant", fontSize = 13.sp, color = DClrAmber, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+@Composable
+private fun StrictRow(checked: Boolean, enabled: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Switch(
+            checked = checked, onCheckedChange = onCheckedChange, enabled = enabled,
+            colors = SwitchDefaults.colors(checkedThumbColor = DClrWhite, checkedTrackColor = DClrTeal)
+        )
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text("Strict Mode", fontSize = 15.sp, color = if (enabled) DClrDark else DClrGray, fontWeight = FontWeight.Medium)
+            Text("Cannot stop or unlock until session ends. Blocks all apps except allowed apps, Phone, and SMS.", fontSize = 11.sp, color = DClrGray, lineHeight = 14.sp)
+        }
+    }
+}
+
+@Composable
+private fun PermBanner(color: Color, tint: Color, text: String, btnText: String, onClick: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(color).padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(Icons.Default.Info, null, tint = tint, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(10.dp))
+        Text(text, fontSize = 13.sp, color = DClrDark, modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium)
+        TextButton(onClick = onClick, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)) {
+            Text(btnText, fontSize = 13.sp, color = tint, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+private fun AllowListCard(appCount: Int, siteCount: Int, enabled: Boolean, onClick: () -> Unit) {
+    com.rasel.RasFocus.ui.theme.PremiumCard(
+        modifier = Modifier.fillMaxWidth(),
+        containerColor = if (enabled) DClrTeal.copy(alpha = 0.1f) else DClrSurface,
+        onClick = onClick,
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier.size(44.dp).clip(CircleShape).background(DClrBadgeGreen),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.CheckCircle, null, tint = DClrGreen, modifier = Modifier.size(24.dp))
+            }
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f)) {
+                Text("Allow List", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = DClrDark)
+                Spacer(Modifier.height(2.dp))
+                Text("$appCount Apps Allowed · $siteCount Sites Allowed", fontSize = 13.sp, color = DClrGray)
+            }
+            Icon(Icons.Default.ChevronRight, null, tint = DClrGray)
+        }
+    }
+}
+
+// ─────────────────────────────────────────
+// BOTTOM SHEET
+// ─────────────────────────────────────────
+
+@Composable
+fun BlocklistPickerSheet(
+    onClose: () -> Unit,
+    onSave: (List<String>, List<String>) -> Unit,
+    initialApps: List<String>,
+    initialSites: List<String>
+) {
+    val context = LocalContext.current
+    val tempApps = remember { mutableStateListOf<String>().apply { addAll(initialApps) } }
+
+    // ── App loading — system + user apps, fast ───────────────────────────
+    data class AppInfo(val name: String, val pkg: String, val icon: android.graphics.drawable.Drawable)
+
+    var allApps by remember { mutableStateOf<List<AppInfo>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var searchQuery by remember { mutableStateOf("") }
+
+    // Popular system/google apps to always include
+    val PRIORITY_PKGS = setOf(
+        "com.android.chrome",
+        "com.google.android.youtube",
+        "com.google.android.gm",
+        "com.google.android.googlequicksearchbox",
+        "com.google.android.apps.maps",
+        "com.google.android.apps.photos",
+        "com.google.android.dialer",
+        "com.android.dialer",
+        "com.samsung.android.dialer",
+        "com.android.messaging",
+        "com.samsung.android.messaging",
+        "com.google.android.apps.messaging",
+        "com.android.settings",
+        "com.samsung.android.settings",
+        "com.facebook.katana",
+        "com.facebook.lite",
+        "com.instagram.android",
+        "com.whatsapp",
+        "com.twitter.android",
+        "org.telegram.messenger",
+        "com.snapchat.android",
+        "com.tiktok.musically",
+        "com.spotify.music",
+        "com.netflix.mediaclient",
+        "com.amazon.mShop.android.shopping",
+        "com.google.android.apps.youtube.music",
+        "com.microsoft.teams",
+        "com.slack",
+        "com.discord",
+        "com.zhiliaoapp.musically",
+        "com.ss.android.ugc.trill"
+    )
+
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) {
+            val pm = context.packageManager
+            val allInstalled = pm.getInstalledApplications(PackageManager.GET_META_DATA)
+
+            // Separate user apps + priority system apps
+            val userApps = allInstalled
+                .filter { (it.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) == 0 }
+
+            val systemApps = allInstalled
+                .filter { (it.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0
+                    && it.packageName in PRIORITY_PKGS }
+
+            val combined = (systemApps + userApps)
+                .distinctBy { it.packageName }
+                .mapNotNull { info ->
+                    try {
+                        AppInfo(
+                            name = pm.getApplicationLabel(info).toString(),
+                            pkg  = info.packageName,
+                            icon = pm.getApplicationIcon(info.packageName)
+                        )
+                    } catch (_: Exception) { null }
+                }
+                .sortedWith(compareBy(
+                    { it.pkg !in PRIORITY_PKGS }, // priority apps first
+                    { it.name.lowercase() }
+                ))
+
+            withContext(Dispatchers.Main) {
+                allApps = combined
+                isLoading = false
+            }
+        }
+    }
+
+    val filtered = remember(allApps, searchQuery) {
+        if (searchQuery.isEmpty()) allApps
+        else allApps.filter {
+            it.name.contains(searchQuery, ignoreCase = true) ||
+            it.pkg.contains(searchQuery, ignoreCase = true)
+        }
+    }
+
+    Column(Modifier.fillMaxSize().background(DClrBg)) {
+
+        // ── Header ───────────────────────────────────────────────────────
+        Row(
+            Modifier.fillMaxWidth().background(DClrSurface).padding(horizontal = 20.dp, vertical = 14.dp),
+            Arrangement.SpaceBetween, Alignment.CenterVertically
+        ) {
+            Column {
+                Text("Allow List", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = DClrDark)
+                Text(
+                    "${tempApps.size} app${if (tempApps.size != 1) "s" else ""} selected",
+                    fontSize = 13.sp, color = DClrTeal
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (tempApps.isNotEmpty()) {
+                    TextButton(
+                        onClick = { tempApps.clear() },
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text("Clear", fontSize = 13.sp, color = DClrRed, fontWeight = FontWeight.Bold)
+                    }
+                }
+                IconButton(
+                    onClick = onClose,
+                    modifier = Modifier.size(36.dp).clip(CircleShape).background(DClrPillBg)
+                ) {
+                    Icon(Icons.Default.Close, null, tint = DClrDark, modifier = Modifier.size(18.dp))
+                }
+            }
+        }
+
+        // ── Search bar ───────────────────────────────────────────────────
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            placeholder = { Text("Search apps…", color = DClrGray, fontSize = 14.sp) },
+            leadingIcon = { Icon(Icons.Default.Search, null, tint = DClrGray, modifier = Modifier.size(20.dp)) },
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton(onClick = { searchQuery = "" }) {
+                        Icon(Icons.Default.Close, null, tint = DClrGray, modifier = Modifier.size(18.dp))
+                    }
+                }
+            },
+            shape = RoundedCornerShape(14.dp),
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = DClrDark,
+                unfocusedTextColor = DClrDark,
+                focusedContainerColor = DClrSurface,
+                unfocusedContainerColor = DClrSurface,
+                focusedBorderColor = DClrTeal,
+                unfocusedBorderColor = DClrBorderMuted
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+        )
+
+        // ── Launcher always-allowed banner ───────────────────────────────
+        val defaultLauncher = remember {
+            val intent = android.content.Intent(android.content.Intent.ACTION_MAIN)
+                .apply { addCategory(android.content.Intent.CATEGORY_HOME) }
+            context.packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
+                ?.activityInfo?.packageName ?: ""
+        }
+        if (defaultLauncher.isNotEmpty()) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(DClrTeal.copy(alpha = 0.1f))
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Default.Home, null, tint = DClrTeal, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    "Launcher সবসময় allow থাকবে",
+                    fontSize = 12.sp, color = DClrTeal, fontWeight = FontWeight.SemiBold
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+        }
+
+        // ── App list ──────────────────────────────────────────────────────
+        if (isLoading) {
+            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("📔", fontSize = 64.sp)
-                    Spacer(Modifier.height(16.dp))
-                    Text("No diary entries yet", fontSize = 18.sp, color = Color(0xFF37474F), fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(6.dp))
-                    Text("Tap ✏️ to write your first entry", fontSize = 14.sp, color = Color.Gray)
+                    CircularProgressIndicator(color = DClrTeal, modifier = Modifier.size(36.dp))
+                    Spacer(Modifier.height(12.dp))
+                    Text("Loading apps…", color = DClrGray, fontSize = 14.sp)
                 }
             }
         } else {
             LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(bottom = 90.dp, top = 8.dp)
+                Modifier.weight(1f),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                grouped.forEach { (date, dayEntries) ->
-                    item {
-                        val cal = runCatching {
-                            val sdf = SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.ENGLISH)
-                            Calendar.getInstance().also { c -> c.time = sdf.parse(date)!! }
-                        }.getOrNull()
+                items(
+                    items = filtered,
+                    key = { it.pkg }
+                ) { app ->
+                    val isLauncher = app.pkg == defaultLauncher
+                    val isSelected = tempApps.contains(app.pkg) || isLauncher
+                    val isPriority = app.pkg in PRIORITY_PKGS
 
-                        val monthStr = cal?.let { SimpleDateFormat("MMM", Locale.ENGLISH).format(it.time).uppercase() } ?: "???"
-                        val dayNum   = cal?.get(Calendar.DAY_OF_MONTH)?.toString() ?: "?"
-                        val yearStr  = cal?.get(Calendar.YEAR)?.toString() ?: ""
-                        val dayName  = cal?.let { SimpleDateFormat("EEE", Locale.ENGLISH).format(it.time).uppercase() } ?: ""
-
-                        // ── Date section header ────────────────────────────────
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // Premium calendar badge
-                            Box(
-                                modifier = Modifier
-                                    .size(52.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(
-                                        Brush.verticalGradient(listOf(indigo, Color(0xFF7C4DFF)))
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text(monthStr, color = Color.White.copy(.8f), fontSize = 9.sp, fontWeight = FontWeight.Bold, lineHeight = 10.sp)
-                                    Text(dayNum, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 22.sp)
-                                    Text(dayName, color = Color.White.copy(.7f), fontSize = 8.sp, fontWeight = FontWeight.Medium, lineHeight = 9.sp)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(
+                                when {
+                                    isSelected -> DClrTeal.copy(alpha = 0.12f)
+                                    else       -> DClrSurface
                                 }
-                            }
-                            Spacer(Modifier.width(12.dp))
-                            Column {
-                                Text(date.substringBefore(",").ifBlank { date }, color = Color(0xFF1A237E), fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                                Text(yearStr, color = Color(0xFF7986CB), fontSize = 12.sp)
-                            }
-                            Spacer(Modifier.weight(1f))
-                            Text("${dayEntries.size} entry${if (dayEntries.size > 1) "ies" else ""}", color = Color.Gray, fontSize = 11.sp)
-                        }
-
-                        dayEntries.forEach { entry ->
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 12.dp, vertical = 3.dp)
-                                    .clickable { onEntryClick(entry) },
-                                shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    // Mood indicator dot
-                                    val moodColor = when (entry.mood) {
-                                        "😊" -> Color(0xFF4CAF50)
-                                        "😢" -> Color(0xFF2196F3)
-                                        "😡" -> Color(0xFFF44336)
-                                        "😴" -> Color(0xFF9C27B0)
-                                        else -> magenta
-                                    }
-                                    Box(modifier = Modifier.size(8.dp).background(moodColor, CircleShape))
-                                    Spacer(Modifier.width(10.dp))
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            if (entry.isLocked) {
-                                                Icon(Icons.Default.Lock, null, tint = magenta, modifier = Modifier.size(13.dp))
-                                                Spacer(Modifier.width(4.dp))
-                                            }
-                                            Text(
-                                                entry.title.ifBlank { "Untitled" },
-                                                color = Color(0xFF1A237E),
-                                                fontSize = 15.sp,
-                                                fontWeight = FontWeight.SemiBold,
-                                                maxLines = 1,
-                                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                                            )
-                                        }
-                                        if (entry.body.isNotBlank()) {
-                                            Text(
-                                                entry.body.take(80).replace('\n', ' '),
-                                                color = Color(0xFF546E7A),
-                                                fontSize = 12.sp,
-                                                maxLines = 1,
-                                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                                modifier = Modifier.padding(top = 2.dp)
-                                            )
-                                        }
-                                        if (entry.tags.isNotEmpty()) {
-                                            Row(modifier = Modifier.padding(top = 4.dp)) {
-                                                entry.tags.take(2).forEach { tag ->
-                                                    Box(
-                                                        modifier = Modifier.padding(end = 4.dp)
-                                                            .background(indigo.copy(.1f), RoundedCornerShape(4.dp))
-                                                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                                                    ) { Text("#$tag", color = indigo, fontSize = 10.sp) }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    if (entry.mood.isNotBlank()) {
-                                        Text(entry.mood, fontSize = 20.sp, modifier = Modifier.padding(start = 8.dp))
-                                    }
-                                }
-                            }
-                        }
-                        Spacer(Modifier.height(8.dp))
-                    }
-                }
-            }
-        }
-    }
-}
-
-// ============================================================
-// MAIN SCREEN
-// ============================================================
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ProfessionalDiaryScreen(
-    onNavigateBack: () -> Unit = {},
-    viewModel: DiaryViewModel = viewModel()
-) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-
-    val currentEntry by viewModel.currentEntry.collectAsState()
-    val allEntries by viewModel.allEntries.collectAsState()
-    val selectedFilter by viewModel.selectedFolderFilter.collectAsState()
-    val saveStatus by viewModel.saveStatus.collectAsState()
-    val isUnlocked by viewModel.isUnlocked.collectAsState()
-    val cloudStatus by viewModel.cloudStatus.collectAsState()
-
-    // â”€â”€ NEW: list vs canvas navigation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    var showListScreen by remember { mutableStateOf(true) }
-
-    var showMoodDialog by remember { mutableStateOf(false) }
-    var showTagDialog by remember { mutableStateOf(false) }
-    var tagInput by remember { mutableStateOf("") }
-    var showExportMenu by remember { mutableStateOf(false) }
-    var showFolderMenu by remember { mutableStateOf(false) }
-    var showSetPinDialog by remember { mutableStateOf(false) }
-    var showReminderDialog by remember { mutableStateOf(false) }
-    var showCalendar by remember { mutableStateOf(false) }
-    var isDarkMode by remember { mutableStateOf(false) }
-
-    // PDF password dialog state
-    var showPdfPasswordDialog by remember { mutableStateOf(false) }
-    var pdfPasswordTarget by remember { mutableStateOf("single") } // "single" or "all"
-    var pdfPassword by remember { mutableStateOf("") }
-    var pdfPasswordVisible by remember { mutableStateOf(false) }
-
-    val bgColor = if (isDarkMode) Color(0xFF121212) else Color(0xFFE6CFA3)
-    val paperColor = if (isDarkMode) Color(0xFF1E1E1E) else Color(0xFFFAFAFA)
-    val textColor = if (isDarkMode) Color(0xFFE0E0E0) else Color(0xFF1A237E)
-
-    DisposableEffect(Unit) {
-        onDispose { viewModel.forceSaveOnExit() }
-    }
-
-    // Auto sync on login
-    LaunchedEffect(Unit) {
-        if (DiaryCloudSync.isLoggedIn()) viewModel.syncFromCloud()
-    }
-
-    // â”€â”€ Show list screen first â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    if (showListScreen) {
-        DiaryListScreen(
-            entries = allEntries,
-            onEntryClick = { entry ->
-                viewModel.loadEntry(entry)
-                showListScreen = false
-            },
-            onNewEntry = {
-                viewModel.startNewEntry()
-                showListScreen = false
-            },
-            onNavigateBack = onNavigateBack,
-            onMenuClick = { scope.launch { drawerState.open() } }
-        )
-        return
-    }
-
-    // BackHandler: physical back button in canvas â†’ save and go to list
-    androidx.activity.compose.BackHandler {
-        viewModel.forceSaveOnExit()
-        showListScreen = true
-    }
-
-    // Show calendar â€” calendar icon click à¦¥à§‡à¦•à§‡ DatePickerDialog à¦–à§‹à¦²à§‡ à¦¯à¦¾à¦¤à§‡
-    // user à¦¯à§‡à¦•à§‹à¦¨à§‹ date choose à¦•à¦°à§‡ à¦¨à¦¤à§à¦¨ entry à¦²à¦¿à¦–à¦¤à§‡ à¦ªà¦¾à¦°à§‡
-    if (showCalendar) {
-        DiaryCalendarScreen(
-            entries = allEntries,
-            onEntryClick = { entry ->
-                viewModel.loadEntry(entry)
-                showCalendar = false
-            },
-            onBack = { showCalendar = false }
-        )
-        return
-    }
-
-    // Show lock screen if entry is locked and not yet unlocked
-    if (currentEntry.isLocked && !isUnlocked) {
-        DiaryLockScreen(
-            entry = currentEntry,
-            onUnlock = { viewModel.unlockWithBiometric() },
-            onCancel = { showListScreen = true }
-        )
-        return
-    }
-
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            ModalDrawerSheet(
-                modifier = Modifier.width(280.dp),
-                drawerContainerColor = Color(0xFF2D323E)
-            ) {
-                DiarySidebar(
-                    selectedFilter = selectedFilter,
-                    isDarkMode = isDarkMode,
-                    cloudStatus = cloudStatus,
-                    isLoggedIn = DiaryCloudSync.isLoggedIn(),
-                    onFilterSelect = {
-                        viewModel.setFolderFilter(it)
-                        scope.launch { drawerState.close() }
-                    },
-                    onNewEntry = {
-                        viewModel.startNewEntry()
-                        scope.launch { drawerState.close() }
-                    },
-                    onToggleTheme = { isDarkMode = !isDarkMode },
-                    onExportClick = {
-                        scope.launch { drawerState.close() }
-                        showExportMenu = true
-                    },
-                    onCalendarClick = {
-                        scope.launch { drawerState.close() }
-                        showCalendar = true
-                    },
-                    onSyncClick = { viewModel.syncToCloud() },
-                    allEntries = allEntries,
-                    onEntryClick = { entry ->
-                        viewModel.loadEntry(entry)
-                        scope.launch { drawerState.close() }
-                    }
-                )
-            }
-        }
-    ) {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = {
-                        Text(
-                            "RasDiary",
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 22.sp
-                        )
-                    },
-                    navigationIcon = {
-                        // Back arrow â†’ save and go back to diary list
-                        IconButton(onClick = {
-                            viewModel.forceSaveOnExit()
-                            showListScreen = true
-                        }) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
-                        }
-                    },
-                    actions = {
-                        // Cloud status icon
-                        when (cloudStatus) {
-                            CloudStatus.SYNCING -> CircularProgressIndicator(
-                                color = Color.White, modifier = Modifier.size(18.dp), strokeWidth = 2.dp
                             )
-                            CloudStatus.SUCCESS -> Icon(Icons.Default.CloudDone, contentDescription = "Synced", tint = Color.Green)
-                            CloudStatus.ERROR -> Icon(Icons.Default.CloudOff, contentDescription = "Error", tint = Color.Red)
-                            CloudStatus.NOT_LOGGED_IN -> {}
-                            else -> {}
-                        }
-
-                        // Mood/emoji button â€” screenshot à¦à¦° ðŸ˜Š icon
-                        IconButton(onClick = { showMoodDialog = true }) {
-                            Icon(
-                                Icons.Default.Face,
-                                contentDescription = "Mood",
-                                tint = if (currentEntry.mood.isNotBlank()) Color(0xFFDD0099) else Color.White
+                            .border(
+                                width = if (isSelected) 1.5.dp else 0.dp,
+                                color = if (isSelected) DClrTeal.copy(alpha = 0.5f) else Color.Transparent,
+                                shape = RoundedCornerShape(12.dp)
                             )
-                        }
-
-                        // Checkmark â€” save + close, screenshot à¦à¦° âœ“ icon
-                        IconButton(onClick = {
-                            viewModel.forceSaveOnExit()
-                            onNavigateBack()
-                        }) {
-                            Icon(Icons.Default.Check, contentDescription = "Save", tint = Color.White)
-                        }
-
-                        // Overflow menu â€” reminder, lock, tag, delete, folder à¦¸à¦¬ à¦à¦–à¦¾à¦¨à§‡
-                        var showOverflowMenu by remember { mutableStateOf(false) }
-                        Box {
-                            IconButton(onClick = { showOverflowMenu = true }) {
-                                Icon(Icons.Default.MoreVert, contentDescription = "More", tint = Color.White)
+                            .clickable(enabled = !isLauncher) {
+                                if (isSelected) tempApps.remove(app.pkg)
+                                else tempApps.add(app.pkg)
                             }
-                            DropdownMenu(expanded = showOverflowMenu, onDismissRequest = { showOverflowMenu = false }) {
-                                DropdownMenuItem(
-                                    text = { Text(if (currentEntry.reminderTimeMillis > 0) "Edit Reminder" else "Set Reminder") },
-                                    leadingIcon = {
-                                        Icon(
-                                            if (currentEntry.reminderTimeMillis > 0) Icons.Default.Notifications else Icons.Default.NotificationsNone,
-                                            contentDescription = null,
-                                            tint = if (currentEntry.reminderTimeMillis > 0) Color(0xFFDD0099) else Color.Gray
-                                        )
-                                    },
-                                    onClick = { showOverflowMenu = false; showReminderDialog = true }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(if (currentEntry.isLocked) "Remove Lock" else "Lock Entry") },
-                                    leadingIcon = {
-                                        Icon(
-                                            if (currentEntry.isLocked) Icons.Default.Lock else Icons.Default.LockOpen,
-                                            contentDescription = null,
-                                            tint = if (currentEntry.isLocked) Color(0xFFDD0099) else Color.Gray
-                                        )
-                                    },
-                                    onClick = { showOverflowMenu = false; showSetPinDialog = true }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Add Tag") },
-                                    leadingIcon = { Icon(Icons.Default.Label, contentDescription = null, tint = Color.Gray) },
-                                    onClick = { showOverflowMenu = false; showTagDialog = true }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Folder: ${currentEntry.folder}") },
-                                    leadingIcon = { Icon(Icons.Default.Folder, contentDescription = null, tint = Color.Gray) },
-                                    onClick = { showOverflowMenu = false; showFolderMenu = true }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Export PDF") },
-                                    leadingIcon = { Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = Color.Gray) },
-                                    onClick = { showOverflowMenu = false; showExportMenu = true }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Delete", color = Color(0xFFD32F2F)) },
-                                    leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = Color(0xFFD32F2F)) },
-                                    onClick = {
-                                        showOverflowMenu = false
-                                        if (currentEntry.title.isNotBlank() || currentEntry.body.isNotBlank()) {
-                                            viewModel.deleteEntry(currentEntry)
-                                            Toast.makeText(context, "Entry Deleted", Toast.LENGTH_SHORT).show()
-                                        }
-                                    }
-                                )
-                            }
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Black)
-                )
-            },
-            containerColor = Color(0xFFDD0099)
-        ) { paddingValues ->
-            DiaryEditorArea(
-                modifier = Modifier.padding(paddingValues),
-                entry = currentEntry,
-                paperColor = paperColor,
-                textColor = textColor,
-                onEntryChange = { viewModel.updateEntry(it) },
-                onMoodClick = { showMoodDialog = true },
-                onTagClick = { showTagDialog = true },
-                onAddTag = { tag -> if (tag.isNotBlank()) viewModel.addTag(tag) },
-                onRemoveTag = { tag -> viewModel.removeTag(tag) },
-                onFolderClick = { showFolderMenu = true },
-                showFolderMenu = showFolderMenu,
-                onDismissFolderMenu = { showFolderMenu = false }
-            )
-        }
-    }
-
-    // ---- Dialogs ----
-
-    if (showMoodDialog) {
-        val moods = listOf("ðŸ˜Š Happy", "ðŸ˜¢ Sad", "ðŸ˜  Angry", "ðŸŽ‰ Excited", "ðŸ˜ Neutral", "ðŸ˜° Anxious")
-        AlertDialog(
-            onDismissRequest = { showMoodDialog = false },
-            title = { Text("Select Mood") },
-            text = {
-                Column {
-                    moods.forEach { mood ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth().clickable {
-                                viewModel.updateMood(mood)
-                                showMoodDialog = false
-                            }.padding(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(selected = currentEntry.mood == mood, onClick = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(mood)
-                        }
-                    }
-                }
-            },
-            confirmButton = { TextButton(onClick = { showMoodDialog = false }) { Text("Cancel") } }
-        )
-    }
-
-    if (showTagDialog) {
-        AlertDialog(
-            onDismissRequest = { showTagDialog = false },
-            title = { Text("Add Tag") },
-            text = {
-                OutlinedTextField(
-                    value = tagInput,
-                    onValueChange = { tagInput = it },
-                    label = { Text("Tag Name") },
-                    singleLine = true
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.addTag(tagInput); tagInput = ""; showTagDialog = false
-                }) { Text("Add") }
-            },
-            dismissButton = { TextButton(onClick = { showTagDialog = false }) { Text("Cancel") } }
-        )
-    }
-
-    // â”€â”€ Backup & Restore Dialog â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    if (showExportMenu) {
-        val driveAvailable = DriveBackupManager.isAvailable(context)
-        var busyMsg by remember { mutableStateOf("") }
-
-        // JSON file picker for import
-        val jsonPickerLauncher = rememberLauncherForActivityResult(
-            ActivityResultContracts.GetContent()
-        ) { uri: Uri? ->
-            if (uri == null) return@rememberLauncherForActivityResult
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    val text = context.contentResolver.openInputStream(uri)
-                        ?.bufferedReader()?.readText() ?: return@launch
-                    val root    = JSONObject(text)
-                    val arr     = root.optJSONArray("entries") ?: return@launch
-                    val db      = DiaryDatabase.getDatabase(context)
-                    val toInsert = (0 until arr.length()).map { i ->
-                        val o = arr.getJSONObject(i)
-                        DiaryEntry(
-                            id        = 0,   // let Room assign new id
-                            title     = o.optString("title"),
-                            body      = o.optString("body"),
-                            date      = o.optString("date"),
-                            mood      = o.optString("mood"),
-                            folder    = o.optString("folder", "Personal"),
-                            tags      = o.optString("tags").split(",")
-                                         .filter { it.isNotBlank() },
-                            isLocked  = o.optBoolean("locked", false),
-                            timestamp = o.optLong("timestamp",
-                                System.currentTimeMillis())
-                        )
-                    }
-                    db.diaryDao().upsertAll(toInsert)
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(context,
-                            "âœ… Imported ${toInsert.size} entries", Toast.LENGTH_SHORT).show()
-                    }
-                } catch (e: Exception) {
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "Import failed: ${e.message}",
-                            Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
-            showExportMenu = false
-        }
-
-        AlertDialog(
-            onDismissRequest = { showExportMenu = false },
-            title = { Text("ðŸ“‚ Backup & Restore", fontWeight = FontWeight.Bold) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    if (busyMsg.isNotBlank()) {
-                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                        Text(busyMsg, fontSize = 12.sp, color = Color(0xFF888888))
-                    }
-
-                    // â”€â”€ LOCAL EXPORT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-                    Text("ðŸ“± Local Export", fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.sp, color = Color(0xFFE91E8C))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(
-                            modifier = Modifier.weight(1f),
-                            onClick = {
-                                val file = DiaryPdfExporter.exportSingleEntry(context, currentEntry)
-                                if (file != null) {
-                                    context.startActivity(Intent.createChooser(
-                                        DiaryPdfExporter.getShareIntent(context, file), "Share PDF"))
-                                } else Toast.makeText(context, "Export failed", Toast.LENGTH_SHORT).show()
-                                showExportMenu = false
-                            }
-                        ) { Text("PDF\n(this entry)", fontSize = 11.sp, textAlign = TextAlign.Center) }
-
-                        OutlinedButton(
-                            modifier = Modifier.weight(1f),
-                            onClick = {
-                                val file = DiaryPdfExporter.exportAllEntries(context, allEntries)
-                                if (file != null) {
-                                    context.startActivity(Intent.createChooser(
-                                        DiaryPdfExporter.getShareIntent(context, file), "Share PDF"))
-                                } else Toast.makeText(context, "Export failed", Toast.LENGTH_SHORT).show()
-                                showExportMenu = false
-                            }
-                        ) { Text("PDF\n(all entries)", fontSize = 11.sp, textAlign = TextAlign.Center) }
-                    }
-
-                    // â”€â”€ LOCAL IMPORT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-                    OutlinedButton(
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = { jsonPickerLauncher.launch("application/json") }
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.FileUpload, null,
-                            modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("Import JSON from device")
-                    }
-
-                    HorizontalDivider()
-
-                    // â”€â”€ DRIVE SECTION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("â˜ï¸ Google Drive", fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.sp, color = Color(0xFF4A90D9))
-                        if (!driveAvailable) {
-                            Spacer(Modifier.width(8.dp))
-                            Text("(sign in required)", fontSize = 11.sp,
-                                color = Color(0xFF888888))
-                        }
-                    }
-
-                    if (driveAvailable) {
-                        val scope = rememberCoroutineScope()
-                        var showFixDriveButton by remember { mutableStateOf(false) }
-                        val fixDriveLauncher = rememberLauncherForActivityResult(
-                            ActivityResultContracts.StartActivityForResult()
-                        ) {
-                            showFixDriveButton = false
-                            Toast.makeText(context,
-                                "Drive permission দেওয়া হয়েছে ✅ — এখন আবার Export/Import করুন",
-                                Toast.LENGTH_LONG).show()
-                        }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            // Drive JSON export
-                            Button(
-                                modifier = Modifier.weight(1f),
-                                onClick = {
-                                    busyMsg = "Exporting to Drive..."
-                                    scope.launch {
-                                        val file = withContext(Dispatchers.IO) {
-                                            DiaryAutoBackupWorker::class.java
-                                            // reuse DiaryPdfExporter + build JSON inline
-                                            val dao = DiaryDatabase.getDatabase(context).diaryDao()
-                                            val entries = dao.getAllEntriesOnce()
-                                            val arr2 = JSONArray()
-                                            entries.forEach { e: DiaryEntry ->
-                                                arr2.put(JSONObject().apply {
-                                                    put("id", e.id); put("title", e.title)
-                                                    put("body", e.body); put("date", e.date)
-                                                    put("mood", e.mood); put("folder", e.folder)
-                                                    put("tags", e.tags.joinToString(","))
-                                                    put("locked", e.isLocked)
-                                                    put("timestamp", e.timestamp)
-                                                })
-                                            }
-                                            val root2 = JSONObject().apply {
-                                                put("exported_at", java.text.SimpleDateFormat(
-                                                    "yyyy-MM-dd HH:mm", java.util.Locale.ENGLISH)
-                                                    .format(java.util.Date()))
-                                                put("entry_count", entries.size)
-                                                put("entries", arr2)
-                                            }
-                                            java.io.File(context.cacheDir, "diary_manual.json")
-                                                .also { it.writeText(root2.toString(2)) }
-                                        }
-                                        val ok = DriveBackupManager.uploadDiaryJson(context, file)
-                                        file.delete()
-                                        busyMsg = ""
-                                        showFixDriveButton = DriveBackupManager.lastRecoveryIntent != null
-                                        Toast.makeText(context,
-                                            if (ok) "✅ JSON saved to Drive"
-                                            else "❌ ${DriveBackupManager.lastError ?: "Upload failed"}",
-                                            Toast.LENGTH_LONG).show()
-                                        if (!showFixDriveButton) showExportMenu = false
+                        // App icon
+                        Image(
+                            bitmap = app.icon.toBitmap().asImageBitmap(),
+                            contentDescription = app.name,
+                            modifier = Modifier.size(40.dp).clip(RoundedCornerShape(10.dp))
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    app.name,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = DClrDark,
+                                    maxLines = 1
+                                )
+                                if (isLauncher) {
+                                    Spacer(Modifier.width(6.dp))
+                                    Box(
+                                        Modifier
+                                            .background(DClrTeal.copy(alpha = 0.18f), RoundedCornerShape(4.dp))
+                                            .padding(horizontal = 5.dp, vertical = 1.dp)
+                                    ) {
+                                        Text("Launcher", fontSize = 9.sp, color = DClrTeal, fontWeight = FontWeight.Bold)
                                     }
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A90D9))
-                            ) { Text("Export JSON", fontSize = 11.sp) }
-
-                            // Drive PDF export
-                            Button(
-                                modifier = Modifier.weight(1f),
-                                onClick = {
-                                    busyMsg = "Exporting PDF to Drive..."
-                                    scope.launch {
-                                        val f = withContext(Dispatchers.IO) {
-                                            DiaryPdfExporter.exportAllEntries(context, allEntries)
-                                        }
-                                        val ok = if (f != null)
-                                            DriveBackupManager.uploadDiaryPdf(context, f)
-                                        else false
-                                        busyMsg = ""
-                                        showFixDriveButton = DriveBackupManager.lastRecoveryIntent != null
-                                        Toast.makeText(context,
-                                            if (ok) "✅ PDF saved to Drive"
-                                            else "❌ ${DriveBackupManager.lastError ?: "Upload failed"}",
-                                            Toast.LENGTH_LONG).show()
-                                        if (!showFixDriveButton) showExportMenu = false
+                                } else if (isPriority && (app.pkg.startsWith("com.android") || app.pkg.startsWith("com.google") || app.pkg.startsWith("com.samsung"))) {
+                                    Spacer(Modifier.width(6.dp))
+                                    Box(
+                                        Modifier
+                                            .background(DClrBadgePurple, RoundedCornerShape(4.dp))
+                                            .padding(horizontal = 5.dp, vertical = 1.dp)
+                                    ) {
+                                        Text("System", fontSize = 9.sp, color = Color(0xFF8B5CF6), fontWeight = FontWeight.Bold)
                                     }
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A90D9))
-                            ) { Text("Export PDF", fontSize = 11.sp) }
-                        }
-
-                        // Drive JSON import
-                        Button(
-                            modifier = Modifier.fillMaxWidth(),
-                            onClick = {
-                                busyMsg = "Downloading from Drive..."
-                                scope.launch {
-                                    val jsonStr = DriveBackupManager.downloadDiaryJson(context)
-                                    if (jsonStr != null) {
-                                        withContext(Dispatchers.IO) {
-                                            try {
-                                                val root3   = JSONObject(jsonStr)
-                                                val arr3    = root3.optJSONArray("entries")
-                                                    ?: return@withContext
-                                                val db      = DiaryDatabase.getDatabase(context)
-                                                val entries3 = (0 until arr3.length()).map { i ->
-                                                    val o = arr3.getJSONObject(i)
-                                                    DiaryEntry(
-                                                        id        = 0,
-                                                        title     = o.optString("title"),
-                                                        body      = o.optString("body"),
-                                                        date      = o.optString("date"),
-                                                        mood      = o.optString("mood"),
-                                                        folder    = o.optString("folder", "Personal"),
-                                                        tags      = o.optString("tags").split(",")
-                                                                     .filter { it.isNotBlank() },
-                                                        isLocked  = o.optBoolean("locked", false),
-                                                        timestamp = o.optLong("timestamp",
-                                                            System.currentTimeMillis())
-                                                    )
-                                                }
-                                                db.diaryDao().upsertAll(entries3)
-                                                withContext(Dispatchers.Main) {
-                                                    Toast.makeText(context,
-                                                        "âœ… Imported ${entries3.size} entries from Drive",
-                                                        Toast.LENGTH_SHORT).show()
-                                                }
-                                            } catch (e: Exception) {
-                                                withContext(Dispatchers.Main) {
-                                                    Toast.makeText(context,
-                                                        "Import failed: ${e.message}",
-                                                        Toast.LENGTH_SHORT).show()
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        showFixDriveButton = DriveBackupManager.lastRecoveryIntent != null
-                                        val msg = DriveBackupManager.lastError
-                                            ?.let { "❌ $it" }
-                                            ?: "No backup found on Drive"
-                                        Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
-                                    }
-                                    busyMsg = ""
-                                    if (!showFixDriveButton) showExportMenu = false
                                 }
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF34A853))
-                        ) {
-                            Icon(Icons.Default.CloudDownload, null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text("Import from Drive")
-                        }
-
-                        if (showFixDriveButton) {
-                            Button(
-                                modifier = Modifier.fillMaxWidth(),
-                                onClick = {
-                                    DriveBackupManager.lastRecoveryIntent?.let {
-                                        fixDriveLauncher.launch(it)
-                                    }
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800))
-                            ) { Text("🔧 Fix Drive Access") }
-                        }
-
-                        // Backup Now (one-shot manual trigger)
-                        OutlinedButton(
-                            modifier = Modifier.fillMaxWidth(),
-                            onClick = {
-                                DiaryAutoBackupWorker.runNow(context)
-                                Toast.makeText(context, "Backup queued âœ…",
-                                    Toast.LENGTH_SHORT).show()
-                                showExportMenu = false
                             }
+                            Text(
+                                app.pkg,
+                                fontSize = 11.sp,
+                                color = DClrGray,
+                                maxLines = 1
+                            )
+                        }
+                        // Checkbox
+                        Box(
+                            Modifier
+                                .size(24.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(
+                                    if (isSelected) DClrTeal else DClrPillBg
+                                ),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.CloudUpload, null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text("Backup Now (auto runs every 3h)")
+                            if (isSelected) {
+                                Icon(
+                                    Icons.Default.Check,
+                                    null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
                         }
                     }
-                }
-            },
-            confirmButton = {},
-            dismissButton = {
-                TextButton(onClick = { showExportMenu = false }) { Text("Close") }
-            }
-        )
-    }
-
-    if (showSetPinDialog) {
-        SetPinDialog(
-            currentEntry = currentEntry,
-            onDismiss = { showSetPinDialog = false },
-            onPinSet = { pin ->
-                viewModel.setPin(pin)
-                showSetPinDialog = false
-                Toast.makeText(context, "PIN set successfully", Toast.LENGTH_SHORT).show()
-            },
-            onRemovePin = {
-                viewModel.removePin()
-                showSetPinDialog = false
-                Toast.makeText(context, "PIN removed", Toast.LENGTH_SHORT).show()
-            }
-        )
-    }
-
-    if (showReminderDialog) {
-        ReminderDialog(
-            currentEntry = currentEntry,
-            onDismiss = { showReminderDialog = false },
-            onSetReminder = { timeMs, label ->
-                viewModel.setReminder(context, timeMs, label)
-                showReminderDialog = false
-                Toast.makeText(context, "Reminder set!", Toast.LENGTH_SHORT).show()
-            },
-            onClearReminder = {
-                viewModel.clearReminder(context)
-                showReminderDialog = false
-                Toast.makeText(context, "Reminder cleared", Toast.LENGTH_SHORT).show()
-            }
-        )
-    }
-}
-
-// ============================================================
-// SIDEBAR  (updated with Calendar + Sync + entry list)
-// ============================================================
-@Composable
-fun DiarySidebar(
-    selectedFilter: String,
-    isDarkMode: Boolean,
-    cloudStatus: CloudStatus,
-    isLoggedIn: Boolean,
-    allEntries: List<DiaryEntry>,
-    onFilterSelect: (String) -> Unit,
-    onNewEntry: () -> Unit,
-    onToggleTheme: () -> Unit,
-    onExportClick: () -> Unit,
-    onCalendarClick: () -> Unit,
-    onSyncClick: () -> Unit,
-    onEntryClick: (DiaryEntry) -> Unit
-) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        // Header
-        Box(
-            modifier = Modifier.fillMaxWidth().background(Color(0xFF1A1D24)).padding(20.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("ðŸ“” My Diary", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                if (isLoggedIn) {
-                    Text("â˜ Cloud Sync Active", color = Color(0xFF4CAF50), fontSize = 11.sp)
-                } else {
-                    Text("Log in to enable Cloud Sync", color = Color.Gray, fontSize = 11.sp)
                 }
             }
         }
 
+        // ── Save button ──────────────────────────────────────────────────
         Button(
-            onClick = onNewEntry,
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2389D7)),
-            shape = RoundedCornerShape(8.dp)
-        ) {
-            Icon(Icons.Default.Add, contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("New Entry", fontWeight = FontWeight.Bold)
-        }
-
-        HorizontalDivider(color = Color(0xFF3A4150))
-
-        SidebarItem("All Entries", Icons.Default.List, selectedFilter == "All Entries", Color.LightGray) { onFilterSelect("All Entries") }
-        SidebarItem("Work", Icons.Default.Build, selectedFilter == "Work", Color(0xFFF39C12)) { onFilterSelect("Work") }
-        SidebarItem("Personal", Icons.Default.Person, selectedFilter == "Personal", Color(0xFF2ECC71)) { onFilterSelect("Personal") }
-        SidebarItem("Secret", Icons.Default.Lock, selectedFilter == "Secret", Color(0xFF9B59B6)) { onFilterSelect("Secret") }
-
-        HorizontalDivider(color = Color(0xFF3A4150), modifier = Modifier.padding(vertical = 4.dp))
-
-        SidebarItem("Calendar", Icons.Default.CalendarMonth, false, Color(0xFF2389D7)) { onCalendarClick() }
-
-        SidebarItem(
-            title = when (cloudStatus) {
-                CloudStatus.SYNCING -> "Syncing..."
-                CloudStatus.SUCCESS -> "Sync: Done âœ“"
-                CloudStatus.ERROR -> "Sync Failed"
-                CloudStatus.NOT_LOGGED_IN -> "Login to Sync"
-                else -> "Sync to Cloud"
-            },
-            icon = Icons.Default.CloudUpload,
-            isSelected = false,
-            iconTint = when (cloudStatus) {
-                CloudStatus.SUCCESS -> Color(0xFF4CAF50)
-                CloudStatus.ERROR -> Color.Red
-                else -> Color(0xFF5DADE2)
-            }
-        ) { onSyncClick() }
-
-        SidebarItem("PDF Export", Icons.Default.PictureAsPdf, false, Color(0xFFE74C3C)) { onExportClick() }
-
-        HorizontalDivider(color = Color(0xFF3A4150), modifier = Modifier.padding(vertical = 4.dp))
-
-        // Recent entries
-        Text(
-            "  Recent Entries",
-            color = Color(0xFF8899AA), fontSize = 11.sp, fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(start = 20.dp, top = 4.dp, bottom = 4.dp)
-        )
-        LazyColumn(modifier = Modifier.weight(1f)) {
-            items(allEntries.take(10)) { entry ->
-                Row(
-                    modifier = Modifier.fillMaxWidth().clickable { onEntryClick(entry) }
-                        .padding(horizontal = 20.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (entry.isLocked) {
-                        Icon(Icons.Default.Lock, contentDescription = null,
-                            tint = Color(0xFF9B59B6), modifier = Modifier.size(14.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                    }
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            entry.title.ifBlank { "Untitled" },
-                            color = Color(0xFFD1D2D4), fontSize = 13.sp,
-                            maxLines = 1
-                        )
-                        Text(
-                            entry.date.take(12).ifBlank { "No date" },
-                            color = Color(0xFF8899AA), fontSize = 10.sp
-                        )
-                    }
-                }
-            }
-        }
-
-        HorizontalDivider(color = Color(0xFF3A4150))
-        SidebarItem(
-            title = if (isDarkMode) "Light Mode" else "Dark Mode",
-            icon = if (isDarkMode) Icons.Default.WbSunny else Icons.Default.Nightlight,
-            isSelected = false, iconTint = Color.LightGray
-        ) { onToggleTheme() }
-        Spacer(modifier = Modifier.height(16.dp))
-    }
-}
-
-@Composable
-fun SidebarItem(
-    title: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    isSelected: Boolean,
-    iconTint: Color,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)
-            .background(if (isSelected) Color(0xFF3A4150) else Color.Transparent)
-            .padding(horizontal = 20.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(20.dp))
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(
-            title, color = if (isSelected) Color.White else Color(0xFFD1D2D4),
-            fontSize = 14.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun DiaryEditorArea(
-    modifier: Modifier = Modifier,
-    entry: DiaryEntry,
-    paperColor: Color,
-    textColor: Color,
-    onEntryChange: (DiaryEntry) -> Unit,
-    onMoodClick: () -> Unit,
-    onTagClick: () -> Unit,
-    onAddTag: (String) -> Unit,
-    onRemoveTag: (String) -> Unit,
-    onFolderClick: () -> Unit,
-    showFolderMenu: Boolean,
-    onDismissFolderMenu: () -> Unit
-) {
-    val wordCount = entry.body.trim().split("\\s+".toRegex()).count { it.isNotEmpty() }
-    val magenta = Color(0xFFDD0099)
-    val context = LocalContext.current
-    var showMediaSheet by remember { mutableStateOf(false) }
-    var isRecording by remember { mutableStateOf(false) }
-    var mediaRecorder by remember { mutableStateOf<android.media.MediaRecorder?>(null) }
-    var audioPath by remember { mutableStateOf<String?>(null) }
-
-    // ── Photo from Gallery ────────────────────────────────────────────────────
-    val galleryLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
-    ) { uri ->
-        if (uri != null) {
-            val tag = "\n📷 [Image: $uri]"
-            onEntryChange(entry.copy(body = entry.body + tag))
-        }
-    }
-
-    // ── Camera photo ─────────────────────────────────────────────────────────
-    var cameraUri by remember { mutableStateOf<Uri?>(null) }
-    val cameraLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.TakePicture()
-    ) { success ->
-        if (success && cameraUri != null) {
-            val tag = "\n📷 [Photo: $cameraUri]"
-            onEntryChange(entry.copy(body = entry.body + tag))
-        }
-    }
-
-    // ── Audio permission ──────────────────────────────────────────────────────
-    val audioPermLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
-            val file = java.io.File(context.cacheDir, "diary_voice_${System.currentTimeMillis()}.m4a")
-            audioPath = file.absolutePath
-            @Suppress("DEPRECATION")
-            val recorder = android.media.MediaRecorder().apply {
-                setAudioSource(android.media.MediaRecorder.AudioSource.MIC)
-                setOutputFormat(android.media.MediaRecorder.OutputFormat.MPEG_4)
-                setAudioEncoder(android.media.MediaRecorder.AudioEncoder.AAC)
-                setOutputFile(file.absolutePath)
-                prepare()
-                start()
-            }
-            mediaRecorder = recorder
-            isRecording = true
-        } else {
-            Toast.makeText(context, "Microphone permission needed", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(magenta)
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        // Reminder badge
-        if (entry.reminderTimeMillis > 0) {
-            val remStr = SimpleDateFormat("MMM d, hh:mm a", Locale.getDefault())
-                .format(Date(entry.reminderTimeMillis))
-            Row(
-                modifier = Modifier.fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color.White)
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.Default.Alarm, contentDescription = null, tint = magenta, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Reminder: $remStr", fontSize = 12.sp, color = Color(0xFF555555))
-            }
-        }
-
-        // ── Date Card ──────────────────────────────────────────────────────
-        val currentDate = if (entry.date.isNotBlank()) entry.date
-            else SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.ENGLISH).format(Date())
-        Row(
+            onClick = { onSave(tempApps.toList(), emptyList()) },
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color.White)
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 16.dp, vertical = 14.dp)
+                .height(54.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = DClrTeal),
+            shape = RoundedCornerShape(16.dp),
+            elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
         ) {
-            Icon(Icons.Default.CalendarToday, contentDescription = "Date", tint = Color(0xFF555555), modifier = Modifier.size(20.dp))
-            Spacer(modifier = Modifier.width(14.dp))
-            Text(currentDate, color = magenta, fontSize = 17.sp, fontWeight = FontWeight.Medium)
-            Spacer(modifier = Modifier.weight(1f))
-            if (entry.isLocked) {
-                Icon(Icons.Default.Lock, contentDescription = "Locked", tint = magenta, modifier = Modifier.size(18.dp))
-            }
-        }
-
-        // ── Title Card ─────────────────────────────────────────────────────
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color.White)
-                .padding(horizontal = 16.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(Icons.Default.Edit, contentDescription = "Title", tint = Color(0xFF555555), modifier = Modifier.size(20.dp))
-            Spacer(modifier = Modifier.width(14.dp))
-            OutlinedTextField(
-                value = entry.title,
-                onValueChange = { onEntryChange(entry.copy(title = it)) },
-                placeholder = { Text("Add title", color = Color(0xFF555555), fontSize = 17.sp) },
-                modifier = Modifier.weight(1f),
-                textStyle = LocalTextStyle.current.copy(fontSize = 17.sp, color = Color(0xFF212121)),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color.Transparent,
-                    unfocusedBorderColor = Color.Transparent,
-                    cursorColor = magenta
-                ),
-                singleLine = true
-            )
-        }
-
-        // ── Meta row: folder + word count (compact, screenshot-এ নেই কিন্তু
-        //    feature ধরে রাখার জন্য ছোট আকারে) ─────────────────────────────
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box {
-                Row(
-                    modifier = Modifier.clickable { onFolderClick() },
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Default.Folder, contentDescription = "Folder", tint = Color.White, modifier = Modifier.size(15.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(entry.folder, color = Color.White, fontSize = 12.sp)
-                }
-                DropdownMenu(expanded = showFolderMenu, onDismissRequest = onDismissFolderMenu) {
-                    listOf("General", "Work", "Personal", "Secret").forEach { folder ->
-                        DropdownMenuItem(
-                            text = { Text(folder) },
-                            onClick = { onEntryChange(entry.copy(folder = folder)); onDismissFolderMenu() }
-                        )
-                    }
-                }
-            }
+            Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(8.dp))
             Text(
-                "$wordCount words",
-                color = Color.White.copy(alpha = 0.85f),
-                fontSize = 11.sp,
-                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                "Save  •  ${tempApps.size} apps",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color.White
             )
-        }
-
-        if (entry.tags.isNotEmpty()) {
-            Row(
-                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                entry.tags.forEach { tag -> Chip(label = tag, onClose = { onRemoveTag(tag) }) }
-            }
-        }
-
-        // ── Body Card — ruled/lined paper effect ────────────────────────────
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color.White)
-        ) {
-            OutlinedTextField(
-                value = entry.body,
-                onValueChange = { onEntryChange(entry.copy(body = it)) },
-                placeholder = {
-                    Text("Start typing here.", color = Color(0xFF555555), fontSize = 17.sp)
-                },
-                modifier = Modifier
-                    .fillMaxSize()
-                    .ruledLines(lineColor = Color(0xFFE0E0E0), lineSpacing = 34.dp, topOffset = 52.dp),
-                textStyle = LocalTextStyle.current.copy(fontSize = 17.sp, color = Color(0xFF212121), lineHeight = 34.sp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color.Transparent,
-                    unfocusedBorderColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedContainerColor = Color.Transparent,
-                    cursorColor = magenta
-                )
-            )
-        }
-
-        // ── Toolbar — mood, tag, formatting (feature ধরে রাখার জন্য) ────────
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color.White)
-                .padding(horizontal = 12.dp, vertical = 4.dp)
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onMoodClick, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Default.Face, contentDescription = "Mood", tint = if (entry.mood.isNotBlank()) magenta else Color(0xFF555555))
-            }
-            // ── Voice record button ───────────────────────────────────────
-            IconButton(
-                onClick = {
-                    if (isRecording) {
-                        // Stop recording
-                        try {
-                            mediaRecorder?.apply { stop(); release() }
-                            mediaRecorder = null
-                        } catch (_: Exception) {}
-                        isRecording = false
-                        audioPath?.let { path ->
-                            val tag = "\n🎙️ [Voice: $path]"
-                            onEntryChange(entry.copy(body = entry.body + tag))
-                            Toast.makeText(context, "Voice note saved", Toast.LENGTH_SHORT).show()
-                        }
-                    } else {
-                        audioPermLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                    }
-                },
-                modifier = Modifier.size(32.dp)
-                    .then(if (isRecording) Modifier.background(Color(0xFFFF4444).copy(.15f), CircleShape) else Modifier)
-            ) {
-                Icon(
-                    if (isRecording) Icons.Default.Stop else Icons.Default.Mic,
-                    contentDescription = if (isRecording) "Stop Recording" else "Voice Note",
-                    tint = if (isRecording) Color(0xFFFF4444) else Color(0xFF555555)
-                )
-            }
-            IconButton(onClick = { }, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Default.Brush, contentDescription = "Draw", tint = Color(0xFF555555))
-            }
-            // ── Photo button — gallery or camera ─────────────────────────
-            IconButton(onClick = { showMediaSheet = true }, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Default.Image, contentDescription = "Photo", tint = Color(0xFF555555))
-            }
-            IconButton(onClick = onTagClick, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Default.Label, contentDescription = "Tag", tint = if (entry.tags.isNotEmpty()) magenta else Color(0xFF555555))
-            }
-            VerticalDivider(modifier = Modifier.height(24.dp), color = Color.LightGray)
-            Text("B", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = Color(0xFF555555), modifier = Modifier.clickable { }.padding(4.dp))
-            Text("I", fontStyle = FontStyle.Italic, fontSize = 18.sp, color = Color(0xFF555555), modifier = Modifier.clickable { }.padding(4.dp))
-            Text("U", textDecoration = TextDecoration.Underline, fontSize = 18.sp, color = Color(0xFF555555), modifier = Modifier.clickable { }.padding(4.dp))
-        }
-    }
-
-    // ── Media picker sheet ────────────────────────────────────────────────────
-    if (showMediaSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showMediaSheet = false },
-            containerColor = Color.White,
-            shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
-        ) {
-            Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
-                Box(modifier = Modifier.width(36.dp).height(4.dp).background(Color(0xFFE0E0E0), CircleShape).align(Alignment.CenterHorizontally))
-                Spacer(Modifier.height(16.dp))
-                Text("Add Photo", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Spacer(Modifier.height(16.dp))
-                // Gallery
-                Row(
-                    modifier = Modifier.fillMaxWidth().clickable {
-                        showMediaSheet = false
-                        galleryLauncher.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly))
-                    }.padding(vertical = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(modifier = Modifier.size(40.dp).background(Color(0xFFE8EAF6), CircleShape), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.PhotoLibrary, null, tint = Color(0xFF3F51B5), modifier = Modifier.size(20.dp))
-                    }
-                    Spacer(Modifier.width(14.dp))
-                    Text("Choose from Gallery", fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                }
-                HorizontalDivider(color = Color(0xFFF0F0F0))
-                // Camera
-                Row(
-                    modifier = Modifier.fillMaxWidth().clickable {
-                        showMediaSheet = false
-                        try {
-                            val imgFile = java.io.File.createTempFile("diary_img_", ".jpg", context.cacheDir)
-                            val uri = androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.provider", imgFile)
-                            cameraUri = uri
-                            cameraLauncher.launch(uri)
-                        } catch (e: Exception) {
-                            Toast.makeText(context, "Camera error: ${e.message}", Toast.LENGTH_SHORT).show()
-                        }
-                    }.padding(vertical = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(modifier = Modifier.size(40.dp).background(Color(0xFFE8F5E9), CircleShape), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.CameraAlt, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(20.dp))
-                    }
-                    Spacer(Modifier.width(14.dp))
-                    Text("Take Photo", fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                }
-                Spacer(Modifier.height(24.dp))
-            }
         }
     }
 }
 
-// â”€â”€ Ruled/lined paper effect â€” body card à¦à¦° background à¦ horizontal line à¦†à¦à¦•à§‡ â”€â”€
-private fun Modifier.ruledLines(lineColor: Color, lineSpacing: androidx.compose.ui.unit.Dp, topOffset: androidx.compose.ui.unit.Dp): Modifier =
-    this.drawBehind {
-        val spacingPx = lineSpacing.toPx()
-        val topPx = topOffset.toPx()
-        var y = topPx
-        while (y < size.height) {
-            drawLine(
-                color = lineColor,
-                start = androidx.compose.ui.geometry.Offset(0f, y),
-                end = androidx.compose.ui.geometry.Offset(size.width, y),
-                strokeWidth = 1.dp.toPx()
-            )
-            y += spacingPx
-        }
-    }
+
+// ─────────────────────────────────────────
+// HELPER COMPOSABLES
+// ─────────────────────────────────────────
 
 @Composable
-fun Chip(label: String, onClose: () -> Unit) {
-    Surface(
-        modifier = Modifier.height(26.dp),
-        shape = RoundedCornerShape(13.dp),
-        color = Color(0xFFE3F2FD),
-        contentColor = Color(0xFF1565C0)
-    ) {
-        Row(modifier = Modifier.padding(horizontal = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(text = label, fontSize = 11.sp, fontWeight = FontWeight.Medium)
-            Spacer(modifier = Modifier.width(4.dp))
-            Icon(
-                imageVector = Icons.Default.Close,
-                contentDescription = "Remove Tag",
-                modifier = Modifier.size(14.dp).clickable { onClose() },
-                tint = Color(0xFF1565C0)
+fun TimerSetupRow(label: String, value: Int, minVal: Int, maxVal: Int, step: Int, enabled: Boolean, onValueChange: (Int) -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(label, fontSize = 15.sp, color = if (enabled) DClrDark else DClrGray, modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(DClrPillBg).padding(2.dp)
+        ) {
+            IconButton(
+                onClick = { if (enabled && value > minVal) onValueChange(value - step) },
+                modifier = Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(if(enabled) DClrSurface else Color.Transparent)
+            ) { Icon(Icons.Default.Remove, null, tint = if (enabled) DClrDark else DClrGray, modifier = Modifier.size(18.dp)) }
+            
+            Text(
+                "$value",
+                fontWeight = FontWeight.ExtraBold, fontSize = 16.sp,
+                modifier = Modifier.width(48.dp), textAlign = TextAlign.Center, color = DClrDark
             )
+            
+            IconButton(
+                onClick = { if (enabled && value < maxVal) onValueChange(value + step) },
+                modifier = Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(if(enabled) DClrSurface else Color.Transparent)
+            ) { Icon(Icons.Default.Add, null, tint = if (enabled) DClrDark else DClrGray, modifier = Modifier.size(18.dp)) }
         }
     }
 }
-

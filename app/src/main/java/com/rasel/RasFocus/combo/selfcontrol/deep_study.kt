@@ -16,6 +16,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -1095,7 +1096,7 @@ fun BlocklistPickerSheet(
                     } catch (_: Exception) { null }
                 }
                 .sortedWith(compareBy(
-                    { it.packageName !in PRIORITY_PKGS }, // priority apps first
+                    { it.pkg !in PRIORITY_PKGS }, // priority apps first
                     { it.name.lowercase() }
                 ))
 

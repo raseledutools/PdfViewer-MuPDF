@@ -58,6 +58,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+import android.Manifest
+import androidx.activity.result.PickVisualMedia
+import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia as PickVisualMediaContract
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.text.input.VisualTransformation
 
 // ============================================================
 // BIOMETRIC HELPER
