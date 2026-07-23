@@ -461,92 +461,143 @@ object AmbientSoundEngine {
 fun Deep_study() {
     val context = LocalContext.current
 
-    var isFocusMode       by remember { mutableStateOf(false) }
-    var isBreak           by remember { mutableStateOf(false) }
-    var focusMin          by remember { mutableIntStateOf(25) }
-    var restMin           by remember { mutableIntStateOf(5) }
-    var totalSessions     by remember { mutableIntStateOf(4) }
-    var currentSession    by remember { mutableIntStateOf(1) }
-    var timeLeftMillis    by remember { mutableLongStateOf(25 * 60 * 1000L) }
-    var isStrict          by remember { mutableStateOf(com.rasel.RasFocus.DataManager.isDeepStudyStrict) }
-    
-    var chkSound          by remember { mutableStateOf(false) }
-    var chkFloat          by remember { mutableStateOf(false) }
-    var soundType         by remember { mutableStateOf(SoundType.WHITE_NOISE) }
+    // ── Session state ────────────────────────────────────────────────────
+    var isFocusMode    by remember { mutableStateOf(false) }
+    var isBreak        by remember { mutableStateOf(false) }
+    var focusMin       by remember { mutableIntStateOf(25) }
+    var restMin        by remember { mutableIntStateOf(5) }
+    var totalSessions  by remember { mutableIntStateOf(4) }
+    var currentSession by remember { mutableIntStateOf(1) }
+    var timeLeftMillis by remember { mutableLongStateOf(25 * 60 * 1000L) }
+    var isStrict       by remember { mutableStateOf(com.rasel.RasFocus.DataManager.isDeepStudyStrict) }
+    var sessionDone    by remember { mutableStateOf(false) }  // all sessions complete flag
+
+    var chkSound  by remember { mutableStateOf(false) }
+    var chkFloat  by remember { mutableStateOf(false) }
+    var soundType by remember { mutableStateOf(SoundType.WHITE_NOISE) }
 
     val allowWebs = remember { mutableStateListOf<BlockItem>().apply { addAll(DataManager.dsAllowWebList.map { BlockItem(it) }) } }
     val allowApps = remember { mutableStateListOf<BlockItem>().apply { addAll(DataManager.dsAllowAppList.map { BlockItem(it) }) } }
 
-    var showBottomSheet   by remember { mutableStateOf(false) }
+    var showBottomSheet by remember { mutableStateOf(false) }
 
-    // Sync timer logic
+    // ── Helpers ──────────────────────────────────────────────────────────
+    fun stopEverything() {
+        AmbientSoundEngine.stop()
+        FloatingStopwatch.dismiss()
+        DeepStudyBlockerService.stop(context)
+    }
+
+    // Reset timer when focusMin changes (only when idle)
     LaunchedEffect(focusMin) {
         if (!isFocusMode && !isBreak) {
             timeLeftMillis = focusMin * 60 * 1000L
         }
     }
 
-    LaunchedEffect(isFocusMode, isBreak) {
-        if (isFocusMode) {
-            val targetTime = System.currentTimeMillis() + timeLeftMillis
-            while (timeLeftMillis > 0 && isFocusMode) {
-                delay(10)
-                timeLeftMillis = maxOf(0L, targetTime - System.currentTimeMillis())
+    // ── Master timer coroutine — single loop, no LaunchedEffect races ────
+    // Runs once. Reads mutable state via snapshot reads inside the loop.
+    // Avoids the bug where LaunchedEffect(isFocusMode, isBreak) restarts
+    // after setting isBreak=true while timeLeftMillis is already 0, causing
+    // the break timer to skip immediately.
+    LaunchedEffect(Unit) {
+        while (true) {
+            // Wait until a session or break starts
+            if (!isFocusMode && !isBreak) {
+                delay(100)
+                continue
             }
-            if (timeLeftMillis <= 0 && isFocusMode) {
-                com.rasel.RasFocus.DataManager.totalFocusTimeMillis += (focusMin * 60 * 1000L)
-                com.rasel.RasFocus.DataManager.totalSessions++
-                if (currentSession < totalSessions) {
-                    isFocusMode = false
-                    isBreak = true
-                    timeLeftMillis = restMin * 60 * 1000L
-                } else {
-                    isFocusMode = false
-                    isBreak = false
-                    timeLeftMillis = focusMin * 60 * 1000L
-                    currentSession = 1
+
+            val isCurrentlyBreak = isBreak
+            val durationMillis   = if (isCurrentlyBreak) restMin * 60 * 1000L else focusMin * 60 * 1000L
+            val targetTime       = System.currentTimeMillis() + timeLeftMillis
+
+            // Tick until time runs out OR session is manually stopped
+            while (true) {
+                delay(16) // ~60fps tick
+                val remaining = targetTime - System.currentTimeMillis()
+                if (remaining <= 0) {
+                    timeLeftMillis = 0L
+                    break
                 }
+                // Manual stop check
+                if (!isFocusMode && !isBreak) {
+                    timeLeftMillis = focusMin * 60 * 1000L
+                    break
+                }
+                timeLeftMillis = remaining
             }
-        } else if (isBreak) {
-            val targetTime = System.currentTimeMillis() + timeLeftMillis
-            while (timeLeftMillis > 0 && isBreak) {
-                delay(10)
-                timeLeftMillis = maxOf(0L, targetTime - System.currentTimeMillis())
-            }
-            if (timeLeftMillis <= 0 && isBreak) {
+
+            // Only process auto-advance if session wasn't manually stopped
+            val stillActive = if (isCurrentlyBreak) isBreak else isFocusMode
+            if (!stillActive) continue  // manual stop — loop back to wait
+
+            if (isCurrentlyBreak) {
+                // Break finished → next focus session
                 isBreak = false
                 isFocusMode = true
                 currentSession++
                 timeLeftMillis = focusMin * 60 * 1000L
+            } else {
+                // Focus session finished
+                com.rasel.RasFocus.DataManager.totalFocusTimeMillis += (focusMin * 60 * 1000L)
+                com.rasel.RasFocus.DataManager.totalSessions++
+
+                if (currentSession < totalSessions) {
+                    // More sessions → start break
+                    isFocusMode = false
+                    isBreak = true
+                    timeLeftMillis = restMin * 60 * 1000L
+                } else {
+                    // ALL SESSIONS DONE — auto stop everything
+                    isFocusMode = false
+                    isBreak = false
+                    timeLeftMillis = focusMin * 60 * 1000L
+                    currentSession = 1
+                    sessionDone = true
+                    stopEverything()
+                    android.widget.Toast.makeText(
+                        context,
+                        "🎉 All sessions complete! Great work!",
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                }
             }
         }
     }
 
-    // Start/stop allow-list enforcement with the focus session itself —
-    // this is the actual fix: previously nothing here ever started any
-    // blocking mechanism, so the allow-list was purely cosmetic.
-    LaunchedEffect(isFocusMode) {
-        if (isFocusMode) DeepStudyBlockerService.start(context)
-        else DeepStudyBlockerService.stop(context)
-    }
-
-    // Sync floating stopwatch
-    LaunchedEffect(chkFloat, isFocusMode) {
+    // ── Side effects — start/stop services when session state changes ────
+    LaunchedEffect(isFocusMode, isBreak) {
         when {
-            !chkFloat -> FloatingStopwatch.dismiss()
+            isFocusMode -> DeepStudyBlockerService.start(context)
+            !isFocusMode && !isBreak -> DeepStudyBlockerService.stop(context)
+        }
+        when {
+            chkSound && (isFocusMode || isBreak) -> AmbientSoundEngine.play(context, soundType)
+            !isFocusMode && !isBreak -> AmbientSoundEngine.stop()
+        }
+        when {
             chkFloat && (isFocusMode || isBreak) && hasOverlayPermission(context) ->
                 FloatingStopwatch.show(context) { chkFloat = false }
+            !isFocusMode && !isBreak -> FloatingStopwatch.dismiss()
         }
     }
 
-    // Sync sound engine
-    LaunchedEffect(chkSound, soundType, isFocusMode, isBreak) {
-        if (chkSound && (isFocusMode || isBreak)) AmbientSoundEngine.play(context, soundType)
-        else AmbientSoundEngine.stop()
+    // Restart sound if user changes type mid-session
+    LaunchedEffect(soundType) {
+        if (chkSound && (isFocusMode || isBreak)) {
+            AmbientSoundEngine.play(context, soundType)
+        }
+    }
+
+    // Session complete celebration toast already shown above;
+    // reset the flag so it doesn't re-trigger on recompose
+    LaunchedEffect(sessionDone) {
+        if (sessionDone) sessionDone = false
     }
 
     DisposableEffect(Unit) {
-        onDispose { AmbientSoundEngine.stop(); FloatingStopwatch.dismiss(); DeepStudyBlockerService.stop(context) }
+        onDispose { stopEverything() }
     }
 
     val scrollState = rememberScrollState()
