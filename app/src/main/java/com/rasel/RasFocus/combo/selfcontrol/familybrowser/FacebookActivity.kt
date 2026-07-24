@@ -170,7 +170,13 @@ class FacebookActivity : ComponentActivity() {
                 recoveryPrefs.edit().putBoolean("was_open", false).apply()
                 webView?.loadUrl(recoveredUrl)
             } else {
-                webView?.loadUrl("https://m.facebook.com/")
+                // ★ FIX: Activity recreate (rotate) এ savedInstanceState থেকে URL restore
+                val savedUrl = savedInstanceState?.getString("fb_saved_url")
+                if (savedUrl != null) {
+                    webView?.loadUrl(savedUrl)
+                } else {
+                    webView?.loadUrl("https://m.facebook.com/")
+                }
             }
         }
     }
@@ -222,14 +228,22 @@ class FacebookActivity : ComponentActivity() {
             webViewClient = object : WebViewClient() {
                 override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
                     super.onPageStarted(view, url, favicon)
-                    // Navigation এর সময় white flash বন্ধ করো
+                    // Navigation এর সময় white flash বন্ধ করো — WebView কে সবসময় opaque রাখো
                     view.setBackgroundColor(Color.parseColor("#f0f2f5"))
                     view.alpha = 1f
+                    // ★ FIX: page load শুরুতে rootFrame bg enforce করো — এর ফলে
+                    // page এর নিজস্ব white background render হওয়ার আগেই container টা
+                    // fb-gray দেখায়, white flash হয় না।
+                    rootFrame?.setBackgroundColor(Color.parseColor("#f0f2f5"))
                 }
 
                 override fun onPageFinished(view: WebView, url: String) {
                     super.onPageFinished(view, url)
                     view.alpha = 1f
+                    // ★ FIX: page finish এ bg transparent করো — WebView নিজেই
+                    // content এর bg দেখাবে। Container টা fb-gray রাখো fallback হিসেবে।
+                    view.setBackgroundColor(Color.parseColor("#f0f2f5"))
+                    rootFrame?.setBackgroundColor(Color.parseColor("#f0f2f5"))
                     flushCookies()
 
                     // ★ Adult keyword block — Facebook SPA তে shouldOverrideUrlLoading
@@ -468,14 +482,66 @@ class FacebookActivity : ComponentActivity() {
                 }
             }
         } else {
-            webView?.resumeTimers()
-            webView?.onResume()
+            val frame = rootFrame
+            if (frame != null) frame.setBackgroundColor(Color.parseColor("#f0f2f5"))
+            val wv = webView
+            if (wv != null) {
+                // ★ FIX: webView কে frame তে re-attach করো যদি detach হয়ে থাকে
+                // (system resource pressure এ Android মাঝে মাঝে View টা detach করে)
+                if (!wv.isAttachedToWindow && frame != null) {
+                    (wv.parent as? ViewGroup)?.removeView(wv)
+                    frame.addView(wv, FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
+                    ))
+                }
+                wv.resumeTimers()
+                wv.onResume()
+            } else if (frame != null) {
+                // ★ FIX: webView null মানে Activity recreate হয়েছে কিন্তু
+                // isFloatingActive ছিল না — নতুন WebView বানাও
+                val pending = $svc_ns.FacebookFloatingWindowService.pendingWebView
+                if (pending != null) {
+                    $svc_ns.FacebookFloatingWindowService.pendingWebView = null
+                    webView = pending
+                    (pending.parent as? ViewGroup)?.removeView(pending)
+                    pending.setBackgroundColor(Color.parseColor("#f0f2f5"))
+                    frame.addView(pending, FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
+                    ))
+                    pending.resumeTimers()
+                    pending.onResume()
+                } else {
+                    val newWv = buildFacebookWebView(frame)
+                    webView = newWv
+                    frame.addView(newWv, FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
+                    ))
+                    val recoveryPrefs = getSharedPreferences("fb_float_recovery", Context.MODE_PRIVATE)
+                    val recoveredUrl = if (recoveryPrefs.getBoolean("was_open", false))
+                        recoveryPrefs.getString("last_url", null) else null
+                    if (recoveredUrl != null) {
+                        recoveryPrefs.edit().putBoolean("was_open", false).apply()
+                        newWv.loadUrl(recoveredUrl)
+                    } else {
+                        newWv.loadUrl("https://m.facebook.com/")
+                    }
+                }
+            }
         }
     }
 
     private fun getRootFrame(): FrameLayout? {
         val contentView = window.decorView.findViewById<ViewGroup>(android.R.id.content)
         return contentView?.getChildAt(0) as? FrameLayout ?: contentView as? FrameLayout
+    }
+
+    // ★ FIX: Activity recreate (rotate, system kill) এ URL save করো
+    override fun onSaveInstanceState(outState: android.os.Bundle) {
+        super.onSaveInstanceState(outState)
+        val url = webView?.url
+        if (!url.isNullOrEmpty() && url.startsWith("http")) {
+            outState.putString("fb_saved_url", url)
+        }
     }
 
     override fun onPause() {
