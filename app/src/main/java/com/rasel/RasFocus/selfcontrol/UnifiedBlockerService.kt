@@ -1020,14 +1020,44 @@ class UnifiedBlockerService : AccessibilityService() {
     private fun handleYouTubeSearchAdultBlock(root: AccessibilityNodeInfo, pkg: String): Boolean {
         if (pkg != "com.google.android.youtube") return false
         if (!blockerPrefs.blockNormalLoading) return false
-        if (isSearchFieldActivelyFocused(root)) return false   // এখনও টাইপ করছে — block না
-        val screenTxt = collectAllText(root).lowercase()
-        if (screenTxt.isBlank()) return false
-        // Firebase keywords — real-time update কাজ করবে
+
+        // ── Search bar focused মানে এখনও টাইপ করছে — block করব না ──
+        val ytSearchBarIds = listOf(
+            "com.google.android.youtube:id/search_edit_text",
+            "com.google.android.youtube:id/search_bar_text",
+            "com.google.android.youtube:id/search_bar_input"
+        )
+        val searchBarFocused = ytSearchBarIds.any { id ->
+            root.findAccessibilityNodeInfosByViewId(id).any { it.isFocused || it.isAccessibilityFocused }
+        }
+        if (searchBarFocused) return false
+
+        // ── Search bar এ আসলে কোনো query আছে কিনা দেখো ──
+        // কোনো query না থাকলে এটা home/subscription feed → block করব না।
+        // collectAllText() দিয়ে পুরো screen scan করলে home feed এর normal
+        // video title এ "dance", "hot" ইত্যাদি সাধারণ শব্দও match করে false
+        // positive block দেয় — যেমন Spelling শেখার ভিডিও block হয়ে যাওয়া।
+        val searchQueryText = ytSearchBarIds.mapNotNull { id ->
+            root.findAccessibilityNodeInfosByViewId(id)
+                .firstOrNull()?.text?.toString()
+        }.firstOrNull()?.lowercase()?.trim() ?: ""
+
+        if (searchQueryText.isBlank()) return false   // কোনো query নেই → home feed → block না
+
+        // ── Search result page কিনা verify করো ──
+        val isSearchResultPage =
+            root.findAccessibilityNodeInfosByViewId("com.google.android.youtube:id/results").isNotEmpty() ||
+            root.findAccessibilityNodeInfosByViewId("com.google.android.youtube:id/search_results_container").isNotEmpty()
+
+        if (!isSearchResultPage) return false  // search result page না → block না
+
+        // ── শুধু search query text check করো, পুরো screen dump না ──
+        // এতে home feed/normal page এর video title দিয়ে false positive হবে না।
         val fbKw = FirebaseKeywordSync.getAdultKeywords()
-        val blocked = if (fbKw.isNotEmpty()) fbKw.any { screenTxt.contains(it) }
-                      else adultSiteKeywords.any { screenTxt.contains(it) }
+        val blocked = if (fbKw.isNotEmpty()) fbKw.any { searchQueryText.contains(it) }
+                      else adultSiteKeywords.any { searchQueryText.contains(it) }
         if (!blocked) return false
+
         blockWithMessage("Adult Content", "YouTube search results contain blocked content.")
         return true
     }

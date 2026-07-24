@@ -963,10 +963,13 @@ class RasFocusBlockingService : AccessibilityService() {
 
             // ── Search result page কিনা check (corroborating signal) ──
             // YouTube search result URL: vnd.youtube://results?search_query=...
+            // ⚠️ channel_list_item এখানে ব্যবহার করা হয় না — এই view-id
+            // Subscriptions tab, channel page, এমনকি home feed এর "channels
+            // for you" shelf এও থাকে, তাই false positive হয়।
+            // শুধু results / search_results_container দিয়ে detect করা নিরাপদ।
             val isSearchResultPage =
                 root.findAccessibilityNodeInfosByViewId("com.google.android.youtube:id/results").isNotEmpty() ||
-                root.findAccessibilityNodeInfosByViewId("com.google.android.youtube:id/search_results_container").isNotEmpty() ||
-                root.findAccessibilityNodeInfosByViewId("com.google.android.youtube:id/channel_list_item").isNotEmpty()
+                root.findAccessibilityNodeInfosByViewId("com.google.android.youtube:id/search_results_container").isNotEmpty()
 
             if (!isSearchResultPage) return false  // search result page নয় → home/feed → block করব না
 
