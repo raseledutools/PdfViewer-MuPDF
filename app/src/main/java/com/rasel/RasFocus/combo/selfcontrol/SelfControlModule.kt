@@ -2353,7 +2353,7 @@ fun UpdateCenterSection(context: Context) {
                     
                     if (downloadedFile != null) {
                         Button(
-                            onClick = { com.rasel.RasFocus.AutoUpdater.installDownloadedUpdate(context, downloadedFile) },
+                            onClick = { com.rasel.RasFocus.AutoUpdater.installApk(context, downloadedFile) },
                             modifier = Modifier.fillMaxWidth().height(50.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
                             shape = RoundedCornerShape(12.dp)
@@ -2363,31 +2363,37 @@ fun UpdateCenterSection(context: Context) {
                             Text("Install Update Now", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = SoftWhite)
                         }
                     } else {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                            Button(
-                                onClick = { com.rasel.RasFocus.AutoUpdater.downloadAndInstallUpdate(context, com.rasel.RasFocus.AutoUpdater.APK_UNIVERSAL, releaseInfo!!.tagName) },
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE)),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text("Universal", fontSize = 12.sp, maxLines = 1)
+                        var cDl by remember { mutableStateOf(false) }
+                        var cPct by remember { mutableStateOf(0) }
+                        var cId by remember { mutableStateOf(-1L) }
+                        var cDone by remember { mutableStateOf(false) }
+                        LaunchedEffect(cId, cDl) {
+                            if (!cDl || cId < 0L) return@LaunchedEffect
+                            while (cDl) {
+                                kotlinx.coroutines.delay(400)
+                                val (p, s) = com.rasel.RasFocus.AutoUpdater.queryProgress(context, cId)
+                                cPct = p
+                                if (s == android.app.DownloadManager.STATUS_SUCCESSFUL) { cDl = false; cDone = true }
+                                else if (s == android.app.DownloadManager.STATUS_FAILED) { cDl = false }
                             }
-                            Button(
-                                onClick = { com.rasel.RasFocus.AutoUpdater.downloadAndInstallUpdate(context, com.rasel.RasFocus.AutoUpdater.APK_LIGHT, releaseInfo!!.tagName) },
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE)),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text("Light", fontSize = 12.sp, maxLines = 1)
+                        }
+                        if (cDone) {
+                            val f = com.rasel.RasFocus.AutoUpdater.getDownloadedFile(context, releaseInfo!!.tagName)
+                            Button(onClick = { if (f != null) { com.rasel.RasFocus.AutoUpdater.installApk(context, f); com.rasel.RasFocus.AutoUpdater.saveTag(context, releaseInfo!!.tagName) } },
+                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B5E20)), shape = RoundedCornerShape(14.dp)
+                            ) { Text("Install Now ✓", color = Color(0xFF69F0AE), fontWeight = FontWeight.Bold) }
+                        } else if (cDl) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                                androidx.compose.material3.CircularProgressIndicator(progress = { cPct / 100f }, color = Color(0xFF4FACFE), trackColor = Color(0xFF2A2D3E))
+                                Spacer(Modifier.height(6.dp))
+                                Text("Downloading... $cPct%", color = SoftWhite, fontSize = 13.sp)
                             }
-                            Button(
-                                onClick = { com.rasel.RasFocus.AutoUpdater.downloadAndInstallUpdate(context, com.rasel.RasFocus.AutoUpdater.APK_FULL_SPLIT, releaseInfo!!.tagName) },
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE)),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text("Split", fontSize = 12.sp, maxLines = 1)
-                            }
+                        } else {
+                            Button(onClick = { cDl = true; cPct = 0; cDone = false; com.rasel.RasFocus.AutoUpdater.downloadWithProgress(context, releaseInfo!!) { id -> cId = id } },
+                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE)), shape = RoundedCornerShape(14.dp)
+                            ) { Icon(Icons.Default.Download, null, tint = SoftWhite, modifier = Modifier.size(16.dp)); Spacer(Modifier.width(8.dp)); Text("Download & Install", fontWeight = FontWeight.Bold, color = SoftWhite) }
                         }
                     }
                 }

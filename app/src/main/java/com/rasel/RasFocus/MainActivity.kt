@@ -911,7 +911,7 @@ class MainActivity : ComponentActivity() {
         com.rasel.RasFocus.DataManager.init(this)
         
         // Check for app updates via GitHub API (Immediate check + Background periodic check)
-        AutoUpdater.checkForUpdates(this)
+        AutoUpdater.checkForUpdates(this) // popup handled in StayFocusedApp LaunchedEffect
         AutoUpdater.setupBackgroundAutoUpdate(this)
         
         // Ensure Notification Service is running if terms are accepted

@@ -300,7 +300,136 @@ fun StayFocusedApp(
         return
     }
 
-    LaunchedEffect(Unit) { }
+    // ★ Update popup state
+    var updateInfo by remember { mutableStateOf<com.rasel.RasFocus.ReleaseInfo?>(null) }
+    var showUpdateDialog by remember { mutableStateOf(false) }
+    var isDownloading by remember { mutableStateOf(false) }
+    var downloadProgress by remember { mutableStateOf(0) }
+    var downloadId by remember { mutableStateOf(-1L) }
+    var downloadDone by remember { mutableStateOf(false) }
+
+    // App launch এ update check — শুধু নতুন version থাকলে popup দেখাও
+    LaunchedEffect(Unit) {
+        withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val currentTag = "v" + com.rasel.RasFocus.BuildConfig.VERSION_NAME
+            val info = com.rasel.RasFocus.AutoUpdater.fetchLatestReleaseInfoSync(context)
+            if (info != null && info.tagName != currentTag) {
+                withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    updateInfo = info
+                    showUpdateDialog = true
+                }
+            }
+        }
+    }
+
+    // Download progress poll
+    LaunchedEffect(downloadId, isDownloading) {
+        if (!isDownloading || downloadId < 0L) return@LaunchedEffect
+        while (isDownloading) {
+            kotlinx.coroutines.delay(400)
+            val (pct, status) = com.rasel.RasFocus.AutoUpdater.queryProgress(context, downloadId)
+            downloadProgress = pct
+            if (status == android.app.DownloadManager.STATUS_SUCCESSFUL) {
+                isDownloading = false
+                downloadDone = true
+            } else if (status == android.app.DownloadManager.STATUS_FAILED) {
+                isDownloading = false
+            }
+        }
+    }
+
+    // ── Update Popup Dialog ──────────────────────────────────────────────
+    if (showUpdateDialog && updateInfo != null) {
+        val info = updateInfo!!
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = { if (!isDownloading) showUpdateDialog = false }
+        ) {
+            androidx.compose.material3.Surface(
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+                color = androidx.compose.ui.graphics.Color(0xFF1A1D2E),
+                tonalElevation = 8.dp
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text("🎉", fontSize = 36.sp)
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "Update Available",
+                        color = SoftWhite,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Version ${info.tagName}  •  ${info.publishedAt}",
+                        color = androidx.compose.ui.graphics.Color(0xFF4FACFE),
+                        fontSize = 13.sp
+                    )
+                    Spacer(Modifier.height(20.dp))
+
+                    if (downloadDone) {
+                        // Download শেষ — Install Now দেখাও
+                        val file = com.rasel.RasFocus.AutoUpdater.getDownloadedFile(context, info.tagName)
+                        Button(
+                            onClick = {
+                                if (file != null) {
+                                    com.rasel.RasFocus.AutoUpdater.installApk(context, file)
+                                    com.rasel.RasFocus.AutoUpdater.saveTag(context, info.tagName)
+                                    showUpdateDialog = false
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth().height(48.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.ui.graphics.Color(0xFF1B5E20)),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp)
+                        ) {
+                            Text("Install Now ✓", color = androidx.compose.ui.graphics.Color(0xFF69F0AE), fontWeight = FontWeight.Bold)
+                        }
+                    } else if (isDownloading) {
+                        // Downloading spinner + progress
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            androidx.compose.material3.CircularProgressIndicator(
+                                progress = { downloadProgress / 100f },
+                                color = androidx.compose.ui.graphics.Color(0xFF4FACFE),
+                                trackColor = androidx.compose.ui.graphics.Color(0xFF2A2D3E)
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "Downloading... $downloadProgress%",
+                                color = SoftWhite,
+                                fontSize = 13.sp
+                            )
+                        }
+                    } else {
+                        // Install Now / Later buttons
+                        Button(
+                            onClick = {
+                                isDownloading = true
+                                downloadProgress = 0
+                                downloadDone = false
+                                com.rasel.RasFocus.AutoUpdater.downloadWithProgress(context, info) { id ->
+                                    downloadId = id
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth().height(48.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.ui.graphics.Color(0xFF4FACFE)),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp)
+                        ) {
+                            Text("Install Now", color = SoftWhite, fontWeight = FontWeight.Bold)
+                        }
+                        Spacer(Modifier.height(10.dp))
+                        TextButton(
+                            onClick = { showUpdateDialog = false },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Later", color = androidx.compose.ui.graphics.Color.LightGray)
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -1739,7 +1868,7 @@ fun UpdateCenterSection(context: Context) {
                     
                     if (downloadedFile != null) {
                         Button(
-                            onClick = { com.rasel.RasFocus.AutoUpdater.installDownloadedUpdate(context, downloadedFile) },
+                            onClick = { com.rasel.RasFocus.AutoUpdater.installApk(context, downloadedFile) },
                             modifier = Modifier.fillMaxWidth().height(52.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B5E20)),
                             shape = RoundedCornerShape(14.dp),
@@ -1750,42 +1879,56 @@ fun UpdateCenterSection(context: Context) {
                             Text("Install Update Now", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF69F0AE), letterSpacing = 0.3.sp)
                         }
                     } else {
-                        Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                            // Universal
-                            OutlinedButton(
-                                onClick = { com.rasel.RasFocus.AutoUpdater.downloadAndInstallUpdate(context, com.rasel.RasFocus.AutoUpdater.APK_UNIVERSAL, releaseInfo!!.tagName) },
-                                modifier = Modifier.fillMaxWidth().height(48.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF4FACFE).copy(alpha = 0.6f)),
-                                colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFF4FACFE).copy(alpha = 0.08f))
-                            ) {
-                                Icon(Icons.Default.Download, contentDescription = null, tint = Color(0xFF4FACFE), modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Universal APK", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4FACFE))
+                        // ★ Browser খোলার পরিবর্তে in-app DownloadManager দিয়ে download
+                        var sidebarDownloading by remember { mutableStateOf(false) }
+                        var sidebarProgress by remember { mutableStateOf(0) }
+                        var sidebarDlId by remember { mutableStateOf(-1L) }
+                        var sidebarDone by remember { mutableStateOf(false) }
+
+                        LaunchedEffect(sidebarDlId, sidebarDownloading) {
+                            if (!sidebarDownloading || sidebarDlId < 0L) return@LaunchedEffect
+                            while (sidebarDownloading) {
+                                kotlinx.coroutines.delay(400)
+                                val (pct, status) = com.rasel.RasFocus.AutoUpdater.queryProgress(context, sidebarDlId)
+                                sidebarProgress = pct
+                                if (status == android.app.DownloadManager.STATUS_SUCCESSFUL) {
+                                    sidebarDownloading = false; sidebarDone = true
+                                } else if (status == android.app.DownloadManager.STATUS_FAILED) {
+                                    sidebarDownloading = false
+                                }
                             }
-                            // Light
-                            OutlinedButton(
-                                onClick = { com.rasel.RasFocus.AutoUpdater.downloadAndInstallUpdate(context, com.rasel.RasFocus.AutoUpdater.APK_LIGHT, releaseInfo!!.tagName) },
+                        }
+
+                        if (sidebarDone) {
+                            val file = com.rasel.RasFocus.AutoUpdater.getDownloadedFile(context, releaseInfo!!.tagName)
+                            Button(
+                                onClick = { if (file != null) { com.rasel.RasFocus.AutoUpdater.installApk(context, file); com.rasel.RasFocus.AutoUpdater.saveTag(context, releaseInfo!!.tagName) } },
                                 modifier = Modifier.fillMaxWidth().height(48.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF4FACFE).copy(alpha = 0.6f)),
-                                colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFF4FACFE).copy(alpha = 0.08f))
-                            ) {
-                                Icon(Icons.Default.Download, contentDescription = null, tint = Color(0xFF4FACFE), modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Light APK", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4FACFE))
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B5E20)),
+                                shape = RoundedCornerShape(14.dp)
+                            ) { Text("Install Now ✓", color = Color(0xFF69F0AE), fontWeight = FontWeight.Bold) }
+                        } else if (sidebarDownloading) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                                androidx.compose.material3.CircularProgressIndicator(
+                                    progress = { sidebarProgress / 100f },
+                                    color = Color(0xFF4FACFE), trackColor = Color(0xFF2A2D3E)
+                                )
+                                Spacer(Modifier.height(6.dp))
+                                Text("Downloading... $sidebarProgress%", color = SoftWhite, fontSize = 13.sp)
                             }
-                            // Split
-                            OutlinedButton(
-                                onClick = { com.rasel.RasFocus.AutoUpdater.downloadAndInstallUpdate(context, com.rasel.RasFocus.AutoUpdater.APK_FULL_SPLIT, releaseInfo!!.tagName) },
+                        } else {
+                            Button(
+                                onClick = {
+                                    sidebarDownloading = true; sidebarProgress = 0; sidebarDone = false
+                                    com.rasel.RasFocus.AutoUpdater.downloadWithProgress(context, releaseInfo!!) { id -> sidebarDlId = id }
+                                },
                                 modifier = Modifier.fillMaxWidth().height(48.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF4FACFE).copy(alpha = 0.6f)),
-                                colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFF4FACFE).copy(alpha = 0.08f))
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FACFE)),
+                                shape = RoundedCornerShape(14.dp)
                             ) {
-                                Icon(Icons.Default.Download, contentDescription = null, tint = Color(0xFF4FACFE), modifier = Modifier.size(16.dp))
+                                Icon(Icons.Default.Download, contentDescription = null, tint = SoftWhite, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text("Split APK", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4FACFE))
+                                Text("Download & Install", fontWeight = FontWeight.Bold, color = SoftWhite)
                             }
                         }
                     }
