@@ -1,24 +1,32 @@
-=== KOTLIN/KAPT ERRORS ===
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1098:26 Unresolved reference: packageName
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/diary.kt:6:42 Conflicting import, imported name 'ActivityResultContracts' is ambiguous
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/diary.kt:62:42 Conflicting import, imported name 'ActivityResultContracts' is ambiguous
+=== KOTLIN ERRORS ===
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/MainActivity.kt:1096:52 Unresolved reference: tween
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/MainActivity.kt:1096:101 Unresolved reference: tween
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/MainActivity.kt:1097:53 Unresolved reference: tween
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/MainActivity.kt:1097:102 Unresolved reference: tween
 
 === UNRESOLVED / TYPE ERRORS ===
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1098:26 Unresolved reference: packageName
-
-=== KAPT / MODULE ERRORS ===
-   > Compilation error. See log for more details
-
-=== STACKTRACE ===
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/MainActivity.kt:1096:52 Unresolved reference: tween
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/MainActivity.kt:1096:101 Unresolved reference: tween
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/MainActivity.kt:1097:53 Unresolved reference: tween
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/MainActivity.kt:1097:102 Unresolved reference: tween
 
 === BUILD FAILURE ===
 > Task :app:compileFullReleaseKotlin FAILED
 * What went wrong:
 Execution failed for task ':app:compileFullReleaseKotlin'.
-BUILD FAILED in 3m 10s
+BUILD FAILED in 3m
 
-=== LAST 50 LINES ===
+=== LAST 60 LINES ===
+> Task :app:parseFullReleaseLocalResources FROM-CACHE
+> Task :app:mapFullReleaseSourceSetPaths
+> Task :app:mergeFullReleaseArtProfile
+> Task :app:validateSigningFullRelease
+> Task :app:writeFullReleaseAppMetadata
 > Task :app:checkFullReleaseDuplicateClasses
+> Task :app:writeFullReleaseSigningConfigVersions
+> Task :app:mergeFullReleaseAssets FROM-CACHE
+> Task :app:checkFullReleaseAarMetadata
+> Task :app:compressFullReleaseAssets FROM-CACHE
 > Task :app:mergeFullReleaseNativeLibs
 > Task :app:collectFullReleaseDependencies
 
@@ -27,8 +35,8 @@ Unable to strip the following libraries, packaging them as they are: libbarhoppe
 
 > Task :app:extractFullReleaseNativeSymbolTables FROM-CACHE
 > Task :app:mergeFullReleaseNativeDebugMetadata NO-SOURCE
-> Task :app:sdkFullReleaseDependencyData
 > Task :app:mergeFullReleaseResources FROM-CACHE
+> Task :app:sdkFullReleaseDependencyData
 > Task :app:processFullReleaseMainManifest
 > Task :app:processFullReleaseManifest
 > Task :app:processFullReleaseManifestForPackage
@@ -39,12 +47,13 @@ note: generating mipmap/ic_launcher_round with config "anydpi-v33" for round ico
 > Task :app:processFullReleaseResources
 > Task :app:kspFullReleaseKotlin
 > Task :app:compileFullReleaseKotlin
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/deep_study.kt:1098:26 Unresolved reference: packageName
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/diary.kt:6:42 Conflicting import, imported name 'ActivityResultContracts' is ambiguous
-e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/study_tools/diary.kt:62:42 Conflicting import, imported name 'ActivityResultContracts' is ambiguous
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/MainActivity.kt:1096:52 Unresolved reference: tween
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/MainActivity.kt:1096:101 Unresolved reference: tween
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/MainActivity.kt:1097:53 Unresolved reference: tween
+e: file:///home/runner/work/RasFocus-final/RasFocus-final/app/src/main/java/com/rasel/RasFocus/selfcontrol/familybrowser/MainActivity.kt:1097:102 Unresolved reference: tween
 
 > Task :app:compileFullReleaseKotlin FAILED
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784869460367.json
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1784889931721.json
 
 FAILURE: Build failed with an exception.
 
@@ -65,6 +74,6 @@ You can use '--warning-mode all' to show the individual deprecation warnings and
 
 For more on this, please refer to https://docs.gradle.org/8.9/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
 
-BUILD FAILED in 3m 10s
+BUILD FAILED in 3m
 32 actionable tasks: 22 executed, 10 from cache
 Configuration cache entry stored.
