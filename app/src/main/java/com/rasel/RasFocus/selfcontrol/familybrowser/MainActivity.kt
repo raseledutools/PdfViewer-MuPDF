@@ -1051,6 +1051,11 @@ fun BrowserScaffold(vm: BrowserViewModel) {
     if (vm.showDownloads) {
         DownloadPanel(vm = vm, onDismiss = { vm.showDownloads = false })
     }
+
+        // ── Bottom Navigation Bar (Chrome-style) ──────────────────────────
+        if (!vm.isFullscreen) {
+            BottomNavigationBar(vm)
+        }
     }
 }
 
@@ -1085,8 +1090,13 @@ fun TopBrowserBar(vm: BrowserViewModel) {
                 verticalAlignment     = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                // ── Home / Back / Forward — তিনটা icon ──────────────────
-                if (!vm.isAddressBarFocused) {
+                // ── Home / Back / Forward — scroll করলে লুকায় (Chrome-style) ──
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = vm.showNavButtons && !vm.isAddressBarFocused,
+                    enter = fadeIn(animationSpec = tween(150)) + expandHorizontally(animationSpec = tween(150)),
+                    exit  = fadeOut(animationSpec = tween(150)) + shrinkHorizontally(animationSpec = tween(150))
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                     val canGoBack    = vm.activeWebView?.canGoBack()  ?: false
                     val canGoForward = vm.activeWebView?.canGoForward() ?: false
                     val iconDisabled = Color.White.copy(0.28f)
@@ -1131,7 +1141,8 @@ fun TopBrowserBar(vm: BrowserViewModel) {
                             )
                         }
                     }
-                }
+                    } // Row
+                } // AnimatedVisibility
 
                 // ── Chrome-style address bar — dark pill ──────────────────
                 val barBg = if (vm.isAddressBarFocused)
@@ -1575,6 +1586,18 @@ fun BrowserWebView(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT
                 )
+
+                // ── Chrome-style scroll: nav buttons hide/show ─────────────
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                    setOnScrollChangeListener { _, _, scrollY, _, oldScrollY ->
+                        val delta = scrollY - oldScrollY
+                        when {
+                            scrollY <= 80 -> vm.showNavButtons = true  // top এ আছে — সবসময় দেখাও
+                            delta > 8     -> vm.showNavButtons = false // নিচে scroll — লুকাও
+                            delta < -8    -> vm.showNavButtons = true  // উপরে scroll — দেখাও
+                        }
+                    }
+                }
 
                 // ── Hardware Acceleration ──────────────────────────────────
                 setLayerType(View.LAYER_TYPE_HARDWARE, null)
@@ -2410,8 +2433,8 @@ fun BottomNavigationBar(vm: BrowserViewModel) {
     val canGoForward = activeTab?.canGoForward ?: false
     val context      = LocalContext.current
     val isDark       = MaterialTheme.colorScheme.surface.luminance() < 0.5f
-    val bgColor      = if (isDark) FxSurface else FxSurfaceL
-    val iconTint     = if (isDark) FxTextDark else FxTextLight
+    val bgColor      = if (isDark) Color(0xFF1A1A1A) else Color(0xFFFFFFFF)
+    val iconTint     = if (isDark) Color.White.copy(0.85f) else Color(0xFF3C3C43).copy(0.75f)
     val iconDisabled = iconTint.copy(alpha = 0.28f)
 
     Surface(
