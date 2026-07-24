@@ -151,7 +151,7 @@ class UsageNotificationService : Service() {
                     val prefs = this@UsageNotificationService.getSharedPreferences("AutoUpdaterPrefs", Context.MODE_PRIVATE)
                     val lastTag = prefs.getString(com.rasel.RasFocus.AutoUpdater.LAST_TAG_KEY, "") ?: ""
                     
-                    com.rasel.RasFocus.AutoUpdater.fetchLatestReleaseInfo { info ->
+                    com.rasel.RasFocus.AutoUpdater.fetchLatestReleaseInfo(this@UsageNotificationService) { info ->
                         if (info != null && info.tagName != lastTag) {
                             // Found a new update, silently download it
                             com.rasel.RasFocus.AutoUpdater.silentDownloadUpdate(

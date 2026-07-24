@@ -2314,7 +2314,7 @@ fun UpdateCenterSection(context: Context) {
     val lastTag = prefs.getString(com.rasel.RasFocus.AutoUpdater.LAST_TAG_KEY, "") ?: ""
 
     LaunchedEffect(Unit) {
-        com.rasel.RasFocus.AutoUpdater.fetchLatestReleaseInfo { info ->
+        com.rasel.RasFocus.AutoUpdater.fetchLatestReleaseInfo(context) { info ->
             releaseInfo = info
             checking = false
         }

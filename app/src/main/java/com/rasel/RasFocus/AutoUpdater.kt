@@ -216,6 +216,28 @@ object AutoUpdater {
             .edit().putString(LAST_TAG_KEY, tag).apply()
     }
 
+    // ── Alias helpers (called from MissingServices / SelfControlModule / InstallUpdateReceiver) ──
+
+    /** Alias for installApk — installs a previously downloaded APK file. */
+    fun installDownloadedUpdate(context: Context, file: java.io.File) =
+        installApk(context, file)
+
+    /**
+     * Alias for downloadWithProgress — silently queues a background download.
+     * [apkName] is ignored (kept for call-site compatibility); actual name is derived from [tag].
+     */
+    fun silentDownloadUpdate(context: Context, apkName: String, tag: String) {
+        val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO)
+        scope.launch {
+            val info = fetchLatestReleaseInfoSync(context) ?: return@launch
+            downloadWithProgress(context, info) { /* download id ignored in silent mode */ }
+        }
+    }
+
+    /** Alias for getDownloadedFile — returns the cached APK for the given tag, or null. */
+    fun getDownloadedUpdateFile(context: Context, tag: String): java.io.File? =
+        getDownloadedFile(context, tag)
+
     private fun ensureChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val ch = NotificationChannel(CHANNEL_ID, "App Updates", NotificationManager.IMPORTANCE_DEFAULT).apply {
