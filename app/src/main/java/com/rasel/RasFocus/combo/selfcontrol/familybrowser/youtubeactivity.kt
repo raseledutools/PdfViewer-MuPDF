@@ -10,6 +10,7 @@ import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -161,8 +162,8 @@ class YoutubeActivity : ComponentActivity() {
         injectVisibilitySpoofBeforeLeave(wv)
 
         // WebView service এ দাও — reload হবে না
-        com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView = wv
-        com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.launchNoReload(
+        com.rasel.RasFocus.combo.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView = wv
+        com.rasel.RasFocus.combo.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.launchNoReload(
             this, currentUrl, currentTitle
         )
 
@@ -234,6 +235,9 @@ class YoutubeActivity : ComponentActivity() {
             }
         }
         setContentView(rootFrame)
+
+        // ★ Swipe down gesture → mini player
+        setupSwipeDownGesture(rootFrame)
 
         val screenFilter = IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_OFF)
@@ -491,23 +495,51 @@ class YoutubeActivity : ComponentActivity() {
             return
         }
 
+        // ★ Back button → video চলছে কিনা check → mini player
         wv.evaluateJavascript("""
             (function() {
                 try {
                     var v = document.querySelector('video');
-                    if (v && !v.paused && !v.ended && v.readyState > 2 && !v.muted) {
+                    if (v && !v.paused && !v.ended && v.readyState > 2) {
                         return 'playing';
                     }
-                    return v ? 'playing' : 'not_playing';
+                    return 'not_playing';
                 } catch(e) { return 'unknown'; }
             })();
         """.trimIndent()) { result ->
             if (result?.contains("not_playing") != true) {
-                launchFloatingDirectly(wv, moveActivityToBack = true)
+                launchMiniPlayer(wv)
             } else {
                 runOnUiThread { @Suppress("DEPRECATION") super.onBackPressed() }
             }
         }
+    }
+
+    private fun launchMiniPlayer(wv: WebView) {
+        val hasOverlay = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+            android.provider.Settings.canDrawOverlays(this)
+        else true
+
+        if (!hasOverlay) {
+            runOnUiThread { @Suppress("DEPRECATION") super.onBackPressed() }
+            return
+        }
+
+        val currentUrl   = wv.url   ?: "https://m.youtube.com"
+        val currentTitle = wv.title ?: "YouTube"
+
+        injectVisibilitySpoofBeforeLeave(wv)
+
+        com.rasel.RasFocus.combo.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView = wv
+        com.rasel.RasFocus.combo.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.launchMiniPlayer(
+            this, currentUrl, currentTitle
+        )
+
+        webView = null
+        isMiniPlayerActive = true
+
+        moveTaskToBack(true)
+        startBgAudioService()
     }
 
     private fun launchFloatingDirectly(wv: WebView, moveActivityToBack: Boolean) {
@@ -525,8 +557,8 @@ class YoutubeActivity : ComponentActivity() {
 
         injectVisibilitySpoofBeforeLeave(wv)
 
-        com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView = wv
-        com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.launchNoReload(this, currentUrl, currentTitle)
+        com.rasel.RasFocus.combo.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView = wv
+        com.rasel.RasFocus.combo.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.launchNoReload(this, currentUrl, currentTitle)
 
         webView = null
         isMiniPlayerActive = true
@@ -537,16 +569,72 @@ class YoutubeActivity : ComponentActivity() {
         startBgAudioService()
     }
 
+    @android.annotation.SuppressLint("ClickableViewAccessibility")
+    private fun setupSwipeDownGesture(rootFrame: FrameLayout) {
+        val SWIPE_DOWN_MIN_PX = (120 * resources.displayMetrics.density).toInt()
+        val SWIPE_START_MAX_Y_RATIO = 0.35f
+
+        val gestureDetector = android.view.GestureDetector(
+            this,
+            object : android.view.GestureDetector.SimpleOnGestureListener() {
+                override fun onFling(
+                    e1: MotionEvent?,
+                    e2: MotionEvent,
+                    velocityX: Float,
+                    velocityY: Float
+                ): Boolean {
+                    val e1nn = e1 ?: return false
+                    val screenH = resources.displayMetrics.heightPixels
+                    val startY = e1nn.rawY
+                    if (startY > screenH * SWIPE_START_MAX_Y_RATIO) return false
+                    val dy = e2.rawY - e1nn.rawY
+                    val dx = e2.rawX - e1nn.rawX
+                    if (dy > SWIPE_DOWN_MIN_PX && velocityY > 300 && Math.abs(dy) > Math.abs(dx) * 1.5f) {
+                        val wv = webView ?: return false
+                        if (isMiniPlayerActive) return false
+                        wv.evaluateJavascript("""
+                            (function() {
+                                try {
+                                    var v = document.querySelector('video');
+                                    return (v && !v.paused && !v.ended && v.readyState > 2) ? 'playing' : 'not_playing';
+                                } catch(e) { return 'unknown'; }
+                            })();
+                        """.trimIndent()) { result ->
+                            if (result?.contains("not_playing") != true) {
+                                runOnUiThread { launchMiniPlayer(wv) }
+                            }
+                        }
+                        return true
+                    }
+                    return false
+                }
+            }
+        )
+        swipeGestureDetector = gestureDetector
+    }
+
+    private var swipeGestureDetector: android.view.GestureDetector? = null
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        swipeGestureDetector?.onTouchEvent(event)
+        return super.onTouchEvent(event)
+    }
+
     private fun stopFloatingAndDestroy() {
         isMiniPlayerActive = false
         stopBgAudioService()
         try {
             stopService(Intent(
                 this,
-                com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService::class.java
+                com.rasel.RasFocus.combo.selfcontrol.familybrowser.service.YoutubeFloatingWindowService::class.java
             ))
         } catch (_: Exception) {}
         finish()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
     }
 
     override fun onResume() {
@@ -554,7 +642,7 @@ class YoutubeActivity : ComponentActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         if (isMiniPlayerActive) {
-            // ★ FIX: Lock → Floating → Unlock flow
+            // ★ FIX: Mini Player tap / Lock → Floating → Unlock flow
             // isMiniPlayerActive = true মানে WebView এখন floating service এ আছে
             // Service বন্ধ করলে onDestroy() এ WebView pendingWebView এ রাখবে
             isMiniPlayerActive = false
@@ -564,7 +652,7 @@ class YoutubeActivity : ComponentActivity() {
             try {
                 stopService(Intent(
                     this,
-                    com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService::class.java
+                    com.rasel.RasFocus.combo.selfcontrol.familybrowser.service.YoutubeFloatingWindowService::class.java
                 ))
             } catch (_: Exception) {}
 
@@ -574,13 +662,13 @@ class YoutubeActivity : ComponentActivity() {
                 val rootFrame = getRootFrame()
 
                 // প্রথমে immediately চেষ্টা করো
-                val immediateWv = com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView
+                val immediateWv = com.rasel.RasFocus.combo.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView
                 if (immediateWv != null) {
                     reattachWebView(immediateWv, rootFrame)
                 } else {
                     // Fallback: একটু অপেক্ষা করো — service onDestroy() সময় নিচ্ছে
                     rootFrame?.postDelayed({
-                        val pendingWv = com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView
+                        val pendingWv = com.rasel.RasFocus.combo.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView
                         if (pendingWv != null) {
                             reattachWebView(pendingWv, rootFrame)
                         }
@@ -616,7 +704,7 @@ class YoutubeActivity : ComponentActivity() {
      */
     private fun reattachWebView(returnedWv: WebView, rootFrame: FrameLayout?) {
         webView = returnedWv
-        com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView = null
+        com.rasel.RasFocus.combo.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView = null
 
         // পুরনো parent থেকে সরাও
         (returnedWv.parent as? ViewGroup)?.removeView(returnedWv)

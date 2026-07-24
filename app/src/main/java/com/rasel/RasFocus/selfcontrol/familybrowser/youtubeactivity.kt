@@ -10,6 +10,7 @@ import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -234,6 +235,10 @@ class YoutubeActivity : ComponentActivity() {
             }
         }
         setContentView(rootFrame)
+
+        // ★ Swipe down gesture → mini player
+        // Video দেখার সময় নিচে swipe করলে corner mini player হবে
+        setupSwipeDownGesture(rootFrame)
 
         val screenFilter = IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_OFF)
@@ -500,23 +505,157 @@ class YoutubeActivity : ComponentActivity() {
             return
         }
 
+        // ★ Back button চাপলে video চলছে কিনা check করো।
+        // চলছে → Mini Player mode এ পাঠাও (native YouTube এর মতো corner mini player)।
+        // চলছে না → normally close।
         wv.evaluateJavascript("""
             (function() {
                 try {
                     var v = document.querySelector('video');
-                    if (v && !v.paused && !v.ended && v.readyState > 2 && !v.muted) {
+                    if (v && !v.paused && !v.ended && v.readyState > 2) {
                         return 'playing';
                     }
-                    return v ? 'playing' : 'not_playing';
+                    return 'not_playing';
                 } catch(e) { return 'unknown'; }
             })();
         """.trimIndent()) { result ->
             if (result?.contains("not_playing") != true) {
-                launchFloatingDirectly(wv, moveActivityToBack = true)
+                // Video চলছে → mini player (corner floating)
+                launchMiniPlayer(wv)
             } else {
                 runOnUiThread { @Suppress("DEPRECATION") super.onBackPressed() }
             }
         }
+    }
+
+    /**
+     * ★ নতুন: Back button চাপলে corner mini player launch।
+     * Native YouTube এর মতো — video corner এ ছোট হয়ে চলতে থাকে,
+     * user home page দেখতে পায় footer সহ।
+     */
+    private fun launchMiniPlayer(wv: WebView) {
+        val hasOverlay = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M)
+            android.provider.Settings.canDrawOverlays(this)
+        else true
+
+        if (!hasOverlay) {
+            // Overlay permission নেই → normally close
+            runOnUiThread { @Suppress("DEPRECATION") super.onBackPressed() }
+            return
+        }
+
+        val currentUrl   = wv.url   ?: "https://m.youtube.com"
+        val currentTitle = wv.title ?: "YouTube"
+
+        injectVisibilitySpoofBeforeLeave(wv)
+
+        // WebView service এ দাও
+        com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.pendingWebView = wv
+        com.rasel.RasFocus.selfcontrol.familybrowser.service.YoutubeFloatingWindowService.launchMiniPlayer(
+            this, currentUrl, currentTitle
+        )
+
+        webView = null
+        isMiniPlayerActive = true
+
+        // Activity background এ পাঠাও → home page দেখা যাবে
+        moveTaskToBack(true)
+
+        startBgAudioService()
+    }
+
+    /**
+     * ★ Swipe down → Mini Player gesture।
+     * Video দেখার সময় উপর থেকে নিচে 120dp+ swipe করলে mini player হবে।
+     * WebView এর scroll এর সাথে conflict না করতে — শুধু top 30% থেকে
+     * শুরু হওয়া downward swipe ধরা হয় (YouTube এর নিজের gesture এর মতো)।
+     */
+    @android.annotation.SuppressLint("ClickableViewAccessibility")
+    private fun setupSwipeDownGesture(rootFrame: FrameLayout) {
+        val SWIPE_DOWN_MIN_PX = (120 * resources.displayMetrics.density).toInt()
+        val SWIPE_START_MAX_Y_RATIO = 0.35f  // screen উপরের 35% থেকে শুরু হলেই ধরবে
+
+        var swipeTouchDownY = 0f
+        var swipeTouchDownX = 0f
+        var swipeStartedInTopArea = false
+        var swipeConsumed = false
+
+        // GestureDetector দিয়ে করা হচ্ছে না কারণ WebView এর internal scroller
+        // GestureDetector এর cancel করে দেয়। তাই simple raw touch tracking।
+        val gestureOverlay = object : View(this) {
+            override fun onTouchEvent(event: MotionEvent): Boolean {
+                return false  // pass through to WebView
+            }
+        }
+        gestureOverlay.layoutParams = FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        )
+
+        // rootFrame এর dispatchTouchEvent override করা যায় না (FrameLayout)।
+        // তাই একটা transparent overlay রাখি যেটা ACTION_DOWN track করবে,
+        // কিন্তু WebView কে touch forward করবে।
+        // এর বদলে rootFrame এর setOnTouchListener — কিন্তু সেটা WebView
+        // গ্রাস করে নেয়। সবচেয়ে clean approach:
+        // একটা custom FrameLayout দিয়ে dispatchTouchEvent intercept করি।
+
+        // NOTE: এই approach টা rootFrame replace করবে না। বরং
+        // Activity window level এ GestureDetector ব্যবহার করবো।
+        val gestureDetector = android.view.GestureDetector(
+            this,
+            object : android.view.GestureDetector.SimpleOnGestureListener() {
+                override fun onFling(
+                    e1: MotionEvent?,
+                    e2: MotionEvent,
+                    velocityX: Float,
+                    velocityY: Float
+                ): Boolean {
+                    val e1nn = e1 ?: return false
+                    val screenH = resources.displayMetrics.heightPixels
+                    val startY = e1nn.rawY
+
+                    // উপরের 35% থেকে শুরু হয়েছে কিনা
+                    if (startY > screenH * SWIPE_START_MAX_Y_RATIO) return false
+
+                    val dy = e2.rawY - e1nn.rawY
+                    val dx = e2.rawX - e1nn.rawX
+
+                    // নিচের দিকে fling, vertical বেশি
+                    if (dy > SWIPE_DOWN_MIN_PX && velocityY > 300 && Math.abs(dy) > Math.abs(dx) * 1.5f) {
+                        val wv = webView ?: return false
+                        if (isMiniPlayerActive) return false
+
+                        // Video চলছে কিনা check করি
+                        wv.evaluateJavascript("""
+                            (function() {
+                                try {
+                                    var v = document.querySelector('video');
+                                    return (v && !v.paused && !v.ended && v.readyState > 2) ? 'playing' : 'not_playing';
+                                } catch(e) { return 'unknown'; }
+                            })();
+                        """.trimIndent()) { result ->
+                            if (result?.contains("not_playing") != true) {
+                                runOnUiThread { launchMiniPlayer(wv) }
+                            }
+                        }
+                        return true
+                    }
+                    return false
+                }
+            }
+        )
+
+        // Window level এ touch ধরার জন্য Activity এর onTouchEvent use করবো।
+        // এটা WebView এর touch consume করে না।
+        swipeGestureDetector = gestureDetector
+    }
+
+    // Swipe gesture detector — onTouchEvent এ use হবে
+    private var swipeGestureDetector: android.view.GestureDetector? = null
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        swipeGestureDetector?.onTouchEvent(event)
+        return super.onTouchEvent(event)
     }
 
     private fun launchFloatingDirectly(wv: WebView, moveActivityToBack: Boolean) {
@@ -558,12 +697,20 @@ class YoutubeActivity : ComponentActivity() {
         finish()
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        // Mini player tap করলে YoutubeActivity FLAG_ACTIVITY_REORDER_TO_FRONT দিয়ে
+        // resume হয় — তখন onNewIntent call হয়। isMiniPlayerActive true থাকলে
+        // onResume() এ WebView re-attach হবে।
+        setIntent(intent)
+    }
+
     override fun onResume() {
         super.onResume()
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         if (isMiniPlayerActive) {
-            // ★ FIX: Lock → Floating → Unlock flow
+            // ★ FIX: Mini Player tap → Activity resume flow
             // isMiniPlayerActive = true মানে WebView এখন floating service এ আছে
             // Service বন্ধ করলে onDestroy() এ WebView pendingWebView এ রাখবে
             isMiniPlayerActive = false
