@@ -499,9 +499,9 @@ class FacebookActivity : ComponentActivity() {
             } else if (frame != null) {
                 // ★ FIX: webView null মানে Activity recreate হয়েছে কিন্তু
                 // isFloatingActive ছিল না — নতুন WebView বানাও
-                val pending = $svc_ns.FacebookFloatingWindowService.pendingWebView
+                val pending = com.rasel.RasFocus.selfcontrol.familybrowser.service.FacebookFloatingWindowService.pendingWebView
                 if (pending != null) {
-                    $svc_ns.FacebookFloatingWindowService.pendingWebView = null
+                    com.rasel.RasFocus.selfcontrol.familybrowser.service.FacebookFloatingWindowService.pendingWebView = null
                     webView = pending
                     (pending.parent as? ViewGroup)?.removeView(pending)
                     pending.setBackgroundColor(Color.parseColor("#f0f2f5"))
