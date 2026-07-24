@@ -192,9 +192,32 @@ class YoutubeActivity : ComponentActivity() {
             get() = com.rasel.RasFocus.selfcontrol.FirebaseKeywordSync.getAdultKeywords()
 
         private val AD_SERVERS = setOf(
-            "googleads.g.doubleclick.net", "pagead2.googlesyndication.com", 
-            "pubads.g.doubleclick.net", "youtube.com/api/stats/ads", "youtube.com/pagead",
-            "googleadservices.com", "adservice.google.com"
+            "googleads.g.doubleclick.net", "pagead2.googlesyndication.com",
+            "pubads.g.doubleclick.net", "adservice.google.com",
+            "googleadservices.com", "ad.doubleclick.net",
+            "amazon-adsystem.com", "adsystem.amazon.com",
+            "moatads.com", "adsafeprotected.com",
+            "securepubads.g.doubleclick.net"
+        )
+
+        private val YT_AD_ENDPOINTS = listOf(
+            "/api/stats/ads", "/pagead/adview", "/ptracking",
+            "/api/stats/qoe?", "/pagead/paralleladload",
+            "/pagead/viewthroughconversion", "/pagead/interaction",
+            "/pagead/adformat", "/annotations_auth", "/get_midroll_info",
+            "/api/stats/delayplay", "/api/stats/atr",
+            "youtubei/v1/player/ad_break", "youtubei/v1/ad_break",
+            "youtubei/v1/log_event",
+            "imasdk.googleapis.com/js/sdkloader",
+            "imasdk.googleapis.com/admob"
+        )
+
+        private val AD_URL_PATTERNS = listOf(
+            "/pagead/", "/ads/", "/adview/", "adformat=",
+            "//ad.", "//ads.", "//adserver.", "//adservice.",
+            "tracking_pixel", "track/click", "ad_impression",
+            "affiliates/", "click.php?aff", "bannerfarm",
+            "adrotate", "sponsored_links"
         )
 
         fun launch(activity: Activity) {
@@ -371,39 +394,75 @@ class YoutubeActivity : ComponentActivity() {
                     view: WebView,
                     request: WebResourceRequest
                 ): WebResourceResponse? {
-                    val url = request.url.toString()
+                    val url  = request.url.toString()
+                    val host = request.url?.host?.lowercase() ?: ""
 
-                    // Layer 1: Network-level ad domain block
                     val prefs = getSharedPreferences("browser_settings", Context.MODE_PRIVATE)
+
                     if (prefs.getBoolean("yt_ad_layer1", true)) {
-                        if (AD_SERVERS.any { url.contains(it) }) {
+                        // ── Check 1: Ad domain block ──────────────────────────
+                        if (AD_SERVERS.any { host == it || host.endsWith(".$it") }) {
                             return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
+                        }
+
+                        // ── Check 2: YouTube-specific ad endpoints ────────────
+                        if (host.contains("youtube.com") || host.contains("imasdk.googleapis.com")) {
+                            if (YT_AD_ENDPOINTS.any { url.contains(it) }) {
+                                return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
+                            }
+                        }
+
+                        // ── Check 3: googlevideo.com ad stream detection ───────
+                        if (url.contains("googlevideo.com/videoplayback")) {
+                            val isAdStream =
+                                url.contains("&oad=")        ||
+                                url.contains("ctier=A")       ||
+                                url.contains("&adformat=")    ||
+                                url.contains("&ad_type=")     ||
+                                url.contains("&source=ytads") ||
+                                url.contains("&adsid=")       ||
+                                (url.contains("&pot=") && url.contains("&c=WEB") && !url.contains("&id="))
+                            if (isAdStream) {
+                                return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
+                            }
+                        }
+
+                        // ── Check 4: Generic ad URL patterns ─────────────────
+                        if (AD_URL_PATTERNS.any { url.contains(it) } &&
+                            !url.contains("youtube.com/watch") &&
+                            !url.contains("googleapis.com/youtube") &&
+                            !url.contains("youtube.com/results")) {
+                            return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
+                        }
+
+                        // ── Check 5: googlevideo.com tracking/ping requests ───
+                        if (host.contains("googlevideo.com")) {
+                            val isGvAd =
+                                url.contains("initplayback")    ||
+                                url.contains("generate_204")    ||
+                                url.contains("/pcs/activeview") ||
+                                url.contains("ctier=SA")        ||
+                                url.contains("ctier=SR")        ||
+                                (url.contains("initplayback") && url.contains("adformat"))
+                            if (isGvAd) {
+                                return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
+                            }
                         }
                     }
 
-                    // ★ Network-level adult site block (domain + keyword)
-                    // আগে এই দুটো check ছিল না — shouldOverrideUrlLoading এ শুধু
-                    // page-navigation এ block হতো, কিন্তু XHR/fetch/sub-resource
-                    // request গুলো bypass হয়ে যেত। এখন shouldInterceptRequest এ
-                    // domain check (AdBlocker.isAdultSite) এবং keyword check
-                    // (FirebaseKeywordSync.containsAdultKeyword) দুটোই করা হচ্ছে —
-                    // ফলে network level এ সব ধরনের request block হবে।
+                    // ── Adult site block (domain + keyword) ───────────────────
                     val isDomainBlocked  = AdBlocker.isAdultSite(url)
                     val isKeywordBlocked = com.rasel.RasFocus.selfcontrol.FirebaseKeywordSync.containsAdultKeyword(url)
                     if (isDomainBlocked || isKeywordBlocked) {
                         adultBlockAlreadyShownForThisLoad = true
                         if (request.isForMainFrame) {
                             val blockedHtml = AdBlocker.buildBlockedPage(url, BlockReason.ADULT)
-                            return WebResourceResponse(
-                                "text/html", "UTF-8",
-                                blockedHtml.byteInputStream()
-                            )
+                            return WebResourceResponse("text/html", "UTF-8", blockedHtml.byteInputStream())
                         }
-                        // Sub-resource (image, script, XHR) → silently block
                         return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
                     }
 
-                    // YouTube search keyword block (XHR search query)
+                    // ── YouTube search keyword block (XHR) ────────────────────
                     val adultBlockHtml = checkAdultSearchKeyword(url)
                     if (adultBlockHtml != null) {
                         adultBlockAlreadyShownForThisLoad = true
