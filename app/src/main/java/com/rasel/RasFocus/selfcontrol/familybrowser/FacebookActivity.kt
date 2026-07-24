@@ -37,6 +37,7 @@ import java.io.ByteArrayInputStream
 class FacebookActivity : ComponentActivity() {
 
     private var webView: WebView? = null
+    private var rootFrame: FrameLayout? = null
     private var customView: View? = null
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
 
@@ -138,6 +139,7 @@ class FacebookActivity : ComponentActivity() {
                 insets
             }
         }
+        this.rootFrame = rootFrame
         setContentView(rootFrame)
 
         // ── আগের floating session থেকে ফেরত আসা WebView থাকলে সেটাই ব্যবহার করো ──
@@ -442,23 +444,41 @@ class FacebookActivity : ComponentActivity() {
             } catch (_: Exception) {}
 
             if (webView == null) {
-                val rootFrame = getRootFrame()
-                // Floating থেকে ফেরার আগেই bg set করো যাতে 200ms গ্যাপে white না দেখায়
-                rootFrame?.setBackgroundColor(Color.parseColor("#f0f2f5"))
-                rootFrame?.postDelayed({
+                // ★ FIX: sync re-attach — postDelayed বাদ দেওয়া হয়েছে কারণ
+                // 200ms delay এ Activity টা white দেখায়। rootFrame field থেকে
+                // সরাসরি নেওয়া হচ্ছে — getRootFrame() inflate timing এ miss করতো।
+                val frame = rootFrame
+                if (frame != null) {
+                    frame.setBackgroundColor(Color.parseColor("#f0f2f5"))
                     val pendingWv = com.rasel.RasFocus.selfcontrol.familybrowser.service.FacebookFloatingWindowService.pendingWebView
-                    if (pendingWv != null && webView == null) {
+                    if (pendingWv != null) {
                         com.rasel.RasFocus.selfcontrol.familybrowser.service.FacebookFloatingWindowService.pendingWebView = null
                         webView = pendingWv
                         (pendingWv.parent as? ViewGroup)?.removeView(pendingWv)
                         pendingWv.setBackgroundColor(Color.parseColor("#f0f2f5"))
-                        rootFrame.addView(pendingWv, FrameLayout.LayoutParams(
+                        frame.addView(pendingWv, FrameLayout.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
                         ))
                         pendingWv.resumeTimers()
                         pendingWv.onResume()
+                    } else {
+                        // pendingWebView নেই — process kill হয়েছিল, নতুন WebView বানাও
+                        val newWv = buildFacebookWebView(frame)
+                        webView = newWv
+                        frame.addView(newWv, FrameLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
+                        ))
+                        val recoveryPrefs = getSharedPreferences("fb_float_recovery", Context.MODE_PRIVATE)
+                        val recoveredUrl = if (recoveryPrefs.getBoolean("was_open", false))
+                            recoveryPrefs.getString("last_url", null) else null
+                        if (recoveredUrl != null) {
+                            recoveryPrefs.edit().putBoolean("was_open", false).apply()
+                            newWv.loadUrl(recoveredUrl)
+                        } else {
+                            newWv.loadUrl("https://m.facebook.com/")
+                        }
                     }
-                }, 200)
+                }
             }
         } else {
             webView?.resumeTimers()
