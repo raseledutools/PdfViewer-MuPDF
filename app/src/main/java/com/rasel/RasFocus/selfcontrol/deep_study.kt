@@ -1095,7 +1095,7 @@ fun BlocklistPickerSheet(
                     } catch (_: Exception) { null }
                 }
                 .sortedWith(compareBy(
-                    { it.packageName !in PRIORITY_PKGS }, // priority apps first
+                    { it.pkg !in PRIORITY_PKGS }, // priority apps first
                     { it.name.lowercase() }
                 ))
 
