@@ -20,7 +20,9 @@ import android.graphics.PixelFormat
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.media.AudioManager
 import android.view.Gravity
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
@@ -549,6 +551,8 @@ class UnifiedBlockerService : AccessibilityService() {
         } else if (shouldBlockNormal) {
             if (System.currentTimeMillis() - lastBlockTime < 5000) return true
             lastBlockTime = System.currentTimeMillis()
+            // ★ FIX: App block এও media pause
+            pauseMediaPlayback()
             val mainMsg = if (DataManager.showQuotes) getReligiousQuote() else getMotivationalQuote()
             Handler(Looper.getMainLooper()).post {
                 BlockPage.show(this, BlockPage.Type.ADULT, "ACCESS DENIED!", mainMsg)
@@ -573,6 +577,8 @@ class UnifiedBlockerService : AccessibilityService() {
         lastBlockTime = System.currentTimeMillis()
         DataManager.totalBlockedCount++
         DataManager.cleanStreakDays = 0
+        // ★ FIX: Adult block এ YouTube native mini player বন্ধ করো
+        pauseMediaPlayback()
         Handler(Looper.getMainLooper()).post {
             BlockPage.show(this, BlockPage.Type.ADULT, "Adult Content", "Reason: $reason")
         }
@@ -1179,6 +1185,8 @@ class UnifiedBlockerService : AccessibilityService() {
         val now = System.currentTimeMillis()
         if (now - fbBlockLastTime < 1200L) return
         fbBlockLastTime = now
+        // ★ FIX: Facebook Reels/Video block এও media pause
+        pauseMediaPlayback()
         val type = when {
             featureTitle.contains("Reel", true) -> BlockPage.Type.REELS
             featureTitle.contains("Video", true) -> BlockPage.Type.REELS
@@ -1211,8 +1219,25 @@ class UnifiedBlockerService : AccessibilityService() {
                 .any { it.isSelected || it.isChecked || it.parent?.isSelected == true }
     }
 
+    // ── pauseMediaPlayback ─────────────────────────────────────────────
+    // Block page দেখানোর সাথে সাথে YouTube / যেকোনো app-এর native
+    // mini player / background audio বন্ধ করে দেয়।
+    // AudioManager.dispatchMediaKeyEvent() সরাসরি system-wide active
+    // media session-এ PAUSE key পাঠায় — YouTube mini player সহ সব
+    // native player এটাতে respond করে।
+    private fun pauseMediaPlayback() {
+        try {
+            val am = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+            am.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PAUSE))
+            am.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP,   KeyEvent.KEYCODE_MEDIA_PAUSE))
+        } catch (_: Exception) { }
+    }
+
     // ── blockWithMessage (extrem_block style) ─────────────────────────
     private fun blockWithMessage(featureTitle: String, reason: String) {
+        // ★ FIX: Block দেখানোর আগেই media pause — না হলে YouTube native
+        // mini player / background audio block page-এর নিচে চলতেই থাকে।
+        pauseMediaPlayback()
         performGlobalAction(GLOBAL_ACTION_HOME)
         val now = System.currentTimeMillis()
         if (now - lastPopupTime > 1500L) {
