@@ -286,10 +286,12 @@ class XlsxViewerActivity : ComponentActivity() {
         val pdf = PdfDocument()
         var pageNum = 0
 
+        var currentPage: PdfDocument.Page? = null
         fun newPage(): android.graphics.Canvas {
             pageNum++
             val info = PdfDocument.PageInfo.Builder(pageW, pageH, pageNum).create()
             val p = pdf.startPage(info)
+            currentPage = p
             p.canvas.drawColor(Color.WHITE)
             return p.canvas
         }
@@ -334,7 +336,7 @@ class XlsxViewerActivity : ComponentActivity() {
 
             for ((rowIdx, row) in rows.withIndex()) {
                 if (y + rowH > pageH - marginB) {
-                    pdf.finishPage(pdf.pages.last())
+                    pdf.finishPage(currentPage)
                     canvas = newPage()
                     y = marginT
                     // Repeat header on new page
@@ -352,7 +354,7 @@ class XlsxViewerActivity : ComponentActivity() {
             }
 
             // Close last page of this sheet
-            if (pageNum > 0) pdf.finishPage(pdf.pages.last())
+            if (pageNum > 0) pdf.finishPage(currentPage)
         }
 
         if (pageNum == 0) {

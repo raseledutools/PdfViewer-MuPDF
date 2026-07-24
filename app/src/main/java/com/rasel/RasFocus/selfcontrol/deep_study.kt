@@ -1217,9 +1217,10 @@ fun BlocklistPickerSheet(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 items(
-                    items = filtered,
-                    key = { it.pkg }
-                ) { app ->
+                    count = filtered.size,
+                    key = { i -> filtered[i].pkg }
+                ) { i ->
+                    val app = filtered[i]
                     val isLauncher = app.pkg == defaultLauncher
                     val isSelected = tempApps.contains(app.pkg) || isLauncher
                     val isPriority = app.pkg in PRIORITY_PKGS

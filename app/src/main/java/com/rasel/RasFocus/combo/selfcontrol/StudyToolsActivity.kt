@@ -8,7 +8,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.rasel.RasFocus.combo.selfcontrol.study_tools.ProfessionalDiaryScreen
+import com.rasel.RasFocus.selfcontrol.study_tools.ProfessionalDiaryScreen
 import com.rasel.RasFocus.combo.selfcontrol.study_tools.StudyToolsScreen
 
 /**
