@@ -373,7 +373,7 @@ class YoutubeActivity : ComponentActivity() {
                 ): WebResourceResponse? {
                     val url = request.url.toString()
 
-                    // Layer 1: Network-level domain block
+                    // Layer 1: Network-level ad domain block
                     val prefs = getSharedPreferences("browser_settings", Context.MODE_PRIVATE)
                     if (prefs.getBoolean("yt_ad_layer1", true)) {
                         if (AD_SERVERS.any { url.contains(it) }) {
@@ -381,11 +381,29 @@ class YoutubeActivity : ComponentActivity() {
                         }
                     }
 
-                    // YouTube-এর নিজস্ব search box থেকে search করলে page navigate করে না —
-                    // internally একটা XHR/fetch request পাঠায়, যেটা shouldOverrideUrlLoading
-                    // এ কখনো পৌঁছায় না (সেটা শুধু full page navigation এ চলে)। এখানে চেক না
-                    // থাকলে address bar এ সরাসরি URL টাইপ করলে block হতো, কিন্তু app এর
-                    // নিজের search icon দিয়ে search করলে সম্পূর্ণ bypass হয়ে যেত।
+                    // ★ Network-level adult site block (domain + keyword)
+                    // আগে এই দুটো check ছিল না — shouldOverrideUrlLoading এ শুধু
+                    // page-navigation এ block হতো, কিন্তু XHR/fetch/sub-resource
+                    // request গুলো bypass হয়ে যেত। এখন shouldInterceptRequest এ
+                    // domain check (AdBlocker.isAdultSite) এবং keyword check
+                    // (FirebaseKeywordSync.containsAdultKeyword) দুটোই করা হচ্ছে —
+                    // ফলে network level এ সব ধরনের request block হবে।
+                    val isDomainBlocked  = AdBlocker.isAdultSite(url)
+                    val isKeywordBlocked = com.rasel.RasFocus.selfcontrol.FirebaseKeywordSync.containsAdultKeyword(url)
+                    if (isDomainBlocked || isKeywordBlocked) {
+                        adultBlockAlreadyShownForThisLoad = true
+                        if (request.isForMainFrame) {
+                            val blockedHtml = AdBlocker.buildBlockedPage(url, BlockReason.ADULT)
+                            return WebResourceResponse(
+                                "text/html", "UTF-8",
+                                blockedHtml.byteInputStream()
+                            )
+                        }
+                        // Sub-resource (image, script, XHR) → silently block
+                        return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
+                    }
+
+                    // YouTube search keyword block (XHR search query)
                     val adultBlockHtml = checkAdultSearchKeyword(url)
                     if (adultBlockHtml != null) {
                         adultBlockAlreadyShownForThisLoad = true
