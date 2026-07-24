@@ -10,6 +10,12 @@
     <cache-path
         name="captures"
         path="captures/" />
+    <!-- converted_pdfs: used by PptxViewerActivity, DocxViewerActivity,
+         XlsxViewerActivity, and UniversalViewerActivity (image→PDF).
+         Missing this was causing FileProvider crash on "Open with RasFocus". -->
+    <cache-path
+        name="converted_pdfs"
+        path="converted_pdfs/" />
     <external-files-path
         name="external_files"
         path="Documents/" />
@@ -23,3 +29,4 @@
         name="internal_files"
         path="." />
 </paths>
+
