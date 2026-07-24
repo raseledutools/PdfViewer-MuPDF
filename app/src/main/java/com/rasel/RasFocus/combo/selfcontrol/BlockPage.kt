@@ -93,30 +93,25 @@ object BlockPage {
     }
 
     // ── Main API: show ───────────────────────────────────────────────────
-    // ✅ FIX: আগে এখানে mainHandler.post{} দিয়ে wrap করা হতো, কিন্তু এই
-    // ফাংশন সবসময় AccessibilityService এর onAccessibilityEvent chain থেকে
-    // call হয় — যেটা ইতিমধ্যেই main thread এ চলে। অপ্রয়োজনীয় Handler
-    // round-trip প্রতিটা extra মিলিসেকেন্ড latency যোগ করছিল, যার ফলে
-    // browser এর নিজের page (Google homepage) block overlay এর আগেই
-    // ভিজিবল হয়ে যাচ্ছিল। এখন already main thread এ থাকলে সরাসরি call
-    // করি — কোনো future caller ভুলে অন্য thread থেকে call করলে (অসম্ভাব্য
-    // কিন্তু safety এর জন্য) তখনই Handler ব্যবহার হবে।
+    // detectedKeyword: exact keyword যেটার কারণে block হয়েছে — block page এ
+    // দেখাবে। না জানলে null পাঠাও, chip দেখাবে না।
     fun show(
         service: AccessibilityService,
         type: Type,
         title: String,
-        reason: String
+        reason: String,
+        detectedKeyword: String? = null
     ) {
         if (isVisible) return
         if (Looper.myLooper() == Looper.getMainLooper()) {
             if (isVisible) return
             isVisible = true
-            buildAndShow(service, type, title, reason)
+            buildAndShow(service, type, title, reason, detectedKeyword)
         } else {
             mainHandler.post {
                 if (isVisible) return@post
                 isVisible = true
-                buildAndShow(service, type, title, reason)
+                buildAndShow(service, type, title, reason, detectedKeyword)
             }
         }
     }
@@ -131,7 +126,8 @@ object BlockPage {
         service: AccessibilityService,
         type: Type,
         title: String,
-        reason: String
+        reason: String,
+        detectedKeyword: String? = null
     ) {
         val ctx: Context = service
         val wm = ctx.getSystemService(Context.WINDOW_SERVICE) as WindowManager
@@ -302,6 +298,35 @@ object BlockPage {
         }
         reasonRow.addView(reasonIcon); reasonRow.addView(reasonTv); body.addView(reasonRow)
 
+        // ── Keyword chip — শুধু adult block এ, keyword জানা থাকলে দেখাবে ──
+        if (!detectedKeyword.isNullOrBlank() && type == Type.ADULT) {
+            val kwBg = GradientDrawable().apply {
+                setColor(Color.parseColor(if (cfg.adultMode) "#1A1A1A" else "#FFF3E0"))
+                cornerRadius = 10f * dp
+                setStroke((1f * dp).toInt(), Color.parseColor(if (cfg.adultMode) "#FF3B5C" else "#FF8C00"))
+            }
+            val kwRow = LinearLayout(ctx).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                background = kwBg
+                val hp = (14 * dp).toInt(); val vp = (10 * dp).toInt(); setPadding(hp, vp, hp, vp)
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { setMargins(0, (10 * dp).toInt(), 0, 0) }
+            }
+            val kwLabel = TextView(ctx).apply {
+                text = "🔍 Detected keyword:  "; textSize = 12f
+                setTextColor(Color.parseColor(if (cfg.adultMode) "#FF8888" else "#E65100"))
+                typeface = Typeface.DEFAULT_BOLD
+            }
+            val kwValue = TextView(ctx).apply {
+                text = "\"$detectedKeyword\""; textSize = 13f
+                setTextColor(Color.parseColor(if (cfg.adultMode) "#FFCCCC" else "#BF360C"))
+                typeface = Typeface.DEFAULT_BOLD
+            }
+            kwRow.addView(kwLabel); kwRow.addView(kwValue); body.addView(kwRow)
+        }
+
         // Divider
         body.addView(View(ctx).apply {
             setBackgroundColor(if (cfg.adultMode) Color.parseColor("#333333") else Color.parseColor("#E8EFF5"))
@@ -376,7 +401,36 @@ object BlockPage {
             val p = (16 * dp).toInt(); setPadding(p, p, p, p)
             setOnClickListener {
                 removeOverlay()
-                service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
+                // YouTube চলছে কিনা দেখো — চললে home reload করে দাও
+                // যাতে block হওয়া screen এ আর ফিরে না যায়
+                val youtubeActive = try {
+                    val root = service.rootInActiveWindow
+                    val pkg = root?.packageName?.toString() ?: ""
+                    root?.recycle()
+                    pkg == "com.google.android.youtube"
+                } catch (_: Exception) { false }
+
+                if (youtubeActive) {
+                    // YouTube কে fresh home screen এ নিয়ে যাও
+                    try {
+                        val ytIntent = ctx.packageManager
+                            .getLaunchIntentForPackage("com.google.android.youtube")
+                        if (ytIntent != null) {
+                            ytIntent.addFlags(
+                                android.content.Intent.FLAG_ACTIVITY_NEW_TASK or
+                                android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                                android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
+                            )
+                            ctx.startActivity(ytIntent)
+                        } else {
+                            service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
+                        }
+                    } catch (_: Exception) {
+                        service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
+                    }
+                } else {
+                    service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
+                }
             }
         })
 

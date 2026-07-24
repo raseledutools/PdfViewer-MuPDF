@@ -1054,11 +1054,10 @@ class UnifiedBlockerService : AccessibilityService() {
         // ── শুধু search query text check করো, পুরো screen dump না ──
         // এতে home feed/normal page এর video title দিয়ে false positive হবে না।
         val fbKw = FirebaseKeywordSync.getAdultKeywords()
-        val blocked = if (fbKw.isNotEmpty()) fbKw.any { searchQueryText.contains(it) }
-                      else adultSiteKeywords.any { searchQueryText.contains(it) }
-        if (!blocked) return false
+        val kwList = if (fbKw.isNotEmpty()) fbKw else adultSiteKeywords
+        val matchedKw = kwList.firstOrNull { searchQueryText.contains(it) } ?: return false
 
-        blockWithMessage("Adult Content", "YouTube search results contain blocked content.")
+        blockWithMessage("Adult Content", "YouTube search results contain blocked content.", matchedKw)
         return true
     }
 
@@ -1242,7 +1241,7 @@ class UnifiedBlockerService : AccessibilityService() {
     }
 
     // ── blockWithMessage (extrem_block style) ─────────────────────────
-    private fun blockWithMessage(featureTitle: String, reason: String) {
+    private fun blockWithMessage(featureTitle: String, reason: String, detectedKeyword: String? = null) {
         performGlobalAction(GLOBAL_ACTION_HOME)
         val now = System.currentTimeMillis()
         if (now - lastPopupTime > 1500L) {
@@ -1258,7 +1257,7 @@ class UnifiedBlockerService : AccessibilityService() {
                 featureTitle.contains("DENIED", true) || featureTitle.contains("STRICT", true) || featureTitle.contains("LOCK", true) -> BlockPage.Type.SYSTEM
                 else -> BlockPage.Type.FOCUS
             }
-            Handler(Looper.getMainLooper()).post { BlockPage.show(this, type, featureTitle, reason) }
+            Handler(Looper.getMainLooper()).post { BlockPage.show(this, type, featureTitle, reason, detectedKeyword) }
         }
     }
 

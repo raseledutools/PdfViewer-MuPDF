@@ -266,14 +266,11 @@ class RasFocusBlockingService : AccessibilityService() {
 
     private var lastPopupTime = 0L
 
-    private fun blockWithMessage(featureTitle: String, reason: String) {
+    private fun blockWithMessage(featureTitle: String, reason: String, detectedKeyword: String? = null) {
         val now = System.currentTimeMillis()
         if (now - lastPopupTime > 1500L) {
             lastPopupTime = now
-            // ✅ FIX: mainHandler.post{} বাদ — আমরা already main thread এ
-            // আছি (onAccessibilityEvent chain), তাই সরাসরি call করলে overlay
-            // এক message-queue round-trip আগে দেখা যায়।
-            showBlockOverlay(featureTitle, reason)
+            showBlockOverlay(featureTitle, reason, detectedKeyword)
             mainHandler.postDelayed({ performGlobalAction(GLOBAL_ACTION_HOME) }, 80L)
         }
     }
@@ -284,14 +281,13 @@ class RasFocusBlockingService : AccessibilityService() {
      * ২. GLOBAL_ACTION_BACK ফায়ার করে current tab/screen destroy করো।
      * ৩. FLAG_ACTIVITY_CLEAR_TASK সহ HOME Intent দিয়ে অ্যাপটি পুরোপুরি kill করো।
      */
-    private fun forceKillAppAndGoHome(pkg: String, featureTitle: String, reason: String) {
+    private fun forceKillAppAndGoHome(pkg: String, featureTitle: String, reason: String, detectedKeyword: String? = null) {
         val now = System.currentTimeMillis()
         if (now - lastPopupTime > 1000L) {
             lastPopupTime = now
 
             // ১. সবার আগে blocking overlay দেখাও (Instant Cover)
-            // ✅ FIX: mainHandler.post{} বাদ — already main thread এ আছি
-            showBlockOverlay(featureTitle, reason)
+            showBlockOverlay(featureTitle, reason, detectedKeyword)
 
             // ২. Current screen / tab destroy করতে BACK press
             mainHandler.postDelayed({
@@ -316,7 +312,7 @@ class RasFocusBlockingService : AccessibilityService() {
 
 
     // ── Block UI delegated to BlockPage.kt ──────────────────────────
-    private fun showBlockOverlay(featureTitle: String, reason: String) {
+    private fun showBlockOverlay(featureTitle: String, reason: String, detectedKeyword: String? = null) {
         val type = when {
             featureTitle.contains("Short", true)  -> BlockPage.Type.SHORTS
             featureTitle.contains("Reel", true)   -> BlockPage.Type.REELS
@@ -327,7 +323,7 @@ class RasFocusBlockingService : AccessibilityService() {
             featureTitle.contains("DENIED", true) || featureTitle.contains("LOCK", true) -> BlockPage.Type.SYSTEM
             else -> BlockPage.Type.FOCUS
         }
-        BlockPage.show(this, type, featureTitle, reason)
+        BlockPage.show(this, type, featureTitle, reason, detectedKeyword)
     }
 
     private fun removeOverlay() { BlockPage.dismiss(this) }
@@ -982,9 +978,10 @@ class RasFocusBlockingService : AccessibilityService() {
             val combined = "$searchQueryText $resultTitleText".trim()
             if (combined.isBlank()) return false
 
-            if (activeKeywords.any { combined.contains(it) }) {
+            val ytMatchedKw = activeKeywords.firstOrNull { combined.contains(it) }
+            if (ytMatchedKw != null) {
                 lastScreenScanBlockTime = now
-                forceKillAppAndGoHome(pkg, "Content Blocked", "Blocked keyword detected in YouTube search.")
+                forceKillAppAndGoHome(pkg, "Content Blocked", "Blocked keyword detected in YouTube search.", ytMatchedKw)
                 return true
             }
             return false
@@ -1021,9 +1018,10 @@ class RasFocusBlockingService : AccessibilityService() {
 
             if (fbQueryText.isBlank()) return false  // কোনো query নেই → skip
 
-            if (activeKeywords.any { fbQueryText.contains(it) }) {
+            val fbMatchedKw = activeKeywords.firstOrNull { fbQueryText.contains(it) }
+            if (fbMatchedKw != null) {
                 lastScreenScanBlockTime = now
-                forceKillAppAndGoHome(pkg, "Content Blocked", "Blocked keyword detected in Facebook search.")
+                forceKillAppAndGoHome(pkg, "Content Blocked", "Blocked keyword detected in Facebook search.", fbMatchedKw)
                 return true
             }
             return false
@@ -1049,9 +1047,10 @@ class RasFocusBlockingService : AccessibilityService() {
                 .firstOrNull()?.text?.toString()?.lowercase()?.trim() ?: ""
             if (searchText.isBlank()) return false
 
-            if (activeKeywords.any { searchText.contains(it) }) {
+            val igMatchedKw = activeKeywords.firstOrNull { searchText.contains(it) }
+            if (igMatchedKw != null) {
                 lastScreenScanBlockTime = now
-                forceKillAppAndGoHome(pkg, "Content Blocked", "Blocked keyword detected in Instagram search.")
+                forceKillAppAndGoHome(pkg, "Content Blocked", "Blocked keyword detected in Instagram search.", igMatchedKw)
                 return true
             }
             return false
@@ -1114,7 +1113,7 @@ class RasFocusBlockingService : AccessibilityService() {
         val match = activeKeywords.firstOrNull { titleText.contains(it) } ?: return false
 
         lastScreenScanBlockTime = now
-        forceKillAppAndGoHome(pkg, "Content Blocked", "Blocked keyword detected on screen.")
+        forceKillAppAndGoHome(pkg, "Content Blocked", "Blocked keyword detected on screen.", match)
         return true
     }
 
